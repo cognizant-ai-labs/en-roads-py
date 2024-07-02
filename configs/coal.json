@@ -1,0 +1,34 @@
+{
+    "evolution_params": {
+        "n_generations": 100,
+        "pop_size": 100,
+        "n_elites": 10
+    },
+    "remove_population_pct": 0.7,
+    "mutation_factor": 0.1,
+    "mutation_rate": 0.1,
+    "model_params": {
+        "hidden_size": 16
+    },
+    "eval_params": {
+        "temp_dir": "evolution/temp"
+    },
+    "context": [],
+    "actions": [
+        "_source_subsidy_delivered_coal_tce",
+        "_source_subsidy_start_time_delivered_coal",
+        "_source_subsidy_stop_time_delivered_coal",
+        "_no_new_coal",
+        "_year_of_no_new_capacity_coal",
+        "_utilization_adjustment_factor_delivered_coal",
+        "_utilization_policy_start_time_delivered_coal",
+        "_utilization_policy_stop_time_delivered_coal",
+        "_target_accelerated_retirement_rate_electric_coal"
+    ],
+    "outcomes": [
+        "CO2 Gross emissions",
+        "Total cost of energy"
+    ],
+    "save_path": "results/coal/reseeded",
+    "seed_path": "evolution/seeding/seeds/coal"
+}
