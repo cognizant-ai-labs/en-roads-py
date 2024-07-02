@@ -78,8 +78,9 @@
         "_performance_standard_time"
     ],
     "outcomes": [
-        "CO2 Gross emissions",
-        "Total cost of energy"
+        "Net cumulative emissions",
+        "Total cost of energy",
+        "Cost of energy next 10 years"
     ],
-    "save_path": "results/actions/dynamic"
+    "save_path": "results/actions/orthogonalseeds"
 }

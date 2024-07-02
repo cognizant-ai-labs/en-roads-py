@@ -71,6 +71,17 @@ class NNPrescriptor(torch.nn.Module):
             torch.nn.Linear(hidden_size, out_size),
             torch.nn.Sigmoid()
         )
+
+        # Orthogonal initialization
+        for layer in self.nn:
+            if isinstance(layer, torch.nn.Linear):
+                torch.nn.init.orthogonal_(layer.weight)
+                layer.bias.data.fill_(0.01)
+
+        # Set up input specs so our inputs are forced into a format the model can use
+        self.bias, self.scaler, self.binary_idxs, self.end_date_idxs = self.initialize_input_specs(actions)
+
+    def initialize_input_specs(self, actions):
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
         bias = []
         scaler = []
@@ -93,13 +104,12 @@ class NNPrescriptor(torch.nn.Module):
             else:
                 raise ValueError(f"Unknown kind: {row['kind']}")
             
-
-        self.bias = torch.tensor(bias, dtype=torch.float32)
-        self.scaler = torch.tensor(scaler, dtype=torch.float32)
-        self.binary_idxs = binary_idxs
-        self.end_date_idxs = end_date_idxs
+        bias = torch.tensor(bias, dtype=torch.float32)
+        scaler = torch.tensor(scaler, dtype=torch.float32)
+        return bias, scaler, binary_idxs, end_date_idxs
         # self.bias = torch.tensor([-15, 2024, 2024, 0, 2024, 0, 2024, 2024, 0])
         # self.scaler = torch.tensor([115, 76, 76, 100, 76, 100, 76, 76, 10])
+
 
     def snap_to_zero_one(self, scaled, i, output):
         output[i] = scaled[i] > 0.5

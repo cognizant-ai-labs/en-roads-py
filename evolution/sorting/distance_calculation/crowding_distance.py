@@ -22,7 +22,7 @@ class CrowdingDistanceCalculator(DistanceCalculator):
             front[0].distance = float('inf')
             front[-1].distance = float('inf')
             for i in range(1, len(front) - 1):
-                if obj_max != obj_min:
+                if obj_max != obj_min and obj_min != -1 * float('inf'):
                     front[i].distance += (front[i+1].metrics[m] - front[i-1].metrics[m]) / (obj_max - obj_min)
                 # If all candidates have the same value, their distances are 0
                 else:

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch
+from tqdm import tqdm
 
 from evolution.candidate import Candidate
 from run_enroads import run_enroads, compile_enroads
@@ -52,12 +53,19 @@ class Evaluator:
         actions_arr = candidate.prescribe(self.torch_context)
         actions_dict = dict(zip(self.actions, actions_arr))
         outcomes_df = self.evaluate_actions(actions_dict)
-        outcomes_df.fillna(99, inplace=True)
+        outcomes_df.fillna(float("inf"), inplace=True)
         
         for outcome in self.outcomes:
-            candidate.metrics[outcome] = -1 * outcomes_df[outcome].iloc[-1]
+            if outcome == "Cost of energy next 10 years":
+                cost_col = outcomes_df["Total cost of energy"]
+                cost = cost_col.iloc[2025-1990:2035-1990].mean()
+                candidate.metrics[outcome] = -1 * cost
+            else:
+                candidate.metrics[outcome] = -1 * outcomes_df[outcome].iloc[-1]
+
+        return outcomes_df
 
     def evaluate_candidates(self, candidates: list[Candidate]):
-        for candidate in candidates:
+        for candidate in tqdm(candidates, leave=False):
             if len(candidate.metrics) == 0:
                 self.evaluate_candidate(candidate)
