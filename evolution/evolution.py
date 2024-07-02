@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from tqdm import tqdm
 
 from evolution.candidate import Candidate
 from evolution.crossover.uniform_crossover import UniformCrossover
@@ -37,6 +38,7 @@ class Evolution():
         self.sorter = NSGA2Sorter(distance_calculator)
         
         self.model_params = config["model_params"]
+        self.actions = config["actions"]
         self.outcomes = config["outcomes"]
 
         self.evaluator = Evaluator(**config["eval_params"])
@@ -65,11 +67,12 @@ class Evolution():
             print("Seeding from ", self.seed_path)
             seed_path = Path(self.seed_path)
             for seed in seed_path.iterdir():
-                candidate = Candidate.from_seed(seed, self.model_params, self.outcomes)
+                candidate = Candidate.from_seed(seed, self.model_params, self.actions, self.outcomes)
                 candidates.append(candidate)
         else:
             print("Generating random seed generation")
-            candidates.extend([Candidate("0_0", [], self.model_params, self.outcomes), Candidate("0_1", [], self.model_params, self.outcomes)])
+            candidates.extend([Candidate("0_0", [], self.model_params, self.actions, self.outcomes), 
+                               Candidate("0_1", [], self.model_params, self.actions, self.outcomes)])
 
         self.evaluator.evaluate_candidates(candidates)
         candidates = self.sorter.sort_candidates(candidates)
@@ -101,7 +104,7 @@ class Evolution():
         print("Beginning evolution...")
         sorted_parents = self.seed_first_gen()
         offspring = []
-        for gen in range(1, self.n_generations+1):
+        for gen in tqdm(range(1, self.n_generations+1)):
             # Create offspring
             keep = min(self.n_elites, len(sorted_parents))
             offspring = self.make_new_pop(sorted_parents, self.pop_size-keep, gen)

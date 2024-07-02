@@ -87,8 +87,11 @@ class TestEvaluator(unittest.TestCase):
                     self.assertTrue(np.isclose(float(inp_val), default))
 
     def test_consistent_eval(self):
+        """
+        Makes sure that the same candidate evaluated twice has the same metrics.
+        """
         evaluator = Evaluator(**self.config["eval_params"])
-        candidate = Candidate("0_0", [], self.config["model_params"], self.config["outcomes"])
+        candidate = Candidate("0_0", [], self.config["model_params"], self.config["actions"], self.config["outcomes"])
         evaluator.evaluate_candidate(candidate)
         original = {k: v for k, v in candidate.metrics.items()}
 

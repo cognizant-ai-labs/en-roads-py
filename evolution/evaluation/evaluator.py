@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from tqdm import tqdm
 
 from evolution.candidate import Candidate
 from run_enroads import run_enroads, compile_enroads
@@ -43,17 +42,22 @@ class Evaluator:
         return input_str
     # pylint: enable=no-member
 
-    def evaluate_candidate(self, candidate: Candidate):
-        actions_arr = candidate.prescribe(self.torch_context)
-        actions_dict = dict(zip(self.actions, actions_arr))
+    def evaluate_actions(self, actions_dict: dict[str, str]):
         self.construct_enroads_input(actions_dict)
         run_enroads(self.temp_dir / "enroads_output.txt", self.temp_dir / "enroads_input.txt")
         outcomes_df = pd.read_csv(self.temp_dir / "enroads_output.txt", sep="\t")
+        return outcomes_df
+
+    def evaluate_candidate(self, candidate: Candidate):
+        actions_arr = candidate.prescribe(self.torch_context)
+        actions_dict = dict(zip(self.actions, actions_arr))
+        outcomes_df = self.evaluate_actions(actions_dict)
+        outcomes_df.fillna(99, inplace=True)
+        
         for outcome in self.outcomes:
-            # TODO: fix
             candidate.metrics[outcome] = -1 * outcomes_df[outcome].iloc[-1]
 
     def evaluate_candidates(self, candidates: list[Candidate]):
-        for candidate in tqdm(candidates):
+        for candidate in candidates:
             if len(candidate.metrics) == 0:
                 self.evaluate_candidate(candidate)

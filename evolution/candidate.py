@@ -1,13 +1,15 @@
 from pathlib import Path
 
+import pandas as pd
 import torch
 
 class Candidate():
     """
     Candidate class that points to a model on disk.
     """
-    def __init__(self, cand_id: str, parents: list[str], model_params: dict, outcomes):
+    def __init__(self, cand_id: str, parents: list[str], model_params: dict, actions, outcomes):
         self.cand_id = cand_id
+        self.actions = actions
         self.outcomes = outcomes
         self.metrics = {}
 
@@ -17,14 +19,14 @@ class Candidate():
 
         # Model
         self.model_params = model_params
-        self.model = NNPrescriptor(**model_params).to("mps")
+        self.model = NNPrescriptor(actions=actions, **model_params).to("mps")
         self.model.eval()
 
     @classmethod
-    def from_seed(cls, path: Path, model_params: dict, outcomes):
+    def from_seed(cls, path: Path, model_params: dict, actions, outcomes):
         cand_id = path.stem
         parents = []
-        candidate = cls(cand_id, parents, model_params, outcomes)
+        candidate = cls(cand_id, parents, model_params, actions, outcomes)
         candidate.model.load_state_dict(torch.load(path))
         return candidate
     
@@ -61,7 +63,7 @@ class Candidate():
         return f"Candidate({self.cand_id})"
 
 class NNPrescriptor(torch.nn.Module):
-    def __init__(self, in_size, hidden_size, out_size):
+    def __init__(self, in_size, hidden_size, out_size, actions):
         super().__init__()
         self.nn = torch.nn.Sequential(
             torch.nn.Linear(in_size, hidden_size),
@@ -69,22 +71,58 @@ class NNPrescriptor(torch.nn.Module):
             torch.nn.Linear(hidden_size, out_size),
             torch.nn.Sigmoid()
         )
-        # TODO: fix hard coding
-        self.bias = torch.tensor([-15, 2024, 2024, 0, 2024, 0, 2024, 2024, 0])
-        self.scaler = torch.tensor([115, 76, 76, 100, 76, 100, 76, 76, 10])
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        bias = []
+        scaler = []
+        binary_idxs = []
+        end_date_idxs = []
+        for i, action in enumerate(actions):
+            row = input_specs[input_specs["varId"] == action].iloc[0]
+            if row["kind"] == "slider":
+                if "stop_time" in action:
+                    end_date_idxs.append(i)
+                    bias.append(0)
+                    scaler.append(1)
+                else:
+                    bias.append(row["minValue"])
+                    scaler.append(row["maxValue"] - row["minValue"])
+            elif row["kind"] == "switch":
+                bias.append(0)
+                scaler.append(1)
+                binary_idxs.append(i)
+            else:
+                raise ValueError(f"Unknown kind: {row['kind']}")
+            
+
+        self.bias = torch.tensor(bias, dtype=torch.float32)
+        self.scaler = torch.tensor(scaler, dtype=torch.float32)
+        self.binary_idxs = binary_idxs
+        self.end_date_idxs = end_date_idxs
+        # self.bias = torch.tensor([-15, 2024, 2024, 0, 2024, 0, 2024, 2024, 0])
+        # self.scaler = torch.tensor([115, 76, 76, 100, 76, 100, 76, 76, 10])
+
+    def snap_to_zero_one(self, scaled, i, output):
+        output[i] = scaled[i] > 0.5
+
+    def scale_end_time(self, scaled, i, output):
+        output[i] = scaled[i] * (self.scaler[i-1] - (output[i-1] - self.bias[i-1])) + output[i-1]
+        assert output[i] >= output[i-1], f"End time {output[i]} is less than start time {output[i-1]}"
+        assert output[i] <= self.scaler[i-1] + self.bias[i-1], f"End time {output[i]} is greater than max {self.scaler[i-1] + self.bias[i-1]}"
 
     # pylint: disable=consider-using-enumerate
     def forward(self, x):
         nn_output = self.nn(x)
         self.scaler = self.scaler.to(x.device)
         self.bias = self.bias.to(x.device)
+        scaled = nn_output * self.scaler + self.bias
+        output = torch.zeros_like(nn_output)
         for i in range(len(nn_output)):
-            # Handle start/stop dates
-            if i not in [2, 7]:
-                nn_output[i] = nn_output[i] * self.scaler[i] + self.bias[i]
+            if i in self.binary_idxs:
+                self.snap_to_zero_one(scaled, i, output)
+            elif i in self.end_date_idxs:
+                self.scale_end_time(scaled, i, output)
             else:
-                nn_output[i] = nn_output[i] * (self.scaler[i] - (nn_output[i-1] - self.bias[i-1])) + nn_output[i-1]
-        assert nn_output[2] > nn_output[1], f"Start date is after end date. Start: {nn_output[1]}, End: {nn_output[2]}."
-        assert nn_output[7] > nn_output[6], f"Start date is after end date. Start: {nn_output[7]}, End: {nn_output[8]}."
-        return nn_output
+                output[i] = scaled[i]
+            
+        return output
     

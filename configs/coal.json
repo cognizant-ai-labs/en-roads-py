@@ -1,6 +1,6 @@
 {
     "evolution_params": {
-        "n_generations": 50,
+        "n_generations": 100,
         "pop_size": 100,
         "n_elites": 10
     },
@@ -11,7 +11,7 @@
         "hidden_size": 16
     },
     "eval_params": {
-        "temp_dir": "temp"
+        "temp_dir": "evolution/temp"
     },
     "context": [],
     "actions": [
@@ -29,5 +29,6 @@
         "CO2 Gross emissions",
         "Total cost of energy"
     ],
-    "save_path": "results/coal/longer"
+    "save_path": "results/coal/reseeded",
+    "seed_path": "evolution/seeding/seeds/coal"
 }
