@@ -17,13 +17,28 @@ class CrowdingDistanceCalculator(DistanceCalculator):
             c.distance = 0
         for m in front[0].metrics.keys():
             front.sort(key=lambda c: c.metrics[m])
-            obj_min = front[0].metrics[m]
-            obj_max = front[-1].metrics[m]
-            front[0].distance = float('inf')
-            front[-1].distance = float('inf')
-            for i in range(1, len(front) - 1):
-                if obj_max != obj_min and obj_min != -1 * float('inf'):
+            print([float(c.metrics[m]) for c in front])
+            # If a candidate has a bad metric, set its distance to negative infinity and ignore it
+            start = 0
+            while front[start].metrics[m] == float("-inf") or front[start].metrics[m] == float("inf"):
+                front[start].distance = float('-inf')
+                start += 1
+            end = -1
+            while front[end].metrics[m] == float("-inf") or front[end].metrics[m] == float("inf"):
+                front[end].distance = float('-inf')
+                end -= 1
+            print(start, end)
+            # Standard NSGA-II Crowding Distance calculation
+            obj_min = front[start].metrics[m]
+            obj_max = front[end].metrics[m]
+            front[start].distance = float('inf')
+            front[end].distance = float('inf')
+            for i in range(start + 1, len(front) + end - 1):
+                # We hard-code simulator fails as inf and have to do this to avoid warnings
+                assert front[i].metrics[m] != float("-inf") and front[i].metrics[m] != float("inf"), "Metric should not be -inf or inf"
+                if obj_max != obj_min:
                     front[i].distance += (front[i+1].metrics[m] - front[i-1].metrics[m]) / (obj_max - obj_min)
                 # If all candidates have the same value, their distances are 0
                 else:
                     front[i].distance += 0
+            print([float(c.distance) for c in front])

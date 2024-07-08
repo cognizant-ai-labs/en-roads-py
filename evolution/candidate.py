@@ -39,7 +39,7 @@ class Candidate():
         Parses the output of our model so that we can use it in the AquaCrop model.
         """
         with torch.no_grad():
-            outputs = self.model.forward(x).detach().cpu().tolist()
+            outputs = self.model.forward(x).detach().cpu()
         return outputs
 
     def record_state(self):
@@ -79,60 +79,86 @@ class NNPrescriptor(torch.nn.Module):
                 layer.bias.data.fill_(0.01)
 
         # Set up input specs so our inputs are forced into a format the model can use
-        self.bias, self.scaler, self.binary_idxs, self.end_date_idxs = self.initialize_input_specs(actions)
+        self.bias, self.scaler, self.binary_mask, self.end_date_idxs, self.steps = self.initialize_input_specs(actions)
 
     def initialize_input_specs(self, actions):
+        """
+        Records information from inputSpecs that we need to parse our outputs.
+        """
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
         bias = []
         scaler = []
-        binary_idxs = []
+        binary_mask = []
         end_date_idxs = []
+        steps = []
         for i, action in enumerate(actions):
             row = input_specs[input_specs["varId"] == action].iloc[0]
             if row["kind"] == "slider":
+                steps.append(row["step"])
                 if "stop_time" in action:
                     end_date_idxs.append(i)
-                    bias.append(0)
-                    scaler.append(1)
-                else:
-                    bias.append(row["minValue"])
-                    scaler.append(row["maxValue"] - row["minValue"])
+                bias.append(row["minValue"])
+                scaler.append(row["maxValue"] - row["minValue"])
+                binary_mask.append(False)
             elif row["kind"] == "switch":
+                steps.append(1)
                 bias.append(0)
                 scaler.append(1)
-                binary_idxs.append(i)
+                binary_mask.append(True)
             else:
                 raise ValueError(f"Unknown kind: {row['kind']}")
             
         bias = torch.tensor(bias, dtype=torch.float32)
         scaler = torch.tensor(scaler, dtype=torch.float32)
-        return bias, scaler, binary_idxs, end_date_idxs
-        # self.bias = torch.tensor([-15, 2024, 2024, 0, 2024, 0, 2024, 2024, 0])
-        # self.scaler = torch.tensor([115, 76, 76, 100, 76, 100, 76, 76, 10])
+        steps = torch.tensor(steps, dtype=torch.float32)
+        binary_mask = torch.tensor(binary_mask, dtype=torch.bool)
+        return bias, scaler, binary_mask, end_date_idxs, steps
 
+    def snap_to_zero_one(self, scaled):
+        """
+        Takes switches and makes them binary.
+        :param scaled: Tensor of shape (batch_size, num_actions)
+        """
+        scaled[:,self.binary_mask] = (scaled[:,self.binary_mask] > 0.5).float()
+        return scaled
 
-    def snap_to_zero_one(self, scaled, i, output):
-        output[i] = scaled[i] > 0.5
+    def swap_end_times(self, output):
+        """
+        Takes indices of end dates and swaps them with the start date if they're less.
+        :param output: Tensor of shape (batch_size, num_actions)
+        """
+        for j in self.end_date_idxs:
+            to_swap = output[:,j] < output[:,j-1]
+            output[to_swap, j], output[to_swap, j-1] = output[to_swap, j-1], output[to_swap, j]
+        return output
 
-    def scale_end_time(self, scaled, i, output):
-        output[i] = scaled[i] * (self.scaler[i-1] - (output[i-1] - self.bias[i-1])) + output[i-1]
-        assert output[i] >= output[i-1], f"End time {output[i]} is less than start time {output[i-1]}"
-        assert output[i] <= self.scaler[i-1] + self.bias[i-1], f"End time {output[i]} is greater than max {self.scaler[i-1] + self.bias[i-1]}"
+    def truncate_output_to_step(self, output):
+        """
+        Truncates outputs to the step thresholds from inputSpecs.
+        :param output: Tensor of shape (batch_size, num_actions)
+        """
+        truncated = torch.floor(output / self.steps) * self.steps
+        return truncated
 
     # pylint: disable=consider-using-enumerate
     def forward(self, x):
+        """
+        Forward pass of neural network.
+        Then scaled and biased.
+        Then switches snapped to 0 or 1.
+        Then end dates swapped if they're less than start dates.
+        Then truncated to step thresholds from inputSpecs.
+        """
         nn_output = self.nn(x)
+
         self.scaler = self.scaler.to(x.device)
         self.bias = self.bias.to(x.device)
+        self.steps = self.steps.to(x.device)
+        self.binary_mask = self.binary_mask.to(x.device)
+
         scaled = nn_output * self.scaler + self.bias
-        output = torch.zeros_like(nn_output)
-        for i in range(len(nn_output)):
-            if i in self.binary_idxs:
-                self.snap_to_zero_one(scaled, i, output)
-            elif i in self.end_date_idxs:
-                self.scale_end_time(scaled, i, output)
-            else:
-                output[i] = scaled[i]
-            
-        return output
+        snapped = self.snap_to_zero_one(scaled)
+        swapped = self.swap_end_times(snapped)
+        truncated = self.truncate_output_to_step(swapped)
+        return truncated
     

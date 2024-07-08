@@ -1,8 +1,8 @@
 {
     "evolution_params": {
         "n_generations": 100,
-        "pop_size": 100,
-        "n_elites": 10
+        "pop_size": 200,
+        "n_elites": 20
     },
     "remove_population_pct": 0.7,
     "mutation_factor": 0.1,
@@ -77,10 +77,12 @@
         "_emissions_performance_standard",
         "_performance_standard_time"
     ],
-    "outcomes": [
-        "Net cumulative emissions",
-        "Total cost of energy",
-        "Cost of energy next 10 years"
-    ],
-    "save_path": "results/actions/orthogonalseeds"
+    "outcomes": {
+        "CO2 Equivalent Net Emissions": true,
+        "Total cost of energy": true,
+        "Cost of energy next 10 years": true,
+        "Global GDP loss": true,
+        "SLR - ft": true
+    },
+    "save_path": "results/outcomes/more"
 }
