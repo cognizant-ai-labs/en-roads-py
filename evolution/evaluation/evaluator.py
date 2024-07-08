@@ -8,7 +8,7 @@ from evolution.candidate import Candidate
 from run_enroads import run_enroads, compile_enroads
 
 class Evaluator:
-    def __init__(self, temp_dir: str, context, actions, outcomes: list[str]):
+    def __init__(self, temp_dir: str, context, actions, outcomes: dict[str, bool]):
         self.temp_dir = Path(temp_dir)
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -53,15 +53,15 @@ class Evaluator:
         actions_arr = candidate.prescribe(self.torch_context)
         actions_dict = dict(zip(self.actions, actions_arr))
         outcomes_df = self.evaluate_actions(actions_dict)
-        outcomes_df.fillna(float("inf"), inplace=True)
+        outcomes_df.fillna(float("-inf"), inplace=True)
         
         for outcome in self.outcomes:
             if outcome == "Cost of energy next 10 years":
                 cost_col = outcomes_df["Total cost of energy"]
                 cost = cost_col.iloc[2025-1990:2035-1990].mean()
-                candidate.metrics[outcome] = -1 * cost
+                candidate.metrics[outcome] = cost
             else:
-                candidate.metrics[outcome] = -1 * outcomes_df[outcome].iloc[-1]
+                candidate.metrics[outcome] = outcomes_df[outcome].iloc[-1]
 
         return outcomes_df
 

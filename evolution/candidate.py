@@ -7,7 +7,7 @@ class Candidate():
     """
     Candidate class that points to a model on disk.
     """
-    def __init__(self, cand_id: str, parents: list[str], model_params: dict, actions, outcomes):
+    def __init__(self, cand_id: str, parents: list[str], model_params: dict, actions: list[str], outcomes: dict[str, bool]):
         self.cand_id = cand_id
         self.actions = actions
         self.outcomes = outcomes
