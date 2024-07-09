@@ -99,5 +99,5 @@
         "Total cost of energy": true,
         "Cost of energy next 10 years": true
     },
-    "save_path": "results/context/single"
+    "save_path": "results/context/test"
 }

@@ -116,10 +116,10 @@ class NNPrescriptor(torch.nn.Module):
 
     def snap_to_zero_one(self, scaled):
         """
-        Takes switches and makes them binary.
+        Takes switches and makes them binary by sigmoiding then snapping to 0 or 1
         :param scaled: Tensor of shape (batch_size, num_actions)
         """
-        scaled[:,self.binary_mask] = (scaled[:,self.binary_mask] > 0.5).float()
+        scaled[:,self.binary_mask] = (torch.sigmoid(scaled[:,self.binary_mask]) > 0.5).float()
         return scaled
 
     def swap_end_times(self, output):
@@ -159,6 +159,7 @@ class NNPrescriptor(torch.nn.Module):
         scaled = nn_output * self.scaler + self.bias
         snapped = self.snap_to_zero_one(scaled)
         swapped = self.swap_end_times(snapped)
-        truncated = self.truncate_output_to_step(swapped)
-        return truncated
+        return swapped
+        # truncated = self.truncate_output_to_step(swapped)
+        # return truncated
     

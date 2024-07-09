@@ -15,9 +15,11 @@ class CrowdingDistanceCalculator(DistanceCalculator):
         """
         for c in front:
             c.distance = 0
+        
+        # Front is sorted by each metric
         for m in front[0].metrics.keys():
             front.sort(key=lambda c: c.metrics[m])
-            print([float(c.metrics[m]) for c in front])
+
             # If a candidate has a bad metric, set its distance to negative infinity and ignore it
             start = 0
             while front[start].metrics[m] == float("-inf") or front[start].metrics[m] == float("inf"):
@@ -27,7 +29,7 @@ class CrowdingDistanceCalculator(DistanceCalculator):
             while front[end].metrics[m] == float("-inf") or front[end].metrics[m] == float("inf"):
                 front[end].distance = float('-inf')
                 end -= 1
-            print(start, end)
+
             # Standard NSGA-II Crowding Distance calculation
             obj_min = front[start].metrics[m]
             obj_max = front[end].metrics[m]
@@ -41,4 +43,3 @@ class CrowdingDistanceCalculator(DistanceCalculator):
                 # If all candidates have the same value, their distances are 0
                 else:
                     front[i].distance += 0
-            print([float(c.distance) for c in front])

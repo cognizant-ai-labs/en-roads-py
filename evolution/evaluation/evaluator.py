@@ -103,6 +103,7 @@ class Evaluator:
             assert outcomes_dfs[i].iloc[:2024-1990].equals(outcomes_dfs[i-1].iloc[:2024-1990])
         concatenated = pd.concat(outcomes_dfs, axis=0)
         average_outcomes_df = concatenated.groupby(concatenated.index).mean()
+
         return average_outcomes_df
 
     def evaluate_candidates(self, candidates: list[Candidate]):
