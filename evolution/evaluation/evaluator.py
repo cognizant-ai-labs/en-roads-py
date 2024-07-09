@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +19,7 @@ class Evaluator:
         self.outcomes = outcomes
 
         self.input_df = pd.read_json("inputSpecs.jsonl", lines=True)
+        self.input_specs = self.input_df.copy() # For validation purposes
         self.input_df["index"] = range(len(self.input_df))
         self.input_df["value"] = self.input_df["defaultValue"]
 
@@ -46,17 +48,41 @@ class Evaluator:
         data = rng.uniform(context_specs["minValue"], context_specs["maxValue"], (n, len(context)))
         return torch.tensor(data, device="mps", dtype=torch.float32)
 
+    def format_string_input(self, value, decimal):
+        """
+        Formats a value to a string with the correct number of decimals.
+        """
+        return f"{value:.{decimal}f}"
 
     # pylint: disable=no-member
-    def construct_enroads_input(self, inputs: dict[str, str]):
-        self.input_df["value"] = self.input_df["defaultValue"]
+    def construct_enroads_input(self, inputs: dict[str, float]):
+        """
+        Constructs input file according to enroads.
+        We want the index of the input and the value separated by a colon. Then separate those by spaces.
+        TODO: This is pretty inefficient at the moment.
+        """
+        input_specs = self.input_specs.copy()
+        input_specs["index"] = range(len(input_specs))
 
-        # Update values in inputs
-        val_col = self.input_df['varId'].map(inputs)
-        self.input_df["value"] = val_col.fillna(self.input_df["value"])
+        # For switches we set the decimal to 0.
+        # For steps of >= 1 we set the decimal to 0 as they should already be rounded integers.
+        input_specs["step"] = input_specs["step"].fillna(1)
+        input_specs["decimal"] = (-1 * np.log10(input_specs["step"])).astype(int)
+        input_specs.loc[input_specs["decimal"] < 0, "decimal"] = 0
+
+        value = self.input_df["varId"].map(inputs)
+        value.fillna(self.input_df["defaultValue"], inplace=True)
+        input_specs["value"] = value
+        input_specs["value_str"] = input_specs.apply(lambda row: self.format_string_input(row["value"], row["decimal"]), axis=1)
+
+        # self.input_df["value"] = self.input_df["defaultValue"]
+
+        # # Update values in inputs
+        # val_col = self.input_df['varId'].map(inputs)
+        # self.input_df["value"] = val_col.fillna(self.input_df["value"])
         
-        self.input_df["input_col"] = self.input_df["index"].astype(str) + ":" + self.input_df["value"].astype(str)
-        input_str = " ".join(self.input_df["input_col"])
+        input_specs["input_col"] = input_specs["index"].astype(str) + ":" + input_specs["value_str"]
+        input_str = " ".join(input_specs["input_col"])
         
         with open(self.temp_dir / "enroads_input.txt", "w", encoding="utf-8") as f:
             f.write(input_str)
@@ -74,10 +100,8 @@ class Evaluator:
         outcomes_dfs = []
         results_dict = {outcome: 0 for outcome in self.outcomes}
         for [batch] in self.torch_context:
-            batch_actions = candidate.prescribe(batch)
-            for actions in batch_actions:
-                actions_list = actions.tolist()
-                actions_dict = dict(zip(self.actions, actions_list))
+            batch_action_dicts = candidate.prescribe(batch)
+            for actions_dict in batch_action_dicts:
                 outcomes_df = self.evaluate_actions(actions_dict)
                 outcomes_dfs.append(outcomes_df)
                 for outcome in self.outcomes:
