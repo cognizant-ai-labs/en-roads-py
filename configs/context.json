@@ -96,8 +96,9 @@
     ],
     "outcomes": {
         "CO2 Equivalent Net Emissions": true,
-        "Total cost of energy": true
+        "Total cost of energy": true,
+        "Cost of energy next 10 years": true
     },
-    "save_path": "results/context/seeded",
+    "save_path": "results/context/test",
     "seed_path": "evolution/seeding/seeds/energy"
 }

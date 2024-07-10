@@ -8,8 +8,11 @@ class NSGA2Sorter(Sorter):
 
     def sort_candidates(self, candidates: list[Candidate]):
         # Get ranks of each candidate
-        self.fast_non_dominated_sort(candidates)
-        self.distance_calculator.calculate_distance(candidates)
+        fronts = self.fast_non_dominated_sort(candidates)
+
+        # Calculate distance for each front
+        for front in fronts:
+            self.distance_calculator.calculate_distance(front)
 
         # Sort primarily by rank, secondarily by distance
         candidates.sort(key=lambda x: (x.rank, -x.distance))

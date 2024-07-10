@@ -93,6 +93,16 @@ class Evaluator:
         return input_str
     # pylint: enable=no-member
 
+    def validate_outcomes(self, outcomes_df: pd.DataFrame):
+        """
+        Ensures our outcome columns don't have NaNs or infs
+        """
+        outcome_keys = [key for key in self.outcomes if key in outcomes_df.columns]
+        subset = outcomes_df[outcome_keys]
+        assert not subset.isna().any().any(), "Outcomes contain NaNs."
+        assert not np.isinf(subset.to_numpy()).any(), "Outcomes contain infs."
+        return True
+
     def evaluate_actions(self, actions_dict: dict[str, str]):
         """
         Evaluates actions a candidate produced.
@@ -100,6 +110,7 @@ class Evaluator:
         self.construct_enroads_input(actions_dict)
         run_enroads(self.temp_dir / "enroads_output.txt", self.temp_dir / "enroads_input.txt")
         outcomes_df = pd.read_csv(self.temp_dir / "enroads_output.txt", sep="\t")
+        self.validate_outcomes(outcomes_df) 
         return outcomes_df
 
     def evaluate_candidate(self, candidate: Candidate):
