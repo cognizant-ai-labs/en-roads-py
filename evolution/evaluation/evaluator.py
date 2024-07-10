@@ -11,6 +11,9 @@ from evolution.candidate import Candidate
 from run_enroads import run_enroads, compile_enroads
 
 class Evaluator:
+    """
+    Evaluates candidates by generating the actions and running the enroads model on them.
+    """
     def __init__(self, temp_dir: str, context, actions, outcomes: dict[str, bool]):
         self.temp_dir = Path(temp_dir)
         self.temp_dir.mkdir(parents=True, exist_ok=True)
@@ -91,12 +94,20 @@ class Evaluator:
     # pylint: enable=no-member
 
     def evaluate_actions(self, actions_dict: dict[str, str]):
+        """
+        Evaluates actions a candidate produced.
+        """
         self.construct_enroads_input(actions_dict)
         run_enroads(self.temp_dir / "enroads_output.txt", self.temp_dir / "enroads_input.txt")
         outcomes_df = pd.read_csv(self.temp_dir / "enroads_output.txt", sep="\t")
         return outcomes_df
 
     def evaluate_candidate(self, candidate: Candidate):
+        """
+        Evaluates a single candidate by running all the context through it and receiving all the batches of actions.
+        Then evaluates all the actions and returns the average outcome.
+        This function also handles the custom outcome "Cost of energy next 10 years".
+        """
         outcomes_dfs = []
         results_dict = {outcome: 0 for outcome in self.outcomes}
         for [batch] in self.torch_context:
@@ -131,6 +142,9 @@ class Evaluator:
         return average_outcomes_df
 
     def evaluate_candidates(self, candidates: list[Candidate]):
+        """
+        Evaluates all candidates. Doesn't unnecessarily evaluate candidates that have already been evaluated.
+        """
         for candidate in tqdm(candidates, leave=False):
             if len(candidate.metrics) == 0:
                 self.evaluate_candidate(candidate)

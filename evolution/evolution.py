@@ -69,11 +69,13 @@ class Evolution():
             for seed in seed_path.iterdir():
                 candidate = Candidate.from_seed(seed, self.model_params, self.actions, self.outcomes)
                 candidates.append(candidate)
-        else:
-            print("Generating random seed generation")
-            for i in range(self.pop_size):
-                candidate = Candidate(f"0_{i}", [], self.model_params, self.actions, self.outcomes)
-                candidates.append(candidate)
+
+        print("Generating random seed generation")
+        i = len(candidates)
+        while i < self.pop_size:
+            candidate = Candidate(f"0_{i}", [], self.model_params, self.actions, self.outcomes)
+            candidates.append(candidate)
+            i += 1
 
         self.evaluator.evaluate_candidates(candidates)
         candidates = self.sorter.sort_candidates(candidates)

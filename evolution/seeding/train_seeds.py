@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import shutil
 
+import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
@@ -13,21 +14,9 @@ from evolution.candidate import NNPrescriptor
 from evolution.evaluation.evaluator import Evaluator
 from evolution.utils import modify_config
 
-class CustomDS(Dataset):
-    def __init__(self, torch_context: list[torch.Tensor]):
-        self.x = torch_context
 
-    def __len__(self):
-        return len(self.x)
-
-    def __getitem__(self, idx):
-        return self.x[idx]
-
-def train_seed(epochs: int, model_params: dict, seed_path: Path, torch_context: torch.tensor, label: torch.tensor):
-    ds = CustomDS([torch_context])
-    dl = DataLoader(ds, batch_size=1, shuffle=True)
-
-    label_tensor = label.to("mps")
+def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: DataLoader, label: torch.tensor):
+    label_tensor = label.to("mps").squeeze()
     model = NNPrescriptor(**model_params)
     model.to("mps")
     model.train()
@@ -36,34 +25,42 @@ def train_seed(epochs: int, model_params: dict, seed_path: Path, torch_context: 
     with tqdm(range(epochs)) as pbar:
         for _ in pbar:
             avg_loss = 0
-            for x in dl:
+            n = 0
+            for [x] in dataloader:
                 optimizer.zero_grad()
-                x = x.to("mps").squeeze()
-                output = model(x)
+                x = x.to("mps")
+                output = model(x).squeeze()
                 loss = criterion(output, label_tensor)
                 loss.backward()
                 optimizer.step()
                 avg_loss += loss.item()
-            pbar.set_description(f"Avg Loss: {(avg_loss / len(ds)):.5f}")
+                n += 1
+            pbar.set_description(f"Avg Loss: {(avg_loss / n):.5f}")
     torch.save(model.state_dict(), seed_path)
 
-def create_labels():
+def create_labels(actions: list[str]):
     """
     WARNING: Labels have to be added in the exact same order as the model.
     """
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
     categories = []
-    categories.append([[-15], [100]])
-    categories.append([[2024, 2024], [2024, 2100]])
-    categories.append([[0], [100]])
-    categories.append([[2024], [2100]])
-    categories.append([[0], [100]])
-    categories.append([[2024, 2024], [2024, 2100]])
-    categories.append([[0], [10]])
+    for action in actions:
+        possibilities = []
+        row = input_specs[input_specs["varId"] == action].iloc[0]
+        if row["kind"] == "slider":
+            possibilities = [row["minValue"], row["maxValue"], row["defaultValue"]]
+        elif row["kind"] == "switch":
+            possibilities = [0, 1, row["defaultValue"]]
+        else:
+            raise ValueError(f"Unknown kind {row['kind']}")
+        categories.append(possibilities)
 
-    combinations = list(itertools.product(*categories))
+
+    combinations = [[possibilities[i] for possibilities in categories] for i in range(len(categories[0]))]
     labels = []
     for comb in combinations:
-        torch_comb = torch.tensor([item for category in comb for item in category], dtype=torch.float32)
+        # torch_comb = torch.tensor([item for category in comb for item in category], dtype=torch.float32)
+        torch_comb = torch.tensor(comb, dtype=torch.float32)
         labels.append(torch_comb)
     return labels
 
@@ -91,11 +88,12 @@ def main():
     evaluator = Evaluator(**evaluator_params)
     torch_context = evaluator.torch_context
     model_params = config["model_params"]
+    model_params["actions"] = config["actions"]
     print(model_params)
     seed_dir = Path(config["seed_path"])
     seed_dir.mkdir(parents=True, exist_ok=True)
 
-    labels = create_labels()
+    labels = create_labels(config["actions"])
     torch.random.manual_seed(42)
     for i, label in enumerate(labels):
         print(f"Training seed 0_{i}.pt")

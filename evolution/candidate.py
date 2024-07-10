@@ -27,6 +27,9 @@ class Candidate():
 
     @classmethod
     def from_seed(cls, path: Path, model_params: dict, actions, outcomes):
+        """
+        Loads PyTorch seed from disk.
+        """
         cand_id = path.stem
         parents = []
         candidate = cls(cand_id, parents, model_params, actions, outcomes)
@@ -34,6 +37,9 @@ class Candidate():
         return candidate
     
     def save(self, path: Path):
+        """
+        Saves PyTorch state dict to disk.
+        """
         path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(self.model.state_dict(), path)
 
@@ -207,10 +213,15 @@ class NNPrescriptor(torch.nn.Module):
         """
         Scales end time based on start time's value.
         We do: end = start + end_logit * (scaler + bias - start)
+        This has to be non in-place to not mess up the gradient calculations in seeding.
         """
-        for j in self.end_date_idxs:
-            output[:, j] = output[:, j-1] + output[:, j] * (self.scaler[j-1] + self.bias[j-1] - output[:, j-1])
-        return output
+        scaled = torch.zeros_like(output)
+        for i in range(scaled.shape[1]):
+            if i in self.end_date_idxs:
+                scaled[:, i] = output[:, i-1] + output[:, i] * (self.scaler[i-1] + self.bias[i-1] - output[:, i-1])
+            else:
+                scaled[:, i] = output[:, i]
+        return scaled
 
     # pylint: disable=consider-using-enumerate
     def forward(self, x):
