@@ -1,3 +1,4 @@
+from pathlib import Path
 import shutil
 import unittest
 
@@ -25,7 +26,9 @@ class TestEvaluator(unittest.TestCase):
             "eval_params": {
                 "temp_dir": "tests/temp"
             },
-            "context": [],
+            "context": [
+                "_new_tech_breakthrough_setting"
+            ],
             "actions": [
                 "_source_subsidy_delivered_coal_tce",
                 "_source_subsidy_start_time_delivered_coal",
@@ -94,30 +97,42 @@ class TestEvaluator(unittest.TestCase):
                 "Total cost of energy",
                 "Cost of energy next 10 years"
             ],
-            "save_path": "results/actions/orthogonalseeds"
+            "save_path": "tests/blah"
         }
         config = modify_config(config)
         self.config = config
         self.evaluator = Evaluator(**self.config["eval_params"])
 
+    def test_default_input(self):
+        """
+        Checks that our default input equals the input specs file.
+        """
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.evaluator.construct_enroads_input({})
+        with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
+            enroads_input = f.read()
+            split_input = enroads_input.split(" ")
+            for i, (default, inp) in enumerate(zip(input_specs["defaultValue"].to_list(), split_input)):
+                _, inp_val = inp.split(":")
+                self.assertEqual(float(inp_val), float(default), f"Input {i} doesn't match default")
+
     def test_construct_input(self):
         """
         Tests that only the actions we choose to change are changed in the input.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         vals = input_specs["defaultValue"].to_list()
 
-        evaluator = Evaluator(**self.config["eval_params"])
-        evaluator.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
+        self.evaluator.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
         with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
             enroads_input = f.read()
             split_input = enroads_input.split(" ")
             for i, (default, inp) in enumerate(zip(vals, split_input)):
                 _, inp_val = inp.split(":")
                 if i == 0:
-                    self.assertTrue(np.isclose(float(inp_val), 100))
+                    self.assertEqual(float(inp_val), 100, "Didn't modify first input correctly")
                 else:
-                    self.assertTrue(np.isclose(float(inp_val), default))
+                    self.assertEqual(float(inp_val), default, f"Messed up input {i}: {inp_val} != {default}")
 
     def test_repeat_constructs(self):
         """
@@ -133,9 +148,9 @@ class TestEvaluator(unittest.TestCase):
             for i, (default, inp) in enumerate(zip(vals, split_input)):
                 _, inp_val = inp.split(":")
                 if i == 0:
-                    self.assertTrue(np.isclose(float(inp_val), 100))
+                    self.assertTrue(np.isclose(float(inp_val), 100), "Didn't modify first input correctly")
                 else:
-                    self.assertTrue(np.isclose(float(inp_val), default))
+                    self.assertTrue(np.isclose(float(inp_val), default), "Messed up first input")
 
         self.evaluator.construct_enroads_input({"_source_subsidy_start_time_delivered_coal": 2040})
         with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
@@ -144,9 +159,9 @@ class TestEvaluator(unittest.TestCase):
             for i, (default, inp) in enumerate(zip(vals, split_input)):
                 _, inp_val = inp.split(":")
                 if i == 1:
-                    self.assertTrue(np.isclose(float(inp_val), 2040))
+                    self.assertTrue(np.isclose(float(inp_val), 2040), "Didn't modify second input correctly")
                 else:
-                    self.assertTrue(np.isclose(float(inp_val), default))
+                    self.assertTrue(np.isclose(float(inp_val), default), "Second input contaminated")
 
     def test_consistent_eval(self):
         """
@@ -183,6 +198,53 @@ class TestEvaluator(unittest.TestCase):
         false_outcomes = self.evaluator.evaluate_actions(false_actions)
 
         self.assertFalse(true_outcomes.equals(false_outcomes))
+
+    def test_switches_change_past(self):
+        """
+        Checks to see if changing each switch messes up the past.
+        """
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        baseline = self.evaluator.evaluate_actions({})
+        bad_actions = []
+        for action in self.config["actions"]:
+            row = input_specs[input_specs["varId"] == action].iloc[0]
+            if row["kind"] == "switch":
+                actions_dict = {}
+                if row["defaultValue"] == row["onValue"]:
+                    actions_dict[action] = row["offValue"]
+                else:
+                    actions_dict[action] = row["onValue"]
+                outcomes = self.evaluator.evaluate_actions(actions_dict)
+                try:
+                    pd.testing.assert_frame_equal(outcomes.iloc[:2024-1990], baseline.iloc[:2024-1990])
+                except AssertionError:
+                    bad_actions.append(action)
+        self.assertEqual(len(bad_actions), 0, f"Switches {bad_actions} changed the past")
+
+    def test_sliders_change_past(self):
+        """
+        Checks to see if setting the slider to the min or max value changes the past.
+        """
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        baseline = self.evaluator.evaluate_actions({})
+        bad_actions = []
+        # TODO: When we set this to input_specs['varId'].unique() we get some fails we need to account for.
+        for action in self.config["actions"]:
+            row = input_specs[input_specs["varId"] == action].iloc[0]
+            if row["kind"] == "slider":
+                outcomes_min = self.evaluator.evaluate_actions({action: row["minValue"]})
+                outcomes_max = self.evaluator.evaluate_actions({action: row["maxValue"]})
+                try:
+                    pd.testing.assert_frame_equal(outcomes_min.iloc[:2024-1990],
+                                                  baseline.iloc[:2024-1990],
+                                                  check_dtype=False)
+                    pd.testing.assert_frame_equal(outcomes_max.iloc[:2024-1990],
+                                                  baseline.iloc[:2024-1990],
+                                                  check_dtype=False)
+                except AssertionError:
+                    bad_actions.append(action)
+
+        self.assertEqual(len(bad_actions), 0, f"Sliders {bad_actions} changed the past")
 
     def tearDown(self):
         shutil.rmtree("tests/temp")

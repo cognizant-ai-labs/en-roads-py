@@ -48,6 +48,7 @@ class Candidate():
         Formats actions based on requirements by en-roads.
         Truncates floats to correct number of decimals.
         We do this here instead of in torch to make sure they aren't messed up by floating point conversion.
+        Switches are snapped to 0 or 1 then set accordingly to the correct on/off value.
         TODO: This assumes steps are powers of 10
         TODO: This actually rounds, not truncates
         """
@@ -73,8 +74,12 @@ class Candidate():
                 if actions_dict[action] > row["maxValue"]:
                     actions_dict[action] = row["maxValue"]
             elif row["kind"] == "switch":
-                # actions_dict[action] = int(actions_dict[action])
-                pass
+                actions_dict[action] = int(actions_dict[action])
+                # Switch values are not necessarily 0/1
+                if actions_dict[action] == 1:
+                    actions_dict[action] = row["onValue"]
+                else:
+                    actions_dict[action] = row["offValue"]
             else:
                 raise ValueError(f"Unknown kind: {row['kind']}")
 
@@ -82,6 +87,7 @@ class Candidate():
         """
         Validates actions are valid.
         TODO: This is pretty inefficient right now.
+        TODO: Not all switches are 0,1
         """
         for action in actions_dict:
             assert action in self.actions, f"{action} not found in actions."

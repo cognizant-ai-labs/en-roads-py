@@ -1,12 +1,11 @@
 import argparse
-import itertools
 import json
 from pathlib import Path
 import shutil
 
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
@@ -16,7 +15,7 @@ from evolution.utils import modify_config
 
 
 def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: DataLoader, label: torch.tensor):
-    label_tensor = label.to("mps").squeeze()
+    label_tensor = label.to("mps")
     model = NNPrescriptor(**model_params)
     model.to("mps")
     model.train()
@@ -26,11 +25,11 @@ def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: Dat
         for _ in pbar:
             avg_loss = 0
             n = 0
-            for [x] in dataloader:
+            for x, _ in dataloader:
                 optimizer.zero_grad()
                 x = x.to("mps")
-                output = model(x).squeeze()
-                loss = criterion(output, label_tensor)
+                output = model(x)
+                loss = criterion(output, label_tensor.repeat(x.shape[0], 1))
                 loss.backward()
                 optimizer.step()
                 avg_loss += loss.item()
@@ -54,7 +53,6 @@ def create_labels(actions: list[str]):
         else:
             raise ValueError(f"Unknown kind {row['kind']}")
         categories.append(possibilities)
-
 
     combinations = [[possibilities[i] for possibilities in categories] for i in range(len(categories[0]))]
     labels = []
@@ -86,7 +84,7 @@ def main():
 
     evaluator_params = config["eval_params"]
     evaluator = Evaluator(**evaluator_params)
-    torch_context = evaluator.torch_context
+    torch_context = evaluator.context_dataloader
     model_params = config["model_params"]
     model_params["actions"] = config["actions"]
     print(model_params)
