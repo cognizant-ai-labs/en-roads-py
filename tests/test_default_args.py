@@ -18,7 +18,7 @@ class TestDefaultArgs(unittest.TestCase):
     """
     def setUp(self):
         compile_enroads()
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         self.input_specs["index"] = range(len(self.input_specs))
         self.temp_dir = Path("tests/temp_dir")
         self.temp_dir.mkdir(exist_ok=True)
@@ -36,7 +36,8 @@ class TestDefaultArgs(unittest.TestCase):
     def test_default_args(self):
         """
         Test if not passing arguments is the same as taking the default args.
-        WARNING: For some reason this test fails with one variable being 0.3 off and another being 0.5 off in 1 row out of 112.
+        WARNING: For some reason this test fails with one variable being 0.3 off and another being 0.5
+        off in 1 row out of 112.
         I think it works fine? We fudge the df_close checker so that this test passes.
         """
         input_col = self.input_specs["index"].astype(str) + ":" + self.input_specs["defaultValue"].astype(str)

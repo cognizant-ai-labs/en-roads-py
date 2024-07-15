@@ -8,8 +8,11 @@ class NSGA2Sorter(Sorter):
 
     def sort_candidates(self, candidates: list[Candidate]):
         # Get ranks of each candidate
-        self.fast_non_dominated_sort(candidates)
-        self.distance_calculator.calculate_distance(candidates)
+        fronts = self.fast_non_dominated_sort(candidates)
+
+        # Calculate distance for each front
+        for front in fronts:
+            self.distance_calculator.calculate_distance(front)
 
         # Sort primarily by rank, secondarily by distance
         candidates.sort(key=lambda x: (x.rank, -x.distance))
@@ -58,11 +61,27 @@ class NSGA2Sorter(Sorter):
     def dominates(self, candidate1: Candidate, candidate2: Candidate) -> bool:
         """
         Determine if one individual dominates another.
+        If an objective is ascending we want to minimize it.
+            If cand2 < cand1 for at least one objective we return False.
+            If cand1 < cand2 for at least one objective and not the above we return True.
+            If cand1 == cand2 for all objectives we return False.
+        If an objective is not ascending we want to maximize it.
+            If cand2 > cand1 for at least one objective we return False.
+            If cand1 > cand2 for at least one objective and not the above we return True.
+            If cand1 == cand2 for all objectives we return False
         """
+        assert candidate1.outcomes.keys() == candidate2.outcomes.keys(), \
+            "Candidates must have the same objectives to compare them."
         better = False
-        for obj in candidate1.metrics.keys():
-            if candidate1.metrics[obj] < candidate2.metrics[obj]:
-                return False
-            if candidate1.metrics[obj] > candidate2.metrics[obj]:
-                better = True
+        for obj, ascending in candidate1.outcomes.items():
+            if ascending:
+                if candidate1.metrics[obj] > candidate2.metrics[obj]:
+                    return False
+                if candidate1.metrics[obj] < candidate2.metrics[obj]:
+                    better = True
+            else:
+                if candidate1.metrics[obj] < candidate2.metrics[obj]:
+                    return False
+                if candidate1.metrics[obj] > candidate2.metrics[obj]:
+                    better = True
         return better
