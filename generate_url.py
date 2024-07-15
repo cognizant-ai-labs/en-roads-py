@@ -24,9 +24,13 @@ def main():
 
     results_dir = Path(args.results_dir)
     cand_id = args.cand_id
-    open_browser(results_dir, cand_id)
+    open_browser(results_dir, cand_id, 0)
 
-def open_browser(results_dir, cand_id):
+def open_browser(results_dir, cand_id, input_idx):
+    """
+    Loads seed from results_dir, loads context based on results_dir's config, runs context through model,
+    then opens browser to en-roads with the prescribed actions and proper context.
+    """
     config = json.load(open(results_dir / "config.json", encoding="utf-8"))
 
     # Get prescribed actions from model
@@ -36,12 +40,14 @@ def open_browser(results_dir, cand_id):
                                     config["model_params"],
                                     config["actions"],
                                     config["outcomes"])
-    [torch_context] = next(iter(evaluator.torch_context))
-    actions_dicts = candidate.prescribe(torch_context)
+    context_tensor, context_vals = evaluator.context_dataset[input_idx]
+    actions_dicts = candidate.prescribe(context_tensor.to("mps").unsqueeze(0))
     actions_dict = actions_dicts[0]
+    context_dict = evaluator.reconstruct_context_dicts([context_vals])[0]
+    actions_dict.update(context_dict)
 
     # Parse actions into format for URL
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
     id_vals = {}
     for action, val in actions_dict.items():
         row = input_specs[input_specs["varId"] == action].iloc[0]

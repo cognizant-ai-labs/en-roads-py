@@ -1,3 +1,6 @@
+"""
+Evaluates candidates in order for them to be sorted.
+"""
 from pathlib import Path
 
 import numpy as np
@@ -15,6 +18,7 @@ EPS = 1e-10
 class Evaluator:
     """
     Evaluates candidates by generating the actions and running the enroads model on them.
+    Generates and stores context data based on config using ContextDataset.
     """
     def __init__(self, temp_dir: str, context: list[str], actions: list[str], outcomes: dict[str, bool]):
         self.temp_dir = Path(temp_dir)
@@ -109,7 +113,8 @@ class Evaluator:
 
     def process_outcomes(self, outcomes_df: pd.DataFrame) -> dict[str, float]:
         """
-        Parses single set of outcomes into results dict
+        Parses single set of outcomes into results dict.
+        This is where we implement our custom objectives
         """
         results_dict = {}
         for outcome in self.outcomes:
@@ -120,20 +125,14 @@ class Evaluator:
                 cost = cost_col.iloc[2025-1990:2035-1990].mean()
                 results_dict[outcome] = cost
 
-            # Average percent change in use of resource for energy over each year starting 2024
-            elif outcome == "Average Energy Change Percent":
+            # Average change in use of resource for energy over each year starting 2024
+            elif outcome == "Average Energy Change":
                 # We don't want fossil fuels because it double counts
                 energies = ["bio", "coal", "gas", "oil", "renew and hydro", "new tech", "nuclear"]
                 demands = [f"Primary energy demand of {energy}" for energy in energies]
-                total_change = 0
-                for demand in demands:
-                    demand_outcome = outcomes_df[demand].iloc[2024-1990:]
-                    change = 0
-                    for i in range(1, len(demand_outcome)):
-                        assert demand_outcome.iloc[i] >= 0, f"Negative value in {demand_outcome}"
-                        change += abs((demand_outcome.iloc[i] - demand_outcome.iloc[i-1]) / (demand_outcome.iloc[i-1] + EPS))
-                    total_change += change / (len(demand_outcome) - 1)
-                results_dict[outcome] = total_change / len(demands)
+                energy_change = outcomes_df[demands].diff().abs().fillna(0)
+                changed = energy_change.sum(axis=1).mean(axis=0)
+                results_dict[outcome] = changed
             
             # Get outcome straight from outcomes df
             else:

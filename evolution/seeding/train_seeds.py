@@ -1,3 +1,6 @@
+"""
+Trains seeds for the first generation of evolution using desired behavior.
+"""
 import argparse
 import json
 from pathlib import Path
@@ -14,7 +17,11 @@ from evolution.evaluation.evaluator import Evaluator
 from evolution.utils import modify_config
 
 
-def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: DataLoader, label: torch.tensor):
+def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: DataLoader, label: torch.Tensor):
+    """
+    Simple PyTorch training loop training a seed model with model_params using data from dataloader to match
+    label label for epochs epochs.
+    """
     label_tensor = label.to("mps")
     model = NNPrescriptor(**model_params)
     model.to("mps")
@@ -41,7 +48,7 @@ def create_labels(actions: list[str]):
     """
     WARNING: Labels have to be added in the exact same order as the model.
     """
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
     categories = []
     for action in actions:
         possibilities = []
@@ -49,7 +56,7 @@ def create_labels(actions: list[str]):
         if row["kind"] == "slider":
             possibilities = [row["minValue"], row["maxValue"], row["defaultValue"]]
         elif row["kind"] == "switch":
-            possibilities = [0, 1, row["defaultValue"]]
+            possibilities = [row["offValue"], row["onValue"], row["defaultValue"]]
         else:
             raise ValueError(f"Unknown kind {row['kind']}")
         categories.append(possibilities)
@@ -57,13 +64,14 @@ def create_labels(actions: list[str]):
     combinations = [[possibilities[i] for possibilities in categories] for i in range(len(categories[0]))]
     labels = []
     for comb in combinations:
-        # torch_comb = torch.tensor([item for category in comb for item in category], dtype=torch.float32)
         torch_comb = torch.tensor(comb, dtype=torch.float32)
         labels.append(torch_comb)
     return labels
 
 def main():
-
+    """
+    Main logic for training seeds.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, help="Path to config file.")
     parser.add_argument("--epochs", type=int, help="Epochs.", default=250)
@@ -84,7 +92,7 @@ def main():
 
     evaluator_params = config["eval_params"]
     evaluator = Evaluator(**evaluator_params)
-    torch_context = evaluator.context_dataloader
+    context_dataloader = evaluator.context_dataloader
     model_params = config["model_params"]
     model_params["actions"] = config["actions"]
     print(model_params)
@@ -95,7 +103,7 @@ def main():
     torch.random.manual_seed(42)
     for i, label in enumerate(labels):
         print(f"Training seed 0_{i}.pt")
-        train_seed(args.epochs, model_params, seed_dir / f"0_{i}.pt", torch_context, label)
+        train_seed(args.epochs, model_params, seed_dir / f"0_{i}.pt", context_dataloader, label)
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,6 @@
+"""
+Candidate class to be used during evolution.
+"""
 import math
 from pathlib import Path
 
@@ -6,7 +9,8 @@ import torch
 
 class Candidate():
     """
-    Candidate class that points to a model on disk.
+    Candidate class that holds the model and stores evaluation and sorting information for evolution.
+    Model can be persisted to disk.
     """
     def __init__(self, cand_id: str, parents: list[str], model_params: dict, actions: list[str], outcomes: dict[str, bool]):
         self.cand_id = cand_id
@@ -23,7 +27,7 @@ class Candidate():
         self.model = NNPrescriptor(actions=actions, **model_params).to("mps")
         self.model.eval()
 
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
 
     @classmethod
     def from_seed(cls, path: Path, model_params: dict, actions, outcomes):
@@ -101,7 +105,8 @@ class Candidate():
                     assert stop_time >= start_time, \
                         f"{action}: {stop_time} < {action.replace('stop', 'start')}: {start_time}."
             elif row["kind"] == "switch":
-                assert actions_dict[action] in [0, 1], f"Value {actions_dict[action]} not in [0, 1]."
+                assert actions_dict[action] in [row["offValue"], row["onValue"]], \
+                    f"Value {actions_dict[action]} not in [{row['offValue']}, {row['onValue']}]."
             else:
                 raise ValueError(f"Unknown kind: {row['kind']}")
 
@@ -142,6 +147,9 @@ class Candidate():
         return f"Candidate({self.cand_id})"
 
 class NNPrescriptor(torch.nn.Module):
+    """
+    Torch neural network that the candidate wraps around.
+    """
     def __init__(self, in_size, hidden_size, out_size, actions):
         super().__init__()
         self.nn = torch.nn.Sequential(
@@ -164,7 +172,7 @@ class NNPrescriptor(torch.nn.Module):
         """
         Records information from inputSpecs that we need to parse our outputs.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         bias = []
         scaler = []
         binary_mask = []
@@ -204,16 +212,6 @@ class NNPrescriptor(torch.nn.Module):
         """
         scaled[:,self.binary_mask] = (scaled[:,self.binary_mask] > 0.5).float()
         return scaled
-
-    def swap_end_times(self, output):
-        """
-        Takes indices of end dates and swaps them with the start date if they're less.
-        :param output: Tensor of shape (batch_size, num_actions)
-        """
-        for j in self.end_date_idxs:
-            to_swap = output[:,j] < output[:,j-1]
-            output[to_swap, j], output[to_swap, j-1] = output[to_swap, j-1], output[to_swap, j]
-        return output
     
     def scale_end_times(self, output):
         """

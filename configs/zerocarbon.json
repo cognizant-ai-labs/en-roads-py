@@ -81,9 +81,8 @@
     ],
     "outcomes": {
         "CO2 Equivalent Net Emissions": true,
-        "Adjusted cost of energy per GJ": true,
-        "Average Energy Change Percent": true
+        "Adjusted cost of energy per GJ": true
     },
-    "save_path": "results/zerocarbon/first",
+    "save_path": "results/zerocarbon/basetwo",
     "seed_path": "evolution/seeding/seeds/zerocarbon"
 }

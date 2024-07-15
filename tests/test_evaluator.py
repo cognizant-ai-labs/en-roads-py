@@ -1,4 +1,6 @@
-from pathlib import Path
+"""
+Unit tests for the evaluator class.
+"""
 import shutil
 import unittest
 
@@ -10,7 +12,12 @@ from evolution.candidate import Candidate
 from evolution.evaluation.evaluator import Evaluator
 
 class TestEvaluator(unittest.TestCase):
+    """
+    Class testing the evaluator class. This is the most important part of the experiment as it executes the
+    en-roads model. We need to make sure all our inputs and outputs are correct.
+    """
     def setUp(self):
+        # Dummy config to test with
         config = {
             "evolution_params": {
                 "n_generations": 100,
@@ -138,7 +145,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Tests inputs don't contaminate each other.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         vals = input_specs["defaultValue"].to_list()
 
         self.evaluator.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
@@ -180,7 +187,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Checks to see if the checkboxes actually change the output of the model.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         # Switch all checkboxes to true
         true_actions = {}
         for action in self.config["actions"]:
@@ -202,6 +209,7 @@ class TestEvaluator(unittest.TestCase):
     def test_switches_change_past(self):
         """
         Checks to see if changing each switch messes up the past.
+        TODO: This test is failing because of a bug in en-roads?
         """
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         baseline = self.evaluator.evaluate_actions({})

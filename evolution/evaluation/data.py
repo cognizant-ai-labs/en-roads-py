@@ -1,5 +1,5 @@
 """
-Script was used to generate our context datasets as pandas dataframes.
+Class to hold the context for the model. Called by the Evaluator during setup.
 """
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ class ContextDataset(Dataset):
         """
         Generates the default context, which is just a single row of the default values for all the context variables.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         data = input_specs[["varId", "defaultValue"]]
         data = data[data["varId"].isin(context)]
         rotated = data.set_index("varId").T
@@ -28,7 +28,6 @@ class ContextDataset(Dataset):
         Generates our new zero carbon breakthrough context. We simply have 3 values corresponding to the different
         breakthrough levels.
         """
-        print("Generating new zero carbon breakthrough context...")
         data = {
             "_new_tech_breakthrough_setting": [0, 1, 2]
         }
