@@ -1,8 +1,17 @@
+"""
+Utility functions to be used throughout the project.
+"""
 import pandas as pd
 
 def modify_config(config: dict):
+    """
+    Sets up our config because we're too lazy to write everything down multiple times.
+    If we don't specify a context we use all the variables besides the actions.
+    We construct the model input and output sizes from the context and actions.
+    We set up the eval params with the context, actions, and outcomes.
+    """
     # Set up context if not provided
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
     actions = config["actions"]
     if len(config["context"]) == 0:
         adj_context = input_specs[~input_specs["varId"].isin(actions)]

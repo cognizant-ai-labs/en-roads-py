@@ -36,7 +36,7 @@ def main():
     In the future this can be run directly through a buffer which eliminates the read/write before each run.
     """
     compile_enroads()
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True)
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
     input_specs["index"] = range(len(input_specs))
     avg_vals = (input_specs["minValue"] + input_specs["maxValue"]) / 2
     input_col = input_specs["index"].astype(str) + ":" + avg_vals.astype(str)

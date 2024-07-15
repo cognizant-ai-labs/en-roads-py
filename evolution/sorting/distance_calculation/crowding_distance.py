@@ -15,15 +15,15 @@ class CrowdingDistanceCalculator(DistanceCalculator):
         """
         for c in front:
             c.distance = 0
+        
+        # Front is sorted by each metric
         for m in front[0].metrics.keys():
             front.sort(key=lambda c: c.metrics[m])
+            # Standard NSGA-II Crowding Distance calculation
             obj_min = front[0].metrics[m]
             obj_max = front[-1].metrics[m]
             front[0].distance = float('inf')
             front[-1].distance = float('inf')
-            for i in range(1, len(front) - 1):
-                if obj_max != obj_min and obj_min != -1 * float('inf'):
+            if obj_max != obj_min:
+                for i in range(1, len(front) - 1):
                     front[i].distance += (front[i+1].metrics[m] - front[i-1].metrics[m]) / (obj_max - obj_min)
-                # If all candidates have the same value, their distances are 0
-                else:
-                    front[i].distance += 0
