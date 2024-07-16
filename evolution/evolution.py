@@ -28,8 +28,8 @@ class Evolution():
         self.n_generations = self.evolution_params["n_generations"]
         self.n_elites = self.evolution_params["n_elites"]
         self.seed_path = None
-        if "seed_path" in config:
-            self.seed_path = config["seed_path"]
+        if "seed_params" in config and "seed_path" in config["seed_params"]:
+            self.seed_path = Path(config["seed_params"]["seed_path"])
 
         self.parent_selector = TournamentSelector(config["remove_population_pct"])
         self.mutator = UniformMutation(config["mutation_factor"], config["mutation_rate"])
@@ -65,8 +65,7 @@ class Evolution():
         candidates = []
         if self.seed_path:
             print("Seeding from ", self.seed_path)
-            seed_path = Path(self.seed_path)
-            for seed in seed_path.iterdir():
+            for seed in self.seed_path.iterdir():
                 candidate = Candidate.from_seed(seed, self.model_params, self.actions, self.outcomes)
                 candidates.append(candidate)
 
