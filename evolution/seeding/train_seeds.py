@@ -11,11 +11,10 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-
 from evolution.candidate import NNPrescriptor
 from evolution.evaluation.evaluator import Evaluator
 from evolution.utils import modify_config
-
+from generate_url import generate_actions_dict
 
 def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: DataLoader, label: torch.Tensor):
     """
@@ -44,7 +43,28 @@ def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: Dat
             pbar.set_description(f"Avg Loss: {(avg_loss / n):.5f}")
     torch.save(model.state_dict(), seed_path)
 
-def create_labels(actions: list[str]):
+def encode_action_labels(actions: list[str], actions_dict: dict[str, float]) -> torch.Tensor:
+    """
+    Encodes actions in en-roads format to torch format to be used in the model.
+    Min/max scales slider variables and sets switches to 0 or 1 based on off/on.
+    """
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    label = []
+    for action in actions:
+        value = actions_dict[action]
+        row = input_specs[input_specs["varId"] == action].iloc[0]
+        if row["kind"] == "slider":
+            value = (value - row["minValue"]) / (row["maxValue"] - row["minValue"])
+            label.append(value)
+        elif row["kind"] == "switch":
+            label.append(1 if value == row["onValue"] else 0)
+        else:
+            raise ValueError(f"Unknown kind {row['kind']}")
+        
+    return torch.tensor(label, dtype=torch.float32)
+
+
+def create_default_labels(actions: list[str]):
     """
     WARNING: Labels have to be added in the exact same order as the model.
     """
@@ -64,8 +84,27 @@ def create_labels(actions: list[str]):
     combinations = [[possibilities[i] for possibilities in categories] for i in range(len(categories[0]))]
     labels = []
     for comb in combinations:
-        torch_comb = torch.tensor(comb, dtype=torch.float32)
-        labels.append(torch_comb)
+        actions_dict = dict(zip(actions, comb))
+        label = encode_action_labels(actions, actions_dict)
+        labels.append(label)
+    return labels
+
+def create_custom_labels(actions: list[str], seed_urls: list[str]):
+    """
+    WARNING: Labels have to be added in the exact same order as the model.
+    """
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    actions_dicts = [generate_actions_dict(url) for url in seed_urls]
+    labels = []
+    for actions_dict in actions_dicts:
+        # Fill actions dict with default values
+        for action in actions:
+            if action not in actions_dict:
+                actions_dict[action] = input_specs[input_specs["varId"] == action].iloc[0]["defaultValue"]
+        # Encode actions dict to tensor
+        label = encode_action_labels(actions, actions_dict)
+        labels.append(label)
+
     return labels
 
 def main():
@@ -73,37 +112,45 @@ def main():
     Main logic for training seeds.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, help="Path to config file.")
-    parser.add_argument("--epochs", type=int, help="Epochs.", default=250)
+    parser.add_argument("--config", type=str, help="Path to config file.", required=True)
     args = parser.parse_args()
 
     with open(args.config, "r", encoding="utf-8") as f:
         config = json.load(f)
 
     config = modify_config(config)
+    seed_params = config["seed_params"]
+    seed_dir = Path(seed_params["seed_path"])
 
-    if Path(config["seed_path"]).exists():
+    if seed_dir.exists():
         inp = input("Seed path already exists, do you want to overwrite? (y/n):")
         if inp.lower() == "y":
-            shutil.rmtree(config["seed_path"])
+            shutil.rmtree(seed_dir)
         else:
             print("Exiting")
             exit()
+
+    seed_dir.mkdir(parents=True, exist_ok=True)
 
     evaluator_params = config["eval_params"]
     evaluator = Evaluator(**evaluator_params)
     context_dataloader = evaluator.context_dataloader
     model_params = config["model_params"]
-    model_params["actions"] = config["actions"]
     print(model_params)
-    seed_dir = Path(config["seed_path"])
-    seed_dir.mkdir(parents=True, exist_ok=True)
+    
+    labels = create_default_labels(config["actions"])
+    # Add custom seed URLs
+    if "seed_urls" in seed_params and len(seed_params["seed_urls"]) > 0:
+        labels.extend(create_custom_labels(config["actions"], seed_params["seed_urls"]))
 
-    labels = create_labels(config["actions"])
     torch.random.manual_seed(42)
     for i, label in enumerate(labels):
         print(f"Training seed 0_{i}.pt")
-        train_seed(args.epochs, model_params, seed_dir / f"0_{i}.pt", context_dataloader, label)
+        train_seed(int(seed_params["epochs"]),
+                   model_params,
+                   seed_dir / f"0_{i}.pt",
+                   context_dataloader,
+                   label)
 
 if __name__ == "__main__":
     main()
