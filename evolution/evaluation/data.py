@@ -20,7 +20,6 @@ class ContextDataset(Dataset):
         data = input_specs[["varId", "defaultValue"]]
         data = data[data["varId"].isin(context)]
         rotated = data.set_index("varId").T
-        print(rotated.shape)
         return rotated
 
     def generate_new_zero_carbon_df(self) -> pd.DataFrame:

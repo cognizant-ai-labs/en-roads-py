@@ -11,9 +11,8 @@ from tqdm import tqdm
 
 from evolution.candidate import Candidate
 from evolution.evaluation.data import ContextDataset
+from evolution.outcomes.outcome_manager import OutcomeManager
 from run_enroads import run_enroads, compile_enroads
-
-EPS = 1e-10
 
 class Evaluator:
     """
@@ -26,6 +25,7 @@ class Evaluator:
 
         self.actions = actions
         self.outcomes = outcomes
+        self.outcome_manager = OutcomeManager(outcomes)
 
         # Precise float is required to load the enroads inputs properly
         self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
@@ -89,13 +89,11 @@ class Evaluator:
         assert not np.isinf(subset.to_numpy()).any(), "Outcomes contain infs."
         return True
 
-    def evaluate_actions(self, actions_dict: dict[str, str], debug=False):
+    def evaluate_actions(self, actions_dict: dict[str, str]):
         """
         Evaluates actions a candidate produced.
         """
-        input_str = self.construct_enroads_input(actions_dict)
-        if debug:
-            print(input_str)
+        self.construct_enroads_input(actions_dict)
         run_enroads(self.temp_dir / "enroads_output.txt", self.temp_dir / "enroads_input.txt")
         outcomes_df = pd.read_csv(self.temp_dir / "enroads_output.txt", sep="\t")
         self.validate_outcomes(outcomes_df)
@@ -110,36 +108,6 @@ class Evaluator:
             context_dict = dict(zip(self.context, row.tolist()))
             context_dicts.append(context_dict)
         return context_dicts
-
-    def process_outcomes(self, outcomes_df: pd.DataFrame) -> dict[str, float]:
-        """
-        Parses single set of outcomes into results dict.
-        This is where we implement our custom objectives
-        """
-        results_dict = {}
-        for outcome in self.outcomes:
-            # Custom outcomes go here
-            # TODO: Technically this breaks if we iterate over this key first
-            if outcome == "Cost of energy next 10 years":
-                cost_col = outcomes_df["Total cost of energy"]
-                cost = cost_col.iloc[2025-1990:2035-1990].mean()
-                results_dict[outcome] = cost
-
-            # Average change in use of resource for energy over each year starting 2024
-            elif outcome == "Average Energy Change":
-                # We don't want fossil fuels because it double counts
-                energies = ["bio", "coal", "gas", "oil", "renew and hydro", "new tech", "nuclear"]
-                demands = [f"Primary energy demand of {energy}" for energy in energies]
-                energy_change = outcomes_df[demands].diff().abs().fillna(0)
-                changed = energy_change.sum(axis=1).mean(axis=0)
-                results_dict[outcome] = changed
-            
-            # Get outcome straight from outcomes df
-            else:
-                results_dict[outcome] = outcomes_df[outcome].iloc[-1]
-
-        return results_dict
-
 
     def evaluate_candidate(self, candidate: Candidate):
         """
@@ -157,7 +125,7 @@ class Evaluator:
                 actions_dict.update(context_dict)
                 outcomes_df = self.evaluate_actions(actions_dict)
                 outcomes_dfs.append(outcomes_df)
-                cand_results.append(self.process_outcomes(outcomes_df))
+                cand_results.append(self.outcome_manager.process_outcomes(outcomes_df))
 
         candidate.metrics = {key: np.mean([result[key] for result in cand_results]) for key in cand_results[0]}
         return outcomes_dfs
