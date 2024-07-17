@@ -61,5 +61,19 @@ def open_browser(results_dir, cand_id, input_idx):
 
     shutil.rmtree(temp_dir)
 
+def generate_actions_dict(url: str):
+    """
+    Reverse-engineers an actions dict based on a given URL.
+    """
+    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    actions_dict = {}
+    for param_val in url.split("&")[1:]:
+        param, val = param_val.split("=")
+        param = param[1:]
+        row = input_specs[input_specs["id"] == int(param)].iloc[0]
+        actions_dict[row["varId"]] = float(val)
+
+    return actions_dict
+
 if __name__ == "__main__":
     main()
