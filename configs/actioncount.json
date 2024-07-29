@@ -1,6 +1,6 @@
 {
     "evolution_params": {
-        "n_generations": 100,
+        "n_generations": 200,
         "pop_size": 100,
         "n_elites": 10
     },
@@ -14,22 +14,6 @@
         "temp_dir": "evolution/temp"
     },
     "context": [
-        "_breakthrough_cost_reduction_renewables",
-        "_breakthrough_success_year_renewables",
-        "_breakthrough_cost_reduction_elec_hydrogen",
-        "_breakthrough_success_year_elec_hydrogen",
-        "_breakthrough_cost_reduction_for_storage",
-        "_breakthrough_success_year_for_storage",
-        "_breakthrough_cost_reduction_delivered_bio",
-        "_breakthrough_success_year_delivered_bio",
-        "_breakthrough_cost_reduction_nuclear",
-        "_breakthrough_success_year_nuclear",
-        "_new_tech_breakthrough_setting",
-        "_breakthrough_success_year_new_tech",
-        "_breakthrough_commercialization_time_new_tech",
-        "_breakthrough_commercialization_time_nuclear",
-        "_breakthrough_commercialization_time_renewables",
-        "_breakthrough_commercialization_time_delivered_bio"
     ],
     "actions": [
         "_source_subsidy_delivered_coal_tce",
@@ -96,8 +80,11 @@
     ],
     "outcomes": {
         "CO2 Equivalent Net Emissions": true,
-        "Adjusted cost of energy per GJ": true
+        "Actions taken": true
     },
-    "save_path": "results/change/nopct",
-    "seed_path": "evolution/seeding/seeds/energy"
+    "save_path": "results/presentation/actionstakenmoregens",
+    "seed_params": {
+        "seed_path": "evolution/seeding/seeds/presentation",
+        "epochs": 5000
+    }
 }

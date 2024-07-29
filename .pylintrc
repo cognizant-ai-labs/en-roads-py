@@ -1,0 +1,5 @@
+[MASTER]
+
+max-line-length=120
+
+suggestion-mode=yes

@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from run_enroads import compile_enroads, run_enroads
+from enroads_runner import EnroadsRunner
 
 class TestDefaultArgs(unittest.TestCase):
     """
@@ -17,11 +17,10 @@ class TestDefaultArgs(unittest.TestCase):
     the default answer.
     """
     def setUp(self):
-        compile_enroads()
+        self.runner = EnroadsRunner("tests/temp_dir")
         self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         self.input_specs["index"] = range(len(self.input_specs))
         self.temp_dir = Path("tests/temp_dir")
-        self.temp_dir.mkdir(exist_ok=True)
 
     def df_close(self, df1, df2):
         """
@@ -45,13 +44,14 @@ class TestDefaultArgs(unittest.TestCase):
         with open(self.temp_dir / "temp_input.txt", "w", encoding="utf-8") as f:
             f.write(input_str)
 
-        run_enroads(self.temp_dir / "no_default.txt")
-        run_enroads(self.temp_dir / "default.txt", self.temp_dir / "temp_input.txt")
+        self.runner.run_enroads(self.temp_dir / "no_default.txt")
+        self.runner.run_enroads(self.temp_dir / "default.txt", self.temp_dir / "temp_input.txt")
 
         no_default_df = pd.read_csv(self.temp_dir / "no_default.txt", sep="\t")
         default_df = pd.read_csv(self.temp_dir / "default.txt", sep="\t")
-
-        self.assertTrue(self.df_close(no_default_df, default_df))
+        pd.testing.assert_frame_equal(no_default_df, default_df)
+        self.assertTrue(no_default_df.equals(default_df))
+        # self.assertTrue(self.df_close(no_default_df, default_df))
 
     def test_non_default_args(self):
         """
@@ -63,8 +63,8 @@ class TestDefaultArgs(unittest.TestCase):
         with open(self.temp_dir / "temp_input.txt", "w", encoding="utf-8") as f:
             f.write(input_str)
 
-        run_enroads(self.temp_dir / "no_default.txt")
-        run_enroads(self.temp_dir / "avg.txt", self.temp_dir / "temp_input.txt")
+        self.runner.run_enroads(self.temp_dir / "no_default.txt")
+        self.runner.run_enroads(self.temp_dir / "avg.txt", self.temp_dir / "temp_input.txt")
 
         no_default_df = pd.read_csv(self.temp_dir / "no_default.txt", sep="\t")
         avg_df = pd.read_csv(self.temp_dir / "avg.txt", sep="\t")
