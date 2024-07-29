@@ -46,6 +46,16 @@ def open_browser(results_dir, cand_id, input_idx):
     context_dict = evaluator.reconstruct_context_dicts([context_vals])[0]
     actions_dict.update(context_dict)
 
+    url = actions_to_url(actions_dict)
+    
+    webbrowser.open(url)
+
+    shutil.rmtree(temp_dir)
+
+def actions_to_url(actions_dict: dict[str, float]) -> str:
+    """
+    Converts an actions dict to a URL.
+    """
     # Parse actions into format for URL
     input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
     id_vals = {}
@@ -57,9 +67,8 @@ def open_browser(results_dir, cand_id, input_idx):
     for key, val in id_vals.items():
         template += f"&p{key}={val}"
 
-    webbrowser.open(template)
+    return template
 
-    shutil.rmtree(temp_dir)
 
 def generate_actions_dict(url: str):
     """
