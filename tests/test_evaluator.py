@@ -169,7 +169,7 @@ class TestEvaluator(unittest.TestCase):
         Checks that our default input equals the input specs file.
         """
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
-        self.evaluator.construct_enroads_input({})
+        self.evaluator.enroads_runner.construct_enroads_input({})
         with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
             enroads_input = f.read()
             split_input = enroads_input.split(" ")
@@ -184,7 +184,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         vals = input_specs["defaultValue"].to_list()
 
-        self.evaluator.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
+        self.evaluator.enroads_runner.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
         with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
             enroads_input = f.read()
             split_input = enroads_input.split(" ")
@@ -202,7 +202,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         vals = input_specs["defaultValue"].to_list()
 
-        self.evaluator.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
+        self.evaluator.enroads_runner.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
         with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
             enroads_input = f.read()
             split_input = enroads_input.split(" ")
@@ -213,7 +213,7 @@ class TestEvaluator(unittest.TestCase):
                 else:
                     self.assertTrue(np.isclose(float(inp_val), default), "Messed up first input")
 
-        self.evaluator.construct_enroads_input({"_source_subsidy_start_time_delivered_coal": 2040})
+        self.evaluator.enroads_runner.construct_enroads_input({"_source_subsidy_start_time_delivered_coal": 2040})
         with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
             enroads_input = f.read()
             split_input = enroads_input.split(" ")
@@ -248,7 +248,7 @@ class TestEvaluator(unittest.TestCase):
             row = input_specs[input_specs["varId"] == action]
             if row["kind"].iloc[0] == "switch":
                 true_actions[action] = 1
-        true_outcomes = self.evaluator.evaluate_actions(true_actions)
+        true_outcomes = self.evaluator.enroads_runner.evaluate_actions(true_actions)
 
         # Switch all checkboxes to false
         false_actions = {}
@@ -256,7 +256,7 @@ class TestEvaluator(unittest.TestCase):
             row = input_specs[input_specs["varId"] == action]
             if row["kind"].iloc[0] == "switch":
                 false_actions[action] = 0
-        false_outcomes = self.evaluator.evaluate_actions(false_actions)
+        false_outcomes = self.evaluator.enroads_runner.evaluate_actions(false_actions)
 
         self.assertFalse(true_outcomes.equals(false_outcomes))
 
@@ -266,7 +266,7 @@ class TestEvaluator(unittest.TestCase):
         TODO: This test is failing because of a bug in en-roads?
         """
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
-        baseline = self.evaluator.evaluate_actions({})
+        baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
         for action in self.config["actions"]:
             row = input_specs[input_specs["varId"] == action].iloc[0]
@@ -276,7 +276,7 @@ class TestEvaluator(unittest.TestCase):
                     actions_dict[action] = row["offValue"]
                 else:
                     actions_dict[action] = row["onValue"]
-                outcomes = self.evaluator.evaluate_actions(actions_dict)
+                outcomes = self.evaluator.enroads_runner.evaluate_actions(actions_dict)
                 try:
                     pd.testing.assert_frame_equal(outcomes.iloc[:2024-1990], baseline.iloc[:2024-1990])
                 except AssertionError:
@@ -288,14 +288,14 @@ class TestEvaluator(unittest.TestCase):
         Checks to see if setting the slider to the min or max value changes the past.
         """
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
-        baseline = self.evaluator.evaluate_actions({})
+        baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
         # TODO: When we set this to input_specs['varId'].unique() we get some fails we need to account for.
         for action in self.config["actions"]:
             row = input_specs[input_specs["varId"] == action].iloc[0]
             if row["kind"] == "slider":
-                outcomes_min = self.evaluator.evaluate_actions({action: row["minValue"]})
-                outcomes_max = self.evaluator.evaluate_actions({action: row["maxValue"]})
+                outcomes_min = self.evaluator.enroads_runner.evaluate_actions({action: row["minValue"]})
+                outcomes_max = self.evaluator.enroads_runner.evaluate_actions({action: row["maxValue"]})
                 try:
                     pd.testing.assert_frame_equal(outcomes_min.iloc[:2024-1990],
                                                   baseline.iloc[:2024-1990],

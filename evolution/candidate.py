@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import torch
 
+
 class Candidate():
     """
     Candidate class that holds the model and stores evaluation and sorting information for evolution.
@@ -161,7 +162,6 @@ class Candidate():
         """
         Validates actions are valid.
         TODO: This is pretty inefficient right now.
-        TODO: Not all switches are 0,1
         """
         for action in actions_dict:
             assert action in self.actions, f"{action} not found in actions."

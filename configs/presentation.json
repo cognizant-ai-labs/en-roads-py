@@ -1,8 +1,8 @@
 {
     "evolution_params": {
         "n_generations": 100,
-        "pop_size": 200,
-        "n_elites": 20
+        "pop_size": 100,
+        "n_elites": 10
     },
     "remove_population_pct": 0.7,
     "mutation_factor": 0.1,
@@ -80,8 +80,13 @@
     ],
     "outcomes": {
         "CO2 Equivalent Net Emissions": true,
-        "Adjusted cost of energy per GJ": true
+        "Adjusted cost of energy per GJ": true,
+        "Average Percent Energy Change": true,
+        "Government net revenue below zero": false
     },
-    "save_path": "results/presentation/basetwo",
-    "seed_path": "evolution/seeding/seeds/presentation"
+    "save_path": "results/presentation/revenue",
+    "seed_params": {
+        "seed_path": "evolution/seeding/seeds/presentation",
+        "epochs": 5000
+    }
 }
