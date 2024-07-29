@@ -2,8 +2,9 @@ import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
 
+
 class AverageCostOutcome(Outcome):
-    def process_outcomes(self, outcomes_df: pd.DataFrame) -> float:
+    def process_outcomes(self, _, outcomes_df: pd.DataFrame) -> float:
         """
         Returns the average cost from 2025 onwards.
         """

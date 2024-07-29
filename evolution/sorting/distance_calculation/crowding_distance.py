@@ -1,6 +1,7 @@
 from evolution.candidate import Candidate
 from evolution.sorting.distance_calculation.distance_calculator import DistanceCalculator
 
+
 class CrowdingDistanceCalculator(DistanceCalculator):
     """
     Calculates NSGA-II crowding distance
