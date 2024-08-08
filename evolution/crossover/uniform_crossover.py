@@ -9,8 +9,8 @@ class UniformCrossover(Crossover):
     Crosses over 2 parents.
     We do not keep track of what's in the models and assume they are loaded correct with the parents.
     """
-    def __init__(self, full=False, mutator: Mutation=None):
-        super().__init__(full, mutator)
+    def __init__(self, mutator: Mutation=None):
+        super().__init__(mutator)
         self.type = "uniform"
 
     def crossover(self, cand_id: str, parent1: Candidate, parent2: Candidate) -> list[Candidate]:
