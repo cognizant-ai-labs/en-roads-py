@@ -125,66 +125,24 @@ class Candidate():
         end = end.detach().cpu().tolist()
         return end
 
-    def round_actions(self, actions_dict: dict[str, float]):
+    def fix_switch_values(self, actions_dict: dict[str, float]):
         """
-        Formats actions based on requirements by en-roads.
-        Rounds floats to correct step value.
-        NOTE: we don't truncate because then it's impossible to reach the highest value.
-        We do this here instead of in torch to make sure they aren't messed up by floating point conversion.
-        Switches are snapped to 0 or 1 then set accordingly to the correct on/off value.
-        TODO: This assumes steps are powers of 10
+        Sets the switch values from 0 to 1 to offValue and onValue
         """
         for action in actions_dict:
             row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
-            if row["kind"] == "slider":
-                # Round to the nearest step
-                actions_dict[action] = row["step"] * round(actions_dict[action] / row["step"])
-                if row["step"] >= 1:
-                    actions_dict[action] = int(actions_dict[action])
-
-                # If we rounded to the max or min, we might get float errors going out of range so we snap them back
-                if actions_dict[action] > row["maxValue"]:
-                    actions_dict[action] = row["maxValue"]
-                if actions_dict[action] < row["minValue"]:
-                    actions_dict[action] = row["minValue"]
-
-            elif row["kind"] == "switch":
+            if row["kind"] == "switch":
                 actions_dict[action] = int(actions_dict[action])
                 # Switch values are not necessarily 0/1
                 if actions_dict[action] == 1:
                     actions_dict[action] = row["onValue"]
                 else:
                     actions_dict[action] = row["offValue"]
-            else:
-                raise ValueError(f"Unknown kind: {row['kind']}")
-
-    def validate_actions(self, actions_dict: dict[str, float]):
-        """
-        Validates actions are valid.
-        TODO: This is pretty inefficient right now.
-        """
-        for action in actions_dict:
-            assert action in self.actions, f"{action} not found in actions."
-            row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
-            if row["kind"] == "slider":
-                assert row["minValue"] <= actions_dict[action] <= row["maxValue"], \
-                    f"Value {actions_dict[action]} not in range [{row['minValue']}, {row['maxValue']}]."
-                if "stop_time" in action:
-                    stop_time = actions_dict[action]
-                    start_time = actions_dict[action.replace("stop", "start")]
-                    assert stop_time >= start_time, \
-                        f"{action}: {stop_time} < {action.replace('stop', 'start')}: {start_time}."
-            elif row["kind"] == "switch":
-                assert actions_dict[action] in [row["offValue"], row["onValue"]], \
-                    f"Value {actions_dict[action]} not in [{row['offValue']}, {row['onValue']}]."
-            else:
-                raise ValueError(f"Unknown kind: {row['kind']}")
-
-        return True
 
     def prescribe(self, x: torch.Tensor) -> list[dict[str, float]]:
         """
         Parses the output of our model so that we can use it in en-roads model.
+        NOTE: We actually can pass float values and are ok with it.
         """
         with torch.no_grad():
             nn_outputs = self.model.forward(x)
@@ -192,8 +150,7 @@ class Candidate():
         actions_dicts = []
         for output in outputs:
             actions_dict = {action: value for action, value in zip(self.actions, output)}
-            self.round_actions(actions_dict)
-            self.validate_actions(actions_dict)
+            self.fix_switch_values(actions_dict)
             actions_dicts.append(actions_dict)
         return actions_dicts
 
