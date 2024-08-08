@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import time
 
+import numpy as np
 import pandas as pd
 
 class EnroadsRunner():
@@ -25,6 +26,12 @@ class EnroadsRunner():
         """
         subprocess.run(["make"], cwd="en-roads-sdk-v24.6.0-beta1/c", check=True)
 
+    def format_string_input(self, value, decimal):
+        """
+        Formats a value to a string with the correct number of decimals.
+        """
+        return f"{value:.{decimal}f}"
+
     # pylint: disable=no-member
     def construct_enroads_input(self, inputs: dict[str, float]):
         """
@@ -35,14 +42,26 @@ class EnroadsRunner():
         input_specs = self.input_specs.copy()
         input_specs["index"] = range(len(input_specs))
 
+        # For switches we set the decimal to 0.
+        # For steps of >= 1 we set the decimal to 0 as they should already be rounded integers.
+        input_specs["step"] = input_specs["step"].fillna(1)
+        # We do np.ceil to round up because in the case of 0.05 we want 2 decimals not 1.
+        # We also know the default values will be in correct steps which means we don't have to worry about
+        # truncating them to the nearest step.
+        input_specs["decimal"] = np.ceil(-1 * np.log10(input_specs["step"])).astype(int)
+        input_specs.loc[input_specs["decimal"] <= 0, "decimal"] = 0
 
         # Get all the values from the dict and replace NaNs with default values
         value = input_specs["varId"].map(inputs)
         value.fillna(input_specs["defaultValue"], inplace=True)
         input_specs["value"] = value
+
+        # # Format the values to strings with the correct number of decimals
+        input_specs["value_str"] = input_specs.apply(lambda row: self.format_string_input(row["value"], row["decimal"]), axis=1)
+        # input_specs["value_str"] = input_specs["value"].astype(str)
         
         # Format string for En-ROADS input
-        input_specs["input_col"] = input_specs["index"].astype(str) + ":" + input_specs["value"].astype(str)
+        input_specs["input_col"] = input_specs["index"].astype(str) + ":" + input_specs["value_str"]
         input_str = " ".join(input_specs["input_col"])
         with open(self.temp_dir / "enroads_input.txt", "w", encoding="utf-8") as f:
             f.write(input_str)
