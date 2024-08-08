@@ -79,12 +79,12 @@
         "_performance_standard_time"
     ],
     "outcomes": {
-        "CO2 Equivalent Net Emissions": true,
-        "Adjusted cost of energy per GJ": true,
-        "Average Percent Energy Change": true,
-        "Government net revenue below zero": false
+        "Temperature above 1.5C": true,
+        "Max cost of energy": true,
+        "Government net revenue below zero": false,
+        "Total energy below baseline": false
     },
-    "save_path": "results/presentation/revenue",
+    "save_path": "results/energy/newobjectives",
     "seed_params": {
         "seed_path": "evolution/seeding/seeds/presentation",
         "epochs": 5000

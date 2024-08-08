@@ -69,7 +69,7 @@ class EnroadsRunner():
         return input_str
     # pylint: enable=no-member
 
-    def run_enroads(self, output_path, input_str=None):
+    def run_enroads(self, output_path, input_path=None):
         """
         Simple function to run the enroads simulator.
         Possible variable values are stored in inputSpecs.jsonl.
@@ -80,8 +80,8 @@ class EnroadsRunner():
         """
         with open(output_path, "w", encoding="utf-8") as out_file:
             command = ["./en-roads-sdk-v24.6.0-beta1/c/enroads"]
-            if input_str:
-                command.append(input_str)
+            if input_path:
+                command.append(input_path)
             # TODO: Gacky thing we do here where if a sim run fails we manually try again.
             code = subprocess.run(command, stdout=out_file, check=False)
             if code.returncode != 0:
@@ -91,15 +91,18 @@ class EnroadsRunner():
     def evaluate_actions(self, actions_dict: dict[str, str]):
         """
         Evaluates actions a candidate produced.
-        TODO: There is a potential race condition where enroads hasn't written the output file yet. We just
-        handle this by sleeping for a second. If the file still doesn't exist we throw an error.
+        TODO: There is a potential race condition where enroads hasn't written the full output file yet. We just
+        handle this by sleeping for a second, then reading again. If the file still doesn't exist we throw an error.
         """
         if len(actions_dict) > 0:
             self.construct_enroads_input(actions_dict)
             self.run_enroads(self.temp_dir / "enroads_output.txt", self.temp_dir / "enroads_input.txt")
         else:
             self.run_enroads(self.temp_dir / "enroads_output.txt")
-        if not (self.temp_dir / "enroads_output.txt").exists():
+        try:
+            outcomes_df = pd.read_csv(self.temp_dir / "enroads_output.txt", sep="\t")
+        except pd.errors.EmptyDataError:
+            print("Unable to read output file. Trying again.")
             time.sleep(1)
-        outcomes_df = pd.read_csv(self.temp_dir / "enroads_output.txt", sep="\t")
+            outcomes_df = pd.read_csv(self.temp_dir / "enroads_output.txt", sep="\t")
         return outcomes_df

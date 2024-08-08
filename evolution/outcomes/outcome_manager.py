@@ -2,11 +2,15 @@ import pandas as pd
 
 from evolution.outcomes.actions import ActionsOutcome
 from evolution.outcomes.average_cost import AverageCostOutcome
+from evolution.outcomes.cost_change_year import CostChangeYearOutcome
 from evolution.outcomes.energy_change import EnergyChangeOutcome
 from evolution.outcomes.enroads import EnroadsOutcome
+from evolution.outcomes.max_cost import MaxCostOutcome
 from evolution.outcomes.near_cost import NearCostOutcome
+from evolution.outcomes.paris_relax import ParisRelaxOutcome
 from evolution.outcomes.paris import ParisOutcome
 from evolution.outcomes.revenue import RevenueOutcome
+from evolution.outcomes.total_energy import TotalEnergyOutcome
 from evolution.outcomes.zero_emissions import ZeroEmissionsOutcome
 
 
@@ -31,6 +35,14 @@ class OutcomeManager():
                 outcome_dict[outcome] = RevenueOutcome()
             elif outcome == "Emissions Above Paris Agreement":
                 outcome_dict[outcome] = ParisOutcome()
+            elif outcome == "Max cost of energy":
+                outcome_dict[outcome] = MaxCostOutcome()
+            elif outcome == "Cost change year":
+                outcome_dict[outcome] = CostChangeYearOutcome()
+            elif outcome == "Total energy below baseline":
+                outcome_dict[outcome] = TotalEnergyOutcome()
+            elif outcome == "Temperature above 1.5C":
+                outcome_dict[outcome] = ParisRelaxOutcome()
             else:
                 outcome_dict[outcome] = EnroadsOutcome(outcome)
 
