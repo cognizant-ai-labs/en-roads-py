@@ -4,6 +4,7 @@ Candidate class to be used during evolution.
 import math
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import torch
 
@@ -139,6 +140,18 @@ class Candidate():
                 else:
                     actions_dict[action] = row["offValue"]
 
+    def clip_min_max(self, actions_dict: dict[str, float]):
+        """
+        Clips the values of the actions to be within min and max.
+        """
+        for action in actions_dict:
+            row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+            if row["kind"] == "slider":
+                if actions_dict[action] < row["minValue"]:
+                    actions_dict[action] = row["minValue"]
+                elif actions_dict[action] > row["maxValue"]:
+                    actions_dict[action] = row["maxValue"]
+
     def prescribe(self, x: torch.Tensor) -> list[dict[str, float]]:
         """
         Parses the output of our model so that we can use it in en-roads model.
@@ -151,6 +164,7 @@ class Candidate():
         for output in outputs:
             actions_dict = {action: value for action, value in zip(self.actions, output)}
             self.fix_switch_values(actions_dict)
+            self.clip_min_max(actions_dict)
             actions_dicts.append(actions_dict)
         return actions_dicts
 
