@@ -1,6 +1,7 @@
 import pandas as pd
 
 from evolution.outcomes.actions import ActionsOutcome
+from evolution.outcomes.action_magnitude import ActionMagnitudeOutcome
 from evolution.outcomes.average_cost import AverageCostOutcome
 from evolution.outcomes.cost_change_year import CostChangeYearOutcome
 from evolution.outcomes.energy_change import EnergyChangeOutcome
@@ -23,6 +24,8 @@ class OutcomeManager():
         for outcome in outcomes:
             if outcome == "Actions taken":
                 outcome_dict[outcome] = ActionsOutcome()
+            elif outcome == "Action magnitude":
+                outcome_dict[outcome] = ActionMagnitudeOutcome()
             elif outcome == "Average Adjusted cost of energy per GJ":
                 outcome_dict[outcome] = AverageCostOutcome()
             elif outcome == "Average Percent Energy Change":

@@ -67,9 +67,8 @@
     ],
     "outcomes": {
         "Temperature above 1.5C": true,
-        "Max cost of energy": true,
-        "Government net revenue below zero": false,
-        "Total energy below baseline": false
+        "Average Adjusted cost of energy per GJ": true,
+        "Action magnitude": true
     },
-    "save_path": "results/pymoo/firsttry"
+    "save_path": "results/pymoo/actionmagnitude"
 }
