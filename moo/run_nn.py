@@ -7,7 +7,6 @@ from pathlib import Path
 import shutil
 
 import dill
-import numpy as np
 import pandas as pd
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.sbx import SBX
@@ -23,7 +22,6 @@ def optimize(config: dict):
     """
     Running pymoo optimization according to our config file.
     """
-
     context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
     context_df = context_df.drop(columns=["F", "scenario"])
     model_params = {"in_size": len(context_df.columns), "hidden_size": 16, "out_size": len(config["actions"])}

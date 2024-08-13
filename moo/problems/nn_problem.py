@@ -37,22 +37,43 @@ class NNProblem(ElementwiseProblem):
         context_ds = ContextDataset(context_df)
         self.context_dl = torch.utils.data.DataLoader(context_ds, batch_size=batch_size, shuffle=False)
 
-    def _evaluate(self, x, out, *args, **kwargs):
+    def params_to_context_actions_dicts(self, x: np.ndarray) -> list[dict[str, float]]:
+        """
+        Takes a set of candidate parameters, loads it into a candidate, prescribes actions for each context, and
+        returns the contexts and actions as a list of dicts.
+        """
         # Create candidate from params and pass contexts through it to get actions dicts for each context
         candidate = Candidate.from_pymoo_params(x, self.model_params, self.actions, self.outcomes)
-        actions_dicts = []
+        context_actions_dicts = []
         for batch in self.context_dl:
             context_tensor, _ = batch
-            actions_dicts.extend(candidate.prescribe(context_tensor.to("mps")))
+            context_actions_dicts.extend(candidate.prescribe(context_tensor.to("mps")))
 
-        # Attach contexts to actions dicts, then pass them through the enroads runner to get outcomes, then evalute
-        # those outcomes.
-        results = []
-        for actions_dict, (_, row) in zip(actions_dicts, self.context_df.iterrows()):
+        for actions_dict, (_, row) in zip(context_actions_dicts, self.context_df.iterrows()):
             context_dict = row.to_dict()
             actions_dict.update(context_dict)
-            outcomes_df = self.runner.evaluate_actions(actions_dict)
-            results_dict = self.outcome_manager.process_outcomes(actions_dict, outcomes_df)
+
+        return context_actions_dicts
+    
+    def run_enroads(self, context_actions_dicts: list[dict[str, float]]) -> list[pd.DataFrame]:
+        """
+        Takes a list of context + actions dicts and runs enroads for each, returning a list of outcomes_dfs.
+        """
+        outcomes_dfs = []
+        for context_actions_dict in context_actions_dicts:
+            outcomes_df = self.runner.evaluate_actions(context_actions_dict)
+            outcomes_dfs.append(outcomes_df)
+
+        return outcomes_dfs
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        context_actions_dicts = self.params_to_context_actions_dicts(x)
+        outcomes_dfs = self.run_enroads(context_actions_dicts)
+        
+        # Process outcomes into metrics
+        results = []
+        for context_actions_dict, outcomes_df in zip(context_actions_dicts, outcomes_dfs):
+            results_dict = self.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
             results.append(results_dict)
         
         # For each outcome, take the mean over all contexts, then negate if we are maximizing
