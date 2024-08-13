@@ -1,7 +1,7 @@
 """
 Candidate class to be used during evolution.
 """
-import math
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
@@ -33,7 +33,37 @@ class Candidate():
         self.scaling_params = self.initialize_scaling_params(actions)
 
     @classmethod
-    def from_seed(cls, path: Path, model_params: dict, actions, outcomes):
+    def from_pymoo_params(cls, x: np.ndarray, model_params: dict, actions: list[str], outcomes: dict[str, bool]):
+        """
+        Creates a candidate from a 1d numpy array of parameters that have to be reshaped into tensors and loaded
+        as a state dict.
+        """
+        candidate = cls("pymoo", [], model_params, actions, outcomes)
+
+        flattened = torch.Tensor(x)
+        state_dict = OrderedDict()
+        pcount = 0
+
+        in_size = model_params["in_size"]
+        hidden_size = model_params["hidden_size"]
+        out_size = model_params["out_size"]
+
+        state_dict["nn.0.weight"] = flattened[:in_size * hidden_size].reshape(hidden_size, in_size)
+        pcount += in_size * hidden_size
+
+        state_dict["nn.0.bias"] = flattened[pcount:pcount + hidden_size]
+        pcount += model_params["hidden_size"]
+
+        state_dict["nn.2.weight"] = flattened[pcount:pcount + hidden_size * out_size].reshape(out_size, hidden_size)
+        pcount += hidden_size * out_size
+
+        state_dict["nn.2.bias"] = flattened[pcount:pcount + out_size]
+
+        candidate.model.load_state_dict(state_dict)
+        return candidate
+
+    @classmethod
+    def from_seed(cls, path: Path, model_params: dict, actions: list[str], outcomes: dict[str, bool]):
         """
         Loads PyTorch seed from disk.
         """

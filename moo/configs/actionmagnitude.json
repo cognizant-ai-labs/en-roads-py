@@ -1,6 +1,6 @@
 {
     "n_generations": 100,
-    "pop_size": 100,
+    "pop_size": 200,
     "crowding_func": "mnn",
     "actions": [
         "_source_subsidy_delivered_coal_tce",
@@ -67,7 +67,7 @@
     ],
     "outcomes": {
         "Temperature above 1.5C": true,
-        "Average Adjusted cost of energy per GJ": true,
+        "Max cost of energy": true,
         "Action magnitude": true
     },
     "save_path": "results/pymoo/actionmagnitude"

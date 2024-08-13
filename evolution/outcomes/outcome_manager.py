@@ -6,6 +6,7 @@ from evolution.outcomes.average_cost import AverageCostOutcome
 from evolution.outcomes.cost_change_year import CostChangeYearOutcome
 from evolution.outcomes.energy_change import EnergyChangeOutcome
 from evolution.outcomes.enroads import EnroadsOutcome
+from evolution.outcomes.gdp_mse import GDPOutcome
 from evolution.outcomes.max_cost import MaxCostOutcome
 from evolution.outcomes.near_cost import NearCostOutcome
 from evolution.outcomes.paris_relax import ParisRelaxOutcome
@@ -46,6 +47,9 @@ class OutcomeManager():
                 outcome_dict[outcome] = TotalEnergyOutcome()
             elif outcome == "Temperature above 1.5C":
                 outcome_dict[outcome] = ParisRelaxOutcome()
+            elif "GDP MSE" in outcome:
+                scenario = int(outcome.split(" ")[-1])
+                outcome_dict[outcome] = GDPOutcome(scenario)
             else:
                 outcome_dict[outcome] = EnroadsOutcome(outcome)
 

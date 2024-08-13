@@ -16,38 +16,25 @@ from pymoo.operators.survival.rank_and_crowding import RankAndCrowding
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
 
-from moo.problems.enroads_problem import EnroadsProblem
-
-
-def seed_default(actions: list[str], pop_size: int) -> np.ndarray:
-    """
-    Creates an initial population with one candidate with the default behavior. The rest are randomly initialized.
-    """
-    X = np.random.random((pop_size, len(actions)))
-
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
-    for i, action in enumerate(actions):
-        row = input_specs[input_specs["varId"] == action].iloc[0]
-        X[0, i] = row["defaultValue"]
-
-    return X
+from moo.problems.nn_problem import NNProblem
 
 
 def optimize(config: dict):
     """
     Running pymoo optimization according to our config file.
     """
-    problem = EnroadsProblem(config["actions"], config["outcomes"])
 
-    X0 = seed_default(config["actions"], config["pop_size"])
+    context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
+    context_df = context_df.drop(columns=["F", "scenario"])
+    model_params = {"in_size": len(context_df.columns), "hidden_size": 16, "out_size": len(config["actions"])}
+    problem = NNProblem(context_df, model_params, config["actions"], config["outcomes"])
 
     algorithm = NSGA2(
         pop_size=config["pop_size"],
         crossover=SBX(prob=0.9, eta=15),
         mutation=PM(eta=20),
         survival=RankAndCrowding(crowding_func=config["crowding_func"]),
-        eliminate_duplicates=True,
-        sampling=X0
+        eliminate_duplicates=True
     )
 
     res = minimize(problem,
