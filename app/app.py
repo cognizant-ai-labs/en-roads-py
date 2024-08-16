@@ -57,6 +57,7 @@ def evenly_sample(lst, m):
 sort_col_idx = 0
 # sample_idxs = evenly_sample(np.argsort(F[:,sort_col_idx]), 10)
 sample_idxs = list(range(10))
+sample_idxs.append("baseline")
 
 context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
 context_df = context_df.drop(columns=["F", "scenario"])
@@ -91,9 +92,23 @@ all_metrics_df = pd.DataFrame(all_metrics)
 context_flattened_dfs = [pd.concat(cand_outcomes_dfs, axis=0, ignore_index=True) for cand_outcomes_dfs in all_outcomes_dfs]
 all_outcomes_df = pd.concat(context_flattened_dfs, axis=0, ignore_index=True)
 
+# Attach baseline to all_outcomes_df
+baseline_df["cand_id"] = "baseline"
+baseline_df["year"] = list(range(1990, 2101))
+for context_idx in range(len(all_outcomes_dfs[0])):
+    baseline_df["context_idx"] = context_idx
+    all_outcomes_df = pd.concat([all_outcomes_df, baseline_df], axis=0, ignore_index=True)
+
+baseline_metrics["cand_id"] = "baseline"
+# Attach baseline to all_metrics_df
+for context_idx in range(len(all_outcomes_dfs[0])):
+    baseline_metrics["context_idx"] = context_idx
+    all_metrics_df = pd.concat([all_metrics_df, pd.DataFrame([baseline_metrics])], axis=0, ignore_index=True)
+
+
 context_idx = 0
 
-plot_outcomes = ["Temperature change from 1850", "CO2 Equivalent Net Emissions", "Government net revenue from adjustments", "Adjusted cost of energy per GJ", "Total Primary Energy Demand"]
+plot_outcomes = ["Temperature change from 1850", "Adjusted cost of energy per GJ", "Government net revenue from adjustments",  "Total Primary Energy Demand"]
 
 def create_context_scatter(context_chart_df):
     fig = px.scatter(context_chart_df,
@@ -101,7 +116,8 @@ def create_context_scatter(context_chart_df):
                      y="gdp",
                      color="scenario",
                      labels={"population": "Population 2100 (B)", "gdp": "GDPPP 2100 (T)"},
-                     hover_data={"description": True, "population": False, "scenario": False, "gdp": False})
+                     hover_data={"description": True, "population": False, "scenario": False, "gdp": False},
+                     title="Select a Context Scenario")
     return fig
 
 # Initialize the Dash app
@@ -109,7 +125,7 @@ app = dash.Dash(__name__)
 
 # Layout of the app
 app.layout = html.Div([
-    html.H1("Select a Context"),
+    html.H1("Climate Change Decision Making Page"),
     
     dcc.Graph(figure=create_context_scatter(context_chart_df), id="context-scatter"),
     
@@ -138,9 +154,11 @@ def click_context(click_data):
     """
     if click_data:
         scenario = int(click_data["points"][0]["customdata"][1][-1]) - 1
-        fig = plot_parallel_coordinates(all_metrics_df, scenario, sample_idxs, outcomes, baseline_metrics)
+        
     else:
-        fig = px.parallel_coordinates(pd.DataFrame())
+        scenario = 0
+
+    fig = plot_parallel_coordinates(all_metrics_df, scenario, sample_idxs, outcomes)
     
     return dcc.Graph(figure=fig, id="parallel-coordinates")
 
@@ -156,7 +174,7 @@ def update_outcomes_plots(click_data):
     
     figs = []
     for outcome in plot_outcomes:
-        fig = plot_outcome_over_time(outcome, sample_idxs, scenario, all_outcomes_df, baseline_df)
+        fig = plot_outcome_over_time(outcome, sample_idxs, scenario, all_outcomes_df)
         figs.append(fig)
     return figs
 

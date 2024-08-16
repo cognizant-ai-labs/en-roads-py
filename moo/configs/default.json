@@ -69,8 +69,7 @@
         "Temperature above 1.5C": true,
         "Max cost of energy": true,
         "Government net revenue below zero": false,
-        "Total energy below baseline": false,
-        "Action magnitude": true
+        "Total energy below baseline": false
     },
-    "save_path": "results/pymoo/context-magnitude"
+    "save_path": "results/pymoo/context-updated"
 }
