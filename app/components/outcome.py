@@ -15,7 +15,11 @@ def plot_outcome_over_time(outcome, cand_idxs, context_idx, all_outcomes_df):
                   x="year",
                   y=outcome,
                   color="cand_id",
-                  title=f"{outcome} over time",
                   range_y=[min_val, max_val],
                   color_discrete_sequence=color_map)
+    fig.update_layout(title={
+        "text": f"{outcome} Over Time",
+        "x": 0.5,
+        "xanchor": "center"
+    })
     return fig
