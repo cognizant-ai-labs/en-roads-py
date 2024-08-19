@@ -1,40 +1,26 @@
+"""
+Demo app for En-ROADS optimization results.
+"""
 import json
 
 import dill
 import dash
-from dash import dcc, html, Input, Output, State
-import plotly.express as px
-import pandas as pd
+from dash import dcc, html, Input, Output
 import numpy as np
+import pandas as pd
 
-from moo.problems.nn_problem import NNProblem
 from enroads_runner import EnroadsRunner
 from evolution.outcomes.outcome_manager import OutcomeManager
 from generate_url import actions_to_url
-from app.components.parallel import plot_parallel_coordinates
+from moo.problems.nn_problem import NNProblem
+
+from app.components.context import create_context_scatter
 from app.components.outcome import plot_outcome_over_time
+from app.components.parallel import plot_parallel_coordinates
 
-ar6_df = pd.read_csv("experiments/scenarios/ar6_snapshot_1723566520.csv/ar6_snapshot_1723566520.csv")
-ar6_df = ar6_df.dropna(subset=["Scenario"])
-ar6_df = ar6_df.dropna(axis=1)
-ar6_df = ar6_df[ar6_df["Scenario"].str.contains("Baseline")]
-pop_df = ar6_df[ar6_df["Variable"] == "Population"]
-gdp_df = ar6_df[ar6_df["Variable"] == "GDP|PPP"]
 
-context_chart_df = pd.DataFrame()
-context_chart_df["scenario"] = ar6_df["Scenario"].unique()
-context_chart_df["scenario"] = context_chart_df["scenario"].str.split("-", expand=True)[0]
-context_chart_df["population"] = pop_df["2100"].values / 1000
-context_chart_df["gdp"] = gdp_df["2100"].values / 1000
-context_chart_df = context_chart_df.sort_values(by="scenario")
-context_chart_df["description"] = ["SSP1: Sustainable Development",
-                             "SSP2: Middle of the Road",
-                             "SSP3: Regional Rivalry",
-                             "SSP4: Inequality",
-                             "SSP5: Fossil-Fueled"]
-
-save_path = "results/pymoo/context"
-with open(save_path + "/config.json", 'r') as f:
+save_path = "results/pymoo/context-updated"
+with open(save_path + "/config.json", 'r', encoding="utf-8") as f:
     config = json.load(f)
 
 actions = config["actions"]
@@ -44,7 +30,6 @@ with open(save_path + "/results", 'rb') as f:
     print("Loaded Checkpoint:", res)
 
 X = res.X
-X = X[:10,:]
 F = res.F
 
 def evenly_sample(lst, m):
@@ -55,8 +40,8 @@ def evenly_sample(lst, m):
     return sample
 
 sort_col_idx = 0
-# sample_idxs = evenly_sample(np.argsort(F[:,sort_col_idx]), 10)
-sample_idxs = list(range(10))
+sample_idxs = evenly_sample(np.argsort(F[:,sort_col_idx]), 10)
+# sample_idxs = list(range(10))
 sample_idxs.append("baseline")
 
 context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
@@ -74,7 +59,7 @@ baseline_metrics = outcome_manager.process_outcomes({}, baseline_df)
 all_outcomes_dfs = []
 all_metrics = []
 all_context_actions_dicts = []
-for cand_idx in range(X.shape[0]):
+for cand_idx in sample_idxs[:-1]:
     context_actions_dicts = problem.params_to_context_actions_dicts(X[cand_idx])
     all_context_actions_dicts.append(context_actions_dicts)
     cand_outcomes_dfs = problem.run_enroads(context_actions_dicts)
@@ -110,86 +95,109 @@ context_idx = 0
 
 plot_outcomes = ["Temperature change from 1850", "Adjusted cost of energy per GJ", "Government net revenue from adjustments",  "Total Primary Energy Demand"]
 
-def create_context_scatter(context_chart_df):
-    fig = px.scatter(context_chart_df,
-                     x="population",
-                     y="gdp",
-                     color="scenario",
-                     labels={"population": "Population 2100 (B)", "gdp": "GDPPP 2100 (T)"},
-                     hover_data={"description": True, "population": False, "scenario": False, "gdp": False},
-                     title="Select a Context Scenario")
-    return fig
-
 # Initialize the Dash app
 app = dash.Dash(__name__)
-
-# Layout of the app
-app.layout = html.Div([
-    html.H1("Climate Change Decision Making Page"),
-    
-    dcc.Graph(figure=create_context_scatter(context_chart_df), id="context-scatter"),
-    
-    html.Br(),
-    
-    html.Div(id="parallel-coordinates-container", children=[
-        dcc.Graph(id="parallel-coordinates")
-    ]),
-    html.Div(children=[
-        dcc.Graph(id=f"outcome-{i}") for i in range(len(plot_outcomes))
-    ]),
-    dcc.Dropdown(sample_idxs, sample_idxs[0], id="cand-dropdown"),
-
-    html.A("View Candidate", id="cand-link", href="#")
-])
+app.title = "Climate Change Decision Making"
 
 @app.callback(
-    Output("parallel-coordinates-container", "children"),
+    Output("parallel-coordinates", "figure"),
     Input("context-scatter", "clickData")
 )
 def click_context(click_data):
     """
-    Selects context when point on map is clicked.
+    Updates parallel coordinates when a context scatter point is clicked.
     :param click_data: Input data from click action.
-    :return: The new longitude and latitude to put into the dropdowns.
+    :return: The parallel coordinates plot.
     """
     if click_data:
         scenario = int(click_data["points"][0]["customdata"][1][-1]) - 1
-        
+
     else:
         scenario = 0
 
     fig = plot_parallel_coordinates(all_metrics_df, scenario, sample_idxs, outcomes)
-    
-    return dcc.Graph(figure=fig, id="parallel-coordinates")
+
+    return fig
 
 @app.callback(
-    [Output(f"outcome-{i}", "figure") for i in range(len(plot_outcomes))],
-    Input("context-scatter", "clickData"),
+    Output("outcome-graph-1", "figure"),
+    Input("outcome-dropdown-1", "value"),
+    Input("context-scatter", "clickData")
 )
-def update_outcomes_plots(click_data):
+def update_outcomes_plot_1(outcome, click_data):
+    """
+    Updates outcome plot when specific outcome is selected or context scatter point is clicked.
+    """
     if click_data:
         scenario = int(click_data["points"][0]["customdata"][1][-1]) - 1
     else:
         scenario = 0
-    
-    figs = []
-    for outcome in plot_outcomes:
-        fig = plot_outcome_over_time(outcome, sample_idxs, scenario, all_outcomes_df)
-        figs.append(fig)
-    return figs
+
+    fig = plot_outcome_over_time(outcome, sample_idxs, scenario, all_outcomes_df)
+    return fig
+
+@app.callback(
+    Output("outcome-graph-2", "figure"),
+    Input("outcome-dropdown-2", "value"),
+    Input("context-scatter", "clickData")
+)
+def update_outcomes_plot_2(outcome, click_data):
+    """
+    Updates outcome plot when specific outcome is selected or context scatter point is clicked.
+    """
+    if click_data:
+        scenario = int(click_data["points"][0]["customdata"][1][-1]) - 1
+    else:
+        scenario = 0
+
+    fig = plot_outcome_over_time(outcome, sample_idxs, scenario, all_outcomes_df)
+    return fig
 
 @app.callback(
     Output("cand-link", "href"),
     Input("cand-dropdown", "value"),
     Input("context-scatter", "clickData")
 )
-def update_cand_link(cand_idx, click_data):
+def update_cand_link(cand, click_data):
+    """
+    Updates the candidate link when a specific candidate is selected.
+    """
     if click_data:
         scenario = int(click_data["points"][0]["customdata"][1][-1]) - 1
     else:
         scenario = 0
-    url = actions_to_url(all_context_actions_dicts[cand_idx][scenario])
+    url = actions_to_url(all_context_actions_dicts[sample_idxs.index(cand)][scenario])
     return url
+
+# Layout of the app
+app.layout = html.Div([
+    html.H1("Climate Change Decision Making Page", style={"textAlign": "center"}),
+
+    dcc.Graph(id="context-scatter", figure=create_context_scatter()),
+
+    dcc.Graph(id="parallel-coordinates"),
+
+    html.Div([
+        html.Div([
+            dcc.Dropdown(plot_outcomes, plot_outcomes[0], id="outcome-dropdown-1")
+        ], style={"width": "50%", "display": "inline-block"}),
+        html.Div([
+            dcc.Dropdown(plot_outcomes, plot_outcomes[1], id="outcome-dropdown-2")
+        ], style={"width": "50%", "display": "inline-block"}),
+    ]),
+    html.Div([
+        html.Div([
+            dcc.Graph(id="outcome-graph-1"),
+        ], style={"width": "50%", "display": "inline-block"}),
+        html.Div([
+            dcc.Graph(id="outcome-graph-2"),
+        ], style={"width": "50%", "display": "inline-block"}),
+    ]),
+
+    dcc.Dropdown(sample_idxs[:-1], sample_idxs[0], id="cand-dropdown"),
+
+    html.A("View Candidate", id="cand-link", href="#", target="_blank", rel="noopener noreferrer")
+])
 
 # Run the app
 if __name__ == '__main__':
