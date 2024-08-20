@@ -34,8 +34,7 @@ def open_browser(results_dir, cand_id, input_idx):
     config = json.load(open(results_dir / "config.json", encoding="utf-8"))
 
     # Get prescribed actions from model
-    temp_dir = Path("temp_dir")
-    evaluator = Evaluator(temp_dir, config["context"], config["actions"], config["outcomes"])
+    evaluator = Evaluator(config["context"], config["actions"], config["outcomes"])
     candidate = Candidate.from_seed(results_dir / cand_id.split("_")[0] / f"{cand_id}.pt",
                                     config["model_params"],
                                     config["actions"],

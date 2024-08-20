@@ -31,7 +31,6 @@ class TestEvaluator(unittest.TestCase):
                 "hidden_size": 64
             },
             "eval_params": {
-                "temp_dir": "tests/temp"
             },
             "context": [
                 "_new_tech_breakthrough_setting"
