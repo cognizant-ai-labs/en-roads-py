@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from dash import html
+from dash import html, dcc
 
 class ParallelComponent():
 
@@ -35,18 +34,19 @@ class ParallelComponent():
         baseline_df = normalized_df[normalized_df["cand_id"] == "baseline"]
         pd.plotting.parallel_coordinates(baseline_df, "cand_id", self.outcomes.keys(), color="black")
 
-        plt.title(f"Average Metrics for All SSPs")
+        plt.title("Average Metrics for All SSPs")
         buf = io.BytesIO()
         plt.savefig(buf, format="png")
         plt.close()
         data = base64.b64encode(buf.getbuffer()).decode("utf-8")
         buf.close()
-        return "data:image/png;base64,{}".format(data)
+        return f"data:image/png;base64,{data}"
         
     def create_parallel_div(self):
         
         div = html.Div([
-            html.Img(id="parallel-coordinates", src=self.plot_parallel_coordinates_plt())
+            html.Img(id="parallel-coordinates", src=self.plot_parallel_coordinates_plt()),
+            dcc.Dropdown(self.cand_idxs, [], id="cand-select-dropdown", multi=True)
         ])
 
         return div
