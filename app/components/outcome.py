@@ -21,10 +21,11 @@ class OutcomeComponent():
                               "Government net revenue from adjustments", 
                               "Total Primary Energy Demand"]
 
-    def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]]):
+    def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]], cand_idxs: list[int]):
         """
         Plots all the candidates' prescribed actions' outcomes for a given context.
         Also plots the baseline given the context.
+        TODO: Fix colors to match parcoords
         """
         outcomes_dfs = [pd.DataFrame(outcomes_json) for outcomes_json in outcomes_jsonl]
         color_map = [c for c in px.colors.qualitative.Plotly]
@@ -33,7 +34,7 @@ class OutcomeComponent():
         showlegend = True
         for cand_idx, outcomes_df in enumerate(outcomes_dfs[:-1]):
             outcomes_df["year"] = list(range(1990, 2101))
-            if cand_idx not in self.cand_idxs:
+            if cand_idx not in cand_idxs:
                 legend = showlegend
                 name = "other"
                 line = dict(color="lightgray")
@@ -48,11 +49,11 @@ class OutcomeComponent():
                     showlegend=legend
                 ))
 
-        for cand_idx in self.cand_idxs:
+        for cand_idx in cand_idxs:
             outcomes_df = outcomes_dfs[cand_idx]
             legend = True
             name = str(cand_idx)
-            line = dict(color=color_map[self.cand_idxs.index(cand_idx)])
+            line = dict(color=color_map[cand_idxs.index(cand_idx)])
             fig.add_trace(go.Scatter(
                 x=outcomes_df["year"],
                 y=outcomes_df[outcome],
@@ -130,23 +131,29 @@ class OutcomeComponent():
         @app.callback(
             Output("outcome-graph-1", "figure"),
             Input("outcome-dropdown-1", "value"),
-            Input("outcomes-store", "data")
+            Input("outcomes-store", "data"),
+            Input("cand-select-dropdown", "value")
         )
-        def update_outcomes_plot_1(outcome, outcomes_jsonl):
+        def update_outcomes_plot_1(outcome, outcomes_jsonl, cand_idxs):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
-            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl)
+            if not cand_idxs:
+                cand_idxs = []
+            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
             return fig
 
         @app.callback(
             Output("outcome-graph-2", "figure"),
             Input("outcome-dropdown-2", "value"),
-            Input("outcomes-store", "data")
+            Input("outcomes-store", "data"),
+            Input("cand-select-dropdown", "value")
         )
-        def update_outcomes_plot_2(outcome, outcomes_jsonl):
+        def update_outcomes_plot_2(outcome, outcomes_jsonl, cand_idxs):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
-            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl)
+            if not cand_idxs:
+                cand_idxs = []
+            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
             return fig
