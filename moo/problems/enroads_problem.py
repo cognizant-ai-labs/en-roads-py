@@ -40,7 +40,7 @@ class EnroadsProblem(ElementwiseProblem):
         super().__init__(n_var=len(actions), n_obj=len(outcomes), n_ieq_constr=len(self.start_year_idxs), xl=xl, xu=xu)
 
         # To evaluate candidate solutions
-        self.runner = EnroadsRunner("moo/temp")
+        self.runner = EnroadsRunner()
         self.actions = [action for action in actions]
         self.outcomes = {k: v for k, v in outcomes.items()}
         self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))

@@ -18,7 +18,7 @@ class Evaluator:
     Evaluates candidates by generating the actions and running the enroads model on them.
     Generates and stores context data based on config using ContextDataset.
     """
-    def __init__(self, temp_dir: str, context: list[str], actions: list[str], outcomes: dict[str, bool]):        
+    def __init__(self, context: list[str], actions: list[str], outcomes: dict[str, bool]):        
 
         self.actions = actions
         self.outcomes = outcomes
@@ -33,7 +33,7 @@ class Evaluator:
         self.context_dataset = ContextDataset(context)
         self.context_dataloader = DataLoader(self.context_dataset, batch_size=3, shuffle=False)
 
-        self.enroads_runner = EnroadsRunner(temp_dir)
+        self.enroads_runner = EnroadsRunner()
 
     def validate_outcomes(self, outcomes_df: pd.DataFrame):
         """

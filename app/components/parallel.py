@@ -1,39 +1,52 @@
+import base64
+import io
+
+import matplotlib
+matplotlib.use('agg')
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from dash import html
 
+class ParallelComponent():
 
-def plot_parallel_coordinates(metrics_df, context_idx, cand_idxs, outcomes):
-    """
-    Takes metrics df of all metrics for all candidates and contexts, and plots parallel coordinates for given context
-    for the candidate indices given over the outcomes given.
-    """
-    coords_df = metrics_df[metrics_df["context_idx"] == context_idx]
-    coords_df = coords_df[coords_df["cand_id"].isin(cand_idxs)]
-    coords_df["cand_id"] = coords_df["cand_id"].astype(str)
-    # coords_df = coords_df.sort_values("cand_id")
-    coords_df["color"] = list(range(len(coords_df)))
-    color_map = [c for c in px.colors.qualitative.Plotly]
-    if len(coords_df) < len(color_map):
-        color_map[len(coords_df)-1] = "black"
-    else:
-        color_map.append("black")
+    def __init__(self, metrics_df: np.ndarray, cand_idxs: list[str], outcomes: dict[str, bool]):
+        self.metrics_df = metrics_df
+        self.cand_idxs = cand_idxs
+        self.outcomes = outcomes
 
-    fig = go.Figure(data =
-        go.Parcoords(
-            line=dict(color=coords_df["color"], colorscale=color_map),
-            dimensions = list([
-                dict(range = [metrics_df[outcome].min(), metrics_df[outcome].max()],
-                     label = outcome,
-                     values = coords_df[outcome]) for outcome in outcomes.keys()
-            ])
-        )
-    )
+    def plot_parallel_coordinates_plt(self):
+        normalized_df = self.metrics_df[self.outcomes.keys()]
+        normalized_df = (normalized_df - normalized_df.mean()) / (normalized_df.std() + 1e-10)
+        normalized_df["cand_id"] = self.metrics_df["cand_id"]
 
-    fig.update_layout(title={
-        "text": f"Metrics for SSP {context_idx+1}",
-        "x": 0.5,
-        "xanchor": "center"
-    })
-    fig.update_coloraxes(showscale=False)
+        condition = ~normalized_df["cand_id"].isin(self.cand_idxs) & (normalized_df["cand_id"] != "baseline")
+        other_df = normalized_df[condition].copy()
+        other_df["cand_id"] = "other"
+        pd.plotting.parallel_coordinates(other_df, "cand_id", self.outcomes.keys(), color="lightgray")
 
-    return fig
+        cand_df = normalized_df[normalized_df["cand_id"].isin(self.cand_idxs)]
+        colors = [c for c in px.colors.qualitative.Plotly]
+        pd.plotting.parallel_coordinates(cand_df, "cand_id", self.outcomes.keys(), color=colors)
+
+        baseline_df = normalized_df[normalized_df["cand_id"] == "baseline"]
+        pd.plotting.parallel_coordinates(baseline_df, "cand_id", self.outcomes.keys(), color="black")
+
+        plt.title(f"Average Metrics for All SSPs")
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png")
+        plt.close()
+        data = base64.b64encode(buf.getbuffer()).decode("utf-8")
+        buf.close()
+        return "data:image/png;base64,{}".format(data)
+        
+    def create_parallel_div(self):
+        
+        div = html.Div([
+            html.Img(id="parallel-coordinates", src=self.plot_parallel_coordinates_plt())
+        ])
+
+        return div
