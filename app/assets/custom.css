@@ -1,0 +1,27 @@
+.cognizant {
+    font-family: Arial;
+}
+
+h1.cognizant h2.cognizant {
+    color: #000048;
+}
+
+.contentBox {
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-bottom: 40px;
+    background-color: white;
+    padding: 20px;
+}
+
+.centered {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body {
+    margin: 0;
+    background-color: "#f0f0f0";
+}

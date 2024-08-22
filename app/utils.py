@@ -1,3 +1,6 @@
+"""
+Utilities for the demo app.
+"""
 import json
 
 import dill
@@ -5,13 +8,14 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import torch
 
-from moo.problems.nn_problem import NNProblem
 from enroads_runner import EnroadsRunner
 from evolution.candidate import Candidate
 from evolution.outcomes.outcome_manager import OutcomeManager
 
 class EvolutionHandler():
-
+    """
+    Handles evolution results and running of prescriptors for the app.
+    """
     def __init__(self):
         save_path = "results/pymoo/context-updated"
         with open(save_path + "/config.json", 'r', encoding="utf-8") as f:
@@ -101,44 +105,3 @@ class EvolutionHandler():
         Takes a context dict and returns the outcomes when no actions are performed.
         """
         return self.runner.evaluate_actions(context_dict)
-
-    # def load_outcomes_and_metrics_dfs(self):
-        
-
-    #     sample_idxs = list(range(10))
-
-        
-
-    #     all_outcomes_dfs = []
-    #     all_metrics = []
-    #     all_context_actions_dicts = []
-    #     for cand_idx in sample_idxs + [99]:
-    #         context_actions_dicts = problem.params_to_context_actions_dicts(X[cand_idx])
-    #         all_context_actions_dicts.append(context_actions_dicts)
-    #         cand_outcomes_dfs = problem.run_enroads(context_actions_dicts)
-    #         all_outcomes_dfs.append(cand_outcomes_dfs)
-    #         for i, (context_actions_dict, outcome_df) in enumerate(zip(context_actions_dicts, cand_outcomes_dfs)):
-    #             metrics = outcome_manager.process_outcomes(context_actions_dict, outcome_df)
-    #             metrics["cand_id"] = cand_idx
-    #             metrics["context_idx"] = i
-    #             all_metrics.append(metrics)
-    #             outcome_df["cand_id"] = cand_idx
-    #             outcome_df["context_idx"] = i
-    #             outcome_df["year"] = list(range(1990, 2101))
-
-    #     all_metrics_df = pd.DataFrame(all_metrics)
-    #     context_flattened_dfs = [pd.concat(cand_outcomes_dfs, axis=0, ignore_index=True) for cand_outcomes_dfs in all_outcomes_dfs]
-    #     all_outcomes_df = pd.concat(context_flattened_dfs, axis=0, ignore_index=True)
-
-    #     # Attach baseline to all_outcomes_df
-    #     baseline_df["cand_id"] = "baseline"
-    #     baseline_df["year"] = list(range(1990, 2101))
-    #     for context_idx in range(len(all_outcomes_dfs[0])):
-    #         baseline_df["context_idx"] = context_idx
-    #         all_outcomes_df = pd.concat([all_outcomes_df, baseline_df], axis=0, ignore_index=True)
-
-    #     baseline_metrics["cand_id"] = "baseline"
-    #     # Attach baseline to all_metrics_df
-    #     for context_idx in range(len(all_outcomes_dfs[0])):
-    #         baseline_metrics["context_idx"] = context_idx
-    #         all_metrics_df = pd.concat([all_metrics_df, pd.DataFrame([baseline_metrics])], axis=0, ignore_index=True)

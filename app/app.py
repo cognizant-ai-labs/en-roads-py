@@ -1,18 +1,8 @@
 """
 Demo app for En-ROADS optimization results.
 """
-import json
-
-import dill
 import dash
-from dash import dcc, html, Input, Output
-import numpy as np
-import pandas as pd
-
-from enroads_runner import EnroadsRunner
-from evolution.outcomes.outcome_manager import OutcomeManager
-from generate_url import actions_to_url
-from moo.problems.nn_problem import NNProblem
+from dash import html
 
 from app.components.context import ContextComponent
 from app.components.outcome import OutcomeComponent
@@ -39,13 +29,17 @@ outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
 
 # Layout of the app
-app.layout = html.Div([
-    html.H1("Climate Change Decision Making Page", style={"textAlign": "center"}),
-    parallel_component.create_parallel_div(),
-    context_component.create_context_div(),
-    outcome_component.create_outcomes_div(),
-    link_component.create_link_div()
-])
+app.layout = html.Div(
+    className="cognizant",
+    style={"backgroundColor": "#f0f0f0", "margin": "0"},
+    children=[
+        html.H1("Climate Change Decision Making Page", style={"textAlign": "center"}),
+        context_component.create_context_div(),
+        parallel_component.create_parallel_div(),
+        outcome_component.create_outcomes_div(),
+        link_component.create_link_div()
+    ]
+)
 
 # Run the app
 if __name__ == '__main__':
