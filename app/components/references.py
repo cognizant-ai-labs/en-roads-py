@@ -21,10 +21,17 @@ class ReferencesComponent():
                     children=[
                         html.H2("References", className="text-center mb-2"),
                         html.P([
-                            "Code for this project can be found ",
+                            "For more info about Project Resilience, visit the ",
+                            html.A("United Nations ITU Page", href="https://www.itu.int/en/ITU-T/extcoop/ai-data-commons/Pages/project-resilience.aspx")
+                        ]),
+                        html.P([
+                            "The code for Project Resilience can be found on ",
+                            html.A("Github", href="https://github.com/project-resilience")
+                        ]),
+                        html.P([
+                            "The code for this project can be found ",
                             html.A("here", href="https://github.com/danyoungday/en-roads-py")
                         ]),
-                            
                         html.P("Keywan Riahi et al. \"The Shared Socioeconomic Pathways and their energy, land use, and \
                                 greenhouse gas emissions implications: An overview,\" in Global Environmental Change, \
                                 vol. 42, pp. 153-168, 2017."),
