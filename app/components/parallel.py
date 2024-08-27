@@ -2,6 +2,7 @@
 File containing component in charge of visualizing the candidates' metrics.
 """
 from dash import html, dcc, Input, Output
+import dash_bootstrap_components as dbc
 import matplotlib
 import numpy as np
 import plotly.express as px
@@ -59,7 +60,7 @@ class ParallelComponent():
                     y=cand_metrics.values[0],
                     mode='lines',
                     name=str(cand_idx),
-                    line=dict(color=px.colors.qualitative.Plotly[cand_idxs.index(cand_idx)])
+                    line=dict(color=px.colors.qualitative.Plotly[self.all_cand_idxs.index(cand_idx)])
                 ))
 
         # Plot baseline if selected
@@ -88,31 +89,36 @@ class ParallelComponent():
 
         return fig
 
+    def create_button_group(self):
+        """
+        Creates button group to select candidates to display.
+        """
+        buttons = []
+        for cand_idx in self.all_cand_idxs:
+            color = "dark" if cand_idx == "baseline" else ("secondary" if cand_idx == "other" else "primary")
+            buttons.append(dbc.Button(str(cand_idx), id=f"cand-button-{cand_idx}", color=color, n_clicks=0))
+
+        button_group = dbc.ButtonGroup(
+            className="justify-content-center w-50 mx-auto",
+            children=buttons
+        )
+        return button_group
 
     def create_parallel_div(self):
         """
         Creates div showing parallel coordinates plot and dropdown to select candidate(s).
         """
         div = html.Div(
-            className="contentBox",
+            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
             children=[
-                html.H2("Select a Prescriptor to Optimize With", style={"textAlign": "center", "color": "#000048"}),
-                html.Div(
+                dbc.Container(
+                    fluid=True,
+                    className="py-3 d-flex flex-column",
                     children=[
-                        html.Div(
-                            children=[dcc.Graph(id="parallel-coordinates")]
-                        ),
-                        html.P("Selected Prescriptors", className="centered"),
-                        html.Div(
-                            style={"width": "50%", "margin-left": "25%", "margin-right": "25%"},
-                            children=[
-                                dcc.Dropdown(self.all_cand_idxs,
-                                            self.all_cand_idxs,
-                                            id="cand-select-dropdown",
-                                            multi=True,
-                                            placeholder="Select Candidate(s)")
-                            ]
-                        )
+                        html.H2("Select a Prescriptor to Optimize With", className="text-center mb-2"),
+                        html.Div(children=dcc.Graph(id="parallel-coordinates")),
+                        html.P("Selected Prescriptors", className="text-center"),
+                        self.create_button_group()
                     ]
                 )
             ]
@@ -122,11 +128,25 @@ class ParallelComponent():
     
     def register_callbacks(self, app):
         @app.callback(
-            Output("parallel-coordinates", "figure"),
-            Input("cand-select-dropdown", "value")
+            [Output(f"cand-button-{cand_idx}", "outline") for cand_idx in self.all_cand_idxs],
+            [Input(f"cand-button-{cand_idx}", "n_clicks") for cand_idx in self.all_cand_idxs]
         )
-        def update_parallel_coordinates(cand_idxs: list[str]):
+        def toggle_button(*clicks):
+            """
+            Toggles button when clicked.
+            """
+            return [bool(click%2) for click in clicks]
+
+        @app.callback(
+            Output("parallel-coordinates", "figure"),
+            [Input(f"cand-button-{cand_idx}", "outline") for cand_idx in self.all_cand_idxs]
+        )
+        def update_parallel_coordinates(*deselected):
             """
             Updates parallel coordinates plot with selected candidates from dropdown.
             """
+            cand_idxs = []
+            for cand_idx, deselect in zip(self.all_cand_idxs, deselected):
+                if not deselect:
+                    cand_idxs.append(cand_idx)
             return self.plot_parallel_coordinates_line(cand_idxs)

@@ -5,6 +5,7 @@ import dash
 from dash import html
 import dash_bootstrap_components as dbc
 
+from app.components.intro import IntroComponent
 from app.components.context import ContextComponent
 from app.components.outcome import OutcomeComponent
 from app.components.parallel import ParallelComponent
@@ -15,6 +16,7 @@ from app.utils import EvolutionHandler
 evolution_handler = EvolutionHandler()
 sample_idxs = list(range(10))
 
+intro_component = IntroComponent()
 context_component = ContextComponent()
 parallel_component = ParallelComponent(evolution_handler.load_initial_metrics_df(),
                                        sample_idxs,
@@ -24,7 +26,7 @@ link_component = LinkComponent(sample_idxs)
 references_component = ReferencesComponent()
 
 # Initialize the Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, "assets/styles.css"])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP, "assets/styles.css"])
 app.title = "Climate Change Decision Making"
 
 context_component.register_callbacks(app)
@@ -34,10 +36,10 @@ link_component.register_callbacks(app)
 
 # Layout of the app
 app.layout = html.Div(
-    className="cognizant",
-    style={"backgroundColor": "#f0f0f0", "margin": "0"},
+    # className="bg-light p-3",
     children=[
-        html.H1("Climate Change Decision Making Page", style={"textAlign": "center"}),
+        # html.H1("Climate Change Decision Making Page", className="text-center display-3 mb-5"),
+        intro_component.create_intro_div(),
         context_component.create_context_div(),
         parallel_component.create_parallel_div(),
         outcome_component.create_outcomes_div(),

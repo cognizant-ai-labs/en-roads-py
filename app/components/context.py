@@ -2,6 +2,7 @@
 Component displaying the context and handling its related functions.
 """
 from dash import dcc, html, Input, Output
+import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -85,13 +86,14 @@ class ContextComponent():
         sliders = []
         for i, (context_col, varname) in enumerate(zip(self.context_cols, self.varnames)):
             row = input_specs[input_specs["varId"] == context_col].iloc[0]
-            label_slider = [
-                html.Div(
-                    style={"grid-column": "1", "grid-row": f"{i+1}"},
+            label_slider = dbc.Row([
+                # TODO: It's annoying that bootstrap only does 12 columns and 5/7 split doesn't look nice.
+                dbc.Col(
+                    width=6,
                     children=[html.Label(varname)]
                 ),
-                html.Div(
-                    style={"grid-column": "2", "grid-row": f"{i+1}"},
+                dbc.Col(
+                    width=6,
                     children=[
                         dcc.Slider(
                             id=f"context-slider-{i}",
@@ -104,38 +106,41 @@ class ContextComponent():
                         )
                     ]
                 )
-            ]
-            sliders.extend(label_slider)
+            ])
+            sliders.append(label_slider)
 
         # TODO: Fix the widths to be responsive
         sliders_div = html.Div(
-            style={"display": "grid", "grid-template-columns": "1fr 55%"},
             children=sliders
         )
 
         div = html.Div(
-            className="contentBox",
+            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
             children=[
-                html.H2("Select a Context Scenario to Optimize For", style={"textAlign": "center"}),
-                html.Div(
-                    style={"display": "grid", "grid-template-columns": "50% 50%", "margin-bottom": "20px"},
+                dbc.Container(
+                    fluid=True,
+                    className="py-3 d-flex flex-column h-100",
                     children=[
-                        html.Div(
-                            style={"grid-column": "1", "height": "100%", "width": "100%", "padding-bottom": "40px"},
+                        dbc.Row(html.H2("Select a Context Scenario to Optimize For", className="text-center mb-5")),
+                        dbc.Row(
+                            className="flex-grow-1",
                             children=[
-                                dcc.Graph(id="context-scatter", figure=self.create_context_scatter())
-                            ]
-                        ),
-                        html.Div(
-                            style={"grid-column": "2", "width": "100%", "margin-top": "3%"},
-                            children=[
-                                sliders_div,
-                                html.Div(
-                                    id="ssp-desc",
-                                    children=[self.construct_ssp_desc(0)]
+                                dbc.Col(dcc.Graph(id="context-scatter", figure=self.create_context_scatter()), className="h-100"),
+                                dbc.Col(
+                                    className="d-flex flex-column h-100",
+                                    children=[
+                                        sliders_div,
+                                        # TODO: Make the box big enough to fit the text
+                                        html.Div(
+                                            id="ssp-desc",
+                                            children=[self.construct_ssp_desc(0)],
+                                            className="flex-grow-1 overflow-auto border rounded-3 p-2",
+                                            style={"height": "275px"}
+                                        )
+                                    ]
                                 )
                             ]
-                        ),
+                        )
                     ]
                 )
             ]
