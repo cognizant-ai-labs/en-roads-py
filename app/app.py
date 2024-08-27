@@ -36,9 +36,7 @@ link_component.register_callbacks(app)
 
 # Layout of the app
 app.layout = html.Div(
-    # className="bg-light p-3",
     children=[
-        # html.H1("Climate Change Decision Making Page", className="text-center display-3 mb-5"),
         intro_component.create_intro_div(),
         context_component.create_context_div(),
         parallel_component.create_parallel_div(),
