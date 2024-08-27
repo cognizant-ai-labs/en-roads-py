@@ -1,7 +1,7 @@
 """
 File containing component in charge of visualizing the candidates' metrics.
 """
-from dash import html, dcc, Input
+from dash import html, dcc, Input, Output
 import matplotlib
 import numpy as np
 import plotly.express as px
@@ -16,10 +16,10 @@ class ParallelComponent():
     def __init__(self, metrics_df: np.ndarray, cand_idxs: list[str], outcomes: dict[str, bool]):
         matplotlib.use('agg')
         self.metrics_df = metrics_df
-        self.cand_idxs = cand_idxs + ["baseline", "other"]
+        self.all_cand_idxs = cand_idxs + ["baseline", "other"]
         self.outcomes = outcomes
     
-    def plot_parallel_coordinates_line(self):
+    def plot_parallel_coordinates_line(self, cand_idxs: list[str]):
         """
         Plots a parallel coordinates plot of the prescriptor metrics.
         Starts by plotting "other" if selected so that it's the bottom of the z axis.
@@ -35,9 +35,9 @@ class ParallelComponent():
         outcomes_list = list(self.outcomes.keys())
         showlegend=True
         # If "other" is in the cand_idxs, plot all other candidates in lightgray
-        if "other" in self.cand_idxs:
+        if "other" in cand_idxs:
             for cand_idx in normalized_df["cand_id"].unique():
-                if cand_idx not in self.cand_idxs and cand_idx != "baseline":
+                if cand_idx not in cand_idxs and cand_idx != "baseline":
                     cand_metrics = normalized_df[normalized_df["cand_id"] == cand_idx]
                     fig.add_trace(go.Scatter(
                         x=outcomes_list,
@@ -51,7 +51,7 @@ class ParallelComponent():
                     showlegend=False
 
         # Plot selected candidates besides baseline so it can be on top
-        for cand_idx in self.cand_idxs:
+        for cand_idx in cand_idxs:
             if cand_idx != "baseline" and cand_idx != "other":
                 cand_metrics = normalized_df[normalized_df["cand_id"] == cand_idx]
                 fig.add_trace(go.Scatter(
@@ -59,11 +59,11 @@ class ParallelComponent():
                     y=cand_metrics.values[0],
                     mode='lines',
                     name=str(cand_idx),
-                    line=dict(color=px.colors.qualitative.Plotly[self.cand_idxs.index(cand_idx)])
+                    line=dict(color=px.colors.qualitative.Plotly[cand_idxs.index(cand_idx)])
                 ))
 
         # Plot baseline if selected
-        if "baseline" in self.cand_idxs:
+        if "baseline" in cand_idxs:
             baseline_metrics = normalized_df[normalized_df["cand_id"] == "baseline"]
             fig.add_trace(go.Scatter(
                 x=outcomes_list,
@@ -86,7 +86,7 @@ class ParallelComponent():
             }
         )
 
-        return dcc.Graph(figure=fig, id="parallel-coordinates")
+        return fig
 
 
     def create_parallel_div(self):
@@ -100,14 +100,14 @@ class ParallelComponent():
                 html.Div(
                     children=[
                         html.Div(
-                            children=[self.plot_parallel_coordinates_line()]
+                            children=[dcc.Graph(id="parallel-coordinates")]
                         ),
                         html.P("Selected Prescriptors", className="centered"),
                         html.Div(
                             style={"width": "50%", "margin-left": "25%", "margin-right": "25%"},
                             children=[
-                                dcc.Dropdown(self.cand_idxs,
-                                            self.cand_idxs,
+                                dcc.Dropdown(self.all_cand_idxs,
+                                            self.all_cand_idxs,
                                             id="cand-select-dropdown",
                                             multi=True,
                                             placeholder="Select Candidate(s)")
@@ -119,3 +119,14 @@ class ParallelComponent():
         )
 
         return div
+    
+    def register_callbacks(self, app):
+        @app.callback(
+            Output("parallel-coordinates", "figure"),
+            Input("cand-select-dropdown", "value")
+        )
+        def update_parallel_coordinates(cand_idxs: list[str]):
+            """
+            Updates parallel coordinates plot with selected candidates from dropdown.
+            """
+            return self.plot_parallel_coordinates_line(cand_idxs)
