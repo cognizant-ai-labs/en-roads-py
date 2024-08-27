@@ -18,7 +18,7 @@ class IntroComponent():
                 dbc.Row(
                     html.P("Immediate action is required to combat climate change. \
                             The technology behind Cognizant NeuroAI brings automatic decision-making to the En-ROADS platform, a powerful climate change simulator. \
-                            A decision-maker can be ready for any scenario, choosing an automatically generated policy that suits their needs best, with the ability to manually \
+                            A decision-maker can be ready for any scenario: choosing an automatically generated policy that suits their needs best, with the ability to manually \
                             modify the policy and see its results. This tool is brought together under Project Resilience, a United Nations initiative to use AI for good.",
                             className="lead w-50 mx-auto text-center")
                 ),
