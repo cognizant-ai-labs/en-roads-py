@@ -2,6 +2,7 @@
 OutcomeComponent class for the outcome section of the app.
 """
 from dash import Input, Output, html, dcc
+import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -15,7 +16,7 @@ class OutcomeComponent():
     """
     def __init__(self, evolution_handler: EvolutionHandler, all_cand_idxs: list[str]):
         self.evolution_handler = evolution_handler
-        self.all_cand_idxs = all_cand_idxs
+        self.all_cand_idxs = all_cand_idxs + ["baseline", "other"]
         self.context_cols = ["_long_term_gdp_per_capita_rate",
                              "_near_term_gdp_per_capita_rate",
                              "_transition_time_to_reach_long_term_gdp_per_capita_rate",
@@ -89,32 +90,87 @@ class OutcomeComponent():
         Note: We have nested loads here. The outer load is for both graphs and triggers when the outcomes store
         is updated. Otherwise, we have individual loads for each graph.
         """
+        # div = html.Div(
+        #     className="contentBox",
+        #     children=[
+        #         html.H2("Outcomes of Prescribed Actions", style={"textAlign": "center"}),
+        #         html.Div([
+        #             html.Div([
+        #                 html.Div([
+        #                     dcc.Dropdown(self.plot_outcomes, self.plot_outcomes[0], id="outcome-dropdown-1")
+        #                 ], style={"width": "50%", "display": "inline-block"}),
+        #                 html.Div([
+        #                     dcc.Dropdown(self.plot_outcomes, self.plot_outcomes[1], id="outcome-dropdown-2")
+        #                 ], style={"width": "50%", "display": "inline-block"}),
+        #             ]),
+        #             html.Div([
+        #                 dcc.Loading([
+        #                     dcc.Store(id="context-actions-store"),
+        #                     dcc.Store(id="outcomes-store"),
+        #                     html.Div([
+        #                         dcc.Graph(id="outcome-graph-1")
+        #                     ], style={"width": "50%", "display": "inline-block"}),
+        #                     html.Div([
+        #                         dcc.Graph(id="outcome-graph-2")
+        #                     ], style={"width": "50%", "display": "inline-block"}),
+        #                 ], type="circle", target_components={"context-actions-store": "*", "outcomes-store": "*"})
+        #             ])
+        #         ])
+        #     ]
+        # )
+
         div = html.Div(
-            className="contentBox",
+            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
             children=[
-                html.H2("Outcomes of Prescribed Actions", style={"textAlign": "center"}),
-                html.Div([
-                    html.Div([
-                        html.Div([
-                            dcc.Dropdown(self.plot_outcomes, self.plot_outcomes[0], id="outcome-dropdown-1")
-                        ], style={"width": "50%", "display": "inline-block"}),
-                        html.Div([
-                            dcc.Dropdown(self.plot_outcomes, self.plot_outcomes[1], id="outcome-dropdown-2")
-                        ], style={"width": "50%", "display": "inline-block"}),
-                    ]),
-                    html.Div([
-                        dcc.Loading([
-                            dcc.Store(id="context-actions-store"),
-                            dcc.Store(id="outcomes-store"),
-                            html.Div([
-                                dcc.Graph(id="outcome-graph-1")
-                            ], style={"width": "50%", "display": "inline-block"}),
-                            html.Div([
-                                dcc.Graph(id="outcome-graph-2")
-                            ], style={"width": "50%", "display": "inline-block"}),
-                        ], type="circle", target_components={"context-actions-store": "*", "outcomes-store": "*"})
-                    ])
-                ])
+                dbc.Container(
+                    fluid=True,
+                    className="py-3",
+                    children=[
+                        dbc.Row(html.H2("Outcomes of Prescribed Actions", className="text-center mb-5")),
+                        dbc.Row(
+                            children=[
+                                dbc.Col(
+                                    children=[
+                                        dcc.Dropdown(
+                                            id="outcome-dropdown-1",
+                                            options=self.plot_outcomes,
+                                            value=self.plot_outcomes[0]
+                                        )
+                                    ]
+                                ),
+                                dbc.Col(
+                                    children=[
+                                        dcc.Dropdown(
+                                            id="outcome-dropdown-2",
+                                            options=self.plot_outcomes,
+                                            value=self.plot_outcomes[1]
+                                        )
+                                    ]
+                                )
+                            ]
+                        ),
+                        dcc.Loading(
+                            target_components={"context-actions-store": "*", "outcomes-store": "*"},
+                            type="circle",
+                            children=[
+                                dcc.Store(id="context-actions-store"),
+                                dcc.Store(id="outcomes-store"),
+                                dbc.Row(
+                                    children=[
+                                        dbc.Col(
+                                            dcc.Graph(id="outcome-graph-1"),
+                                            width=6
+                                        ),
+                                        dbc.Col(
+                                            dcc.Graph(id="outcome-graph-2"),
+                                            width=6
+                                        )
+                                    ]
+                                )
+                            ]
+                        )
+                    ]
+                )
             ]
         )
 
@@ -145,14 +201,16 @@ class OutcomeComponent():
             Output("outcome-graph-1", "figure"),
             Input("outcome-dropdown-1", "value"),
             Input("outcomes-store", "data"),
-            Input("cand-select-dropdown", "value")
+            [Input(f"cand-button-{cand_idx}", "outline") for cand_idx in self.all_cand_idxs]
         )
-        def update_outcomes_plot_1(outcome, outcomes_jsonl, cand_idxs):
+        def update_outcomes_plot_1(outcome, outcomes_jsonl, *deselected):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
-            if not cand_idxs:
-                cand_idxs = []
+            cand_idxs = []
+            for cand_idx, deselect in zip(self.all_cand_idxs, deselected):
+                if not deselect:
+                    cand_idxs.append(cand_idx)
             fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
             return fig
 
@@ -160,13 +218,15 @@ class OutcomeComponent():
             Output("outcome-graph-2", "figure"),
             Input("outcome-dropdown-2", "value"),
             Input("outcomes-store", "data"),
-            Input("cand-select-dropdown", "value")
+            [Input(f"cand-button-{cand_idx}", "outline") for cand_idx in self.all_cand_idxs]
         )
-        def update_outcomes_plot_2(outcome, outcomes_jsonl, cand_idxs):
+        def update_outcomes_plot_2(outcome, outcomes_jsonl, *deselected):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
-            if not cand_idxs:
-                cand_idxs = []
+            cand_idxs = []
+            for cand_idx, deselect in zip(self.all_cand_idxs, deselected):
+                if not deselect:
+                    cand_idxs.append(cand_idx)
             fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
             return fig
