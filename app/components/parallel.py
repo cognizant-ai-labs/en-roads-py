@@ -3,7 +3,6 @@ File containing component in charge of visualizing the candidates' metrics.
 """
 from dash import html, dcc, Input, Output
 import dash_bootstrap_components as dbc
-import matplotlib
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
@@ -15,13 +14,13 @@ class ParallelComponent():
     candidates to display so the user can compare them.
     """
     def __init__(self, metrics_df: np.ndarray, cand_idxs: list[str], outcomes: dict[str, bool]):
-        matplotlib.use('agg')
         self.metrics_df = metrics_df
         self.all_cand_idxs = cand_idxs + ["baseline", "other"]
         self.outcomes = outcomes
-    
+
     def plot_parallel_coordinates_line(self, cand_idxs: list[str]):
         """
+        NOTE: This is legacy code that may be brought back in later for a user toggle.
         Plots a parallel coordinates plot of the prescriptor metrics.
         Starts by plotting "other" if selected so that it's the bottom of the z axis.
         Then plots selected candidates in color.
@@ -34,7 +33,7 @@ class ParallelComponent():
         normalized_df["cand_id"] = self.metrics_df["cand_id"]
 
         outcomes_list = list(self.outcomes.keys())
-        showlegend=True
+        showlegend = True
         # If "other" is in the cand_idxs, plot all other candidates in lightgray
         if "other" in cand_idxs:
             for cand_idx in normalized_df["cand_id"].unique():
@@ -49,7 +48,7 @@ class ParallelComponent():
                         line=dict(color="lightgray"),
                         showlegend=showlegend
                     ))
-                    showlegend=False
+                    showlegend = False
 
         # Plot selected candidates besides baseline so it can be on top
         for cand_idx in cand_idxs:
@@ -101,7 +100,7 @@ class ParallelComponent():
         normalized_df["cand_id"] = self.metrics_df["cand_id"]
 
         outcomes_list = list(self.outcomes.keys())
-        showlegend=True
+        showlegend = True
         # If "other" is in the cand_idxs, plot all other candidates in lightgray
         if "other" in cand_idxs:
             for cand_idx in normalized_df["cand_id"].unique():
@@ -110,13 +109,13 @@ class ParallelComponent():
                     fig.add_trace(go.Scatterpolar(
                         r=cand_metrics.values[0],
                         theta=outcomes_list,
-                        # fill='toself',
                         legendgroup="other",
-                        name="other" + " " * ((len("baseline") - len("other")) + 5),  # TODO: Hack to make legend spacing consistent
+                        # TODO: Hack to make legend spacing consistent
+                        name="other" + " " * ((len("baseline") - len("other")) + 5),
                         line=dict(color="lightgray"),
                         showlegend=showlegend
                     ))
-                    showlegend=False
+                    showlegend = False
 
         # Plot selected candidates besides baseline so it can be on top
         for cand_idx in cand_idxs:
@@ -125,8 +124,8 @@ class ParallelComponent():
                 fig.add_trace(go.Scatterpolar(
                     theta=outcomes_list,
                     r=cand_metrics.values[0],
-                    # fill="toself",
-                    name=str(cand_idx) + " " * ((len("baseline") - len(str(cand_idx))) + 5),  # TODO: Hack to make legend spacing consistent
+                    # TODO: Hack to fix legend spacing
+                    name=str(cand_idx) + " " * ((len("baseline") - len(str(cand_idx))) + 5),
                     line=dict(color=px.colors.qualitative.Plotly[self.all_cand_idxs.index(cand_idx)])
                 ))
 
@@ -149,7 +148,7 @@ class ParallelComponent():
                 'yanchor': 'top'  # Optionally keep it anchored to the top
             },
             polar={
-                "radialaxis":{
+                "radialaxis": {
                     "visible": True,
                     "range": [normalized_df[outcomes_list].min().min(), normalized_df[outcomes_list].max().max()]
                 }
@@ -191,14 +190,18 @@ class ParallelComponent():
                         dbc.Row(
                             className="text-center mb-2 w-70 mx-auto",
                             children=[
-                                html.P("A population of AI models are trained using an evolutionary algorithm, with fitness \
-                                    being rated by the En-ROADS simulator on their average performance across all \
-                                    scenarios. The plot below shows model performances, with points closer to the middle \
-                                    being more desirable. Select and deselect points to compare models.")
+                                html.P("A population of AI models are trained using an evolutionary algorithm, with \
+                                       fitness being rated by the En-ROADS simulator on their average performance \
+                                       across all scenarios. The plot below shows model performances, with points \
+                                       closer to the middle being more desirable. Select and deselect points to \
+                                       compare models.")
                             ]
                         ),
                         dbc.Row(
-                            dbc.Col(html.Div(children=dcc.Graph(id="parallel-coordinates")), width={"size": 11, "offset": 1})  # TODO: Hack to center graph
+                            dbc.Col(
+                                html.Div(children=dcc.Graph(id="parallel-coordinates")),
+                                width={"size": 11, "offset": 1}
+                            )  # TODO: Hack to center graph
                         ),
                         dbc.Row(
                             html.P("Selected Prescriptors", className="text-center"),
@@ -212,7 +215,7 @@ class ParallelComponent():
         )
 
         return div
-    
+
     def register_callbacks(self, app):
         @app.callback(
             [Output(f"cand-button-{cand_idx}", "outline") for cand_idx in self.all_cand_idxs],
@@ -222,7 +225,7 @@ class ParallelComponent():
             """
             Toggles button when clicked.
             """
-            return [bool(click%2) for click in clicks]
+            return [bool(click % 2) for click in clicks]
 
         @app.callback(
             Output("parallel-coordinates", "figure"),

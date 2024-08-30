@@ -8,6 +8,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+
 class ContextComponent():
     """
     Component in charge of displaying the preset contexts in a scatter and the corresponding context sliders.
@@ -23,7 +24,7 @@ class ContextComponent():
                          "Near-Term Economic Growth (GDPPP)",
                          "Transition Time (years)",
                          "Population (B)"]
-        
+
         # Round context df here instead of automatically by Dash so that we know for sure how it's rounding.
         self.context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
@@ -54,21 +55,12 @@ class ContextComponent():
         context_chart_df = context_chart_df.sort_values(by="scenario")
         # pylint: disable=unsupported-assignment-operation
         context_chart_df["description"] = ["SSP1: Sustainable Development",
-                                    "SSP2: Middle of the Road",
-                                    "SSP3: Regional Rivalry",
-                                    "SSP4: Inequality",
-                                    "SSP5: Fossil-Fueled"]
+                                           "SSP2: Middle of the Road",
+                                           "SSP3: Regional Rivalry",
+                                           "SSP4: Inequality",
+                                           "SSP5: Fossil-Fueled"]
 
         fig = go.Figure()
-
-        # fig = px.scatter(context_chart_df,
-        #                 x="population",
-        #                 y="gdp",
-        #                 color="scenario",
-        #                 text="description",
-        #                 color_discrete_sequence=px.colors.qualitative.Safe,
-        #                 labels={"population": "Population 2100 (B)", "gdp": "GDPPP 2100 (T)"},
-        #                 hover_data={"description": True, "population": False, "scenario": False, "gdp": False})
 
         # pylint: disable=unsubscriptable-object
         fig.add_trace(go.Scatter(
@@ -81,7 +73,7 @@ class ContextComponent():
         ))
 
         fig.update_layout(
-            title = {
+            title={
                 "text": "Select a Pre-Set Context Scenario",
                 "x": 0.5,
                 "xanchor": "center"
@@ -91,7 +83,7 @@ class ContextComponent():
             showlegend=False,
         )
         return fig
-    
+
     def create_context_div(self):
         """
         Creates div showing context scatter plot next to context sliders.
@@ -138,15 +130,22 @@ class ContextComponent():
                         dbc.Row(html.H2("Select a Context Scenario to Optimize For", className="text-center mb-5")),
                         dbc.Row(
                             className="mb-2 w-70 text-center mx-auto",
-                            children=[html.P("According to the AR6 climate report: 'The five Shared Socioeconomic Pathways \
-                                       were designed to span a range of challenges to climate change \
-                                       mitigation and adaptation.' Select one of these scenarios by clicking it in the \
-                                       scatter plot below. If desired, manually modify the scenario with the sliders.")]
+                            children=[html.P("According to the AR6 climate report: 'The five Shared Socioeconomic \
+                                             Pathways were designed to span a range of challenges to climate change \
+                                             mitigation and adaptation.' Select one of these scenarios by clicking it \
+                                             in the scatter plot below. If desired, manually modify the scenario \
+                                             with the sliders.")]
                         ),
                         dbc.Row(
                             className="flex-grow-1",
                             children=[
-                                dbc.Col(dcc.Graph(id="context-scatter", figure=self.create_context_scatter()), className="h-100"),
+                                dbc.Col(
+                                    className="h-100",
+                                    children=[dcc.Graph(
+                                        id="context-scatter",
+                                        figure=self.create_context_scatter()
+                                    )],
+                                ),
                                 dbc.Col(
                                     className="d-flex flex-column h-100",
                                     children=[
@@ -201,11 +200,11 @@ class ContextComponent():
                 scenario = int(click_data["points"][0]["pointNumber"])
             else:
                 scenario = 0
-            
+
             scenario = f"SSP{scenario+1}-Baseline"
             row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
-            return row[self.context_cols[0]], row[self.context_cols[1]], row[self.context_cols[2]], row[self.context_cols[3]]
-        
+            return [row[self.context_cols[i]] for i in range(4)]
+
         @app.callback(
             Output("ssp-desc", "children"),
             [Input(f"context-slider-{i}", "value") for i in range(4)],
@@ -228,4 +227,3 @@ class ContextComponent():
                         html.H4("Custom Scenario Selected")
                     ]
                 )
-
