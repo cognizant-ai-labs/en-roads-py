@@ -14,6 +14,7 @@ from app.components.references import ReferencesComponent
 from app.utils import EvolutionHandler
 
 evolution_handler = EvolutionHandler()
+# The candidates are sorted by rank then distance so the 'best' ones are the first 10
 sample_idxs = list(range(10))
 
 intro_component = IntroComponent()

@@ -69,6 +69,12 @@ class EvolutionHandler():
         # Attach baseline to metrics_df
         metrics_df = pd.concat([metrics_df, pd.DataFrame([baseline_metrics_avg])], axis=0, ignore_index=True)
 
+        # TODO: Eventually don't hard-code this. Flip the net revenue below 0 to be something we minimize
+        if "Government net revenue below zero" in metrics_df.columns:
+            metrics_df["Government net revenue below zero"] *= -1
+        if "Total energy below baseline" in metrics_df.columns:
+            metrics_df["Total energy below baseline"] *= -1
+
         return metrics_df
     
     def prescribe_all(self, context_dict: dict[str, float]):
