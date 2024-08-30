@@ -8,6 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from app.utils import EvolutionHandler
 
+
 class OutcomeComponent():
     """
     Component in charge of showing the outcomes of the prescribed actions for the selected prescriptors.
@@ -52,7 +53,7 @@ class OutcomeComponent():
                         showlegend=showlegend,
                         line=dict(color="lightgray")
                     ))
-                    showlegend=False
+                    showlegend = False
 
         for cand_idx in cand_idxs:
             if cand_idx != "baseline" and cand_idx != "other":
@@ -78,10 +79,10 @@ class OutcomeComponent():
             ))
 
         fig.update_layout(
-            title = {
+            title={
                 "text": f"{outcome} Over Time",
                 "x": 0.5,
-                "xanchor": "center",},
+                "xanchor": "center"},
         )
         return fig
     

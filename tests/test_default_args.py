@@ -4,10 +4,10 @@ Tests the enroads model
 import io
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from enroads_runner import EnroadsRunner
+
 
 class TestDefaultArgs(unittest.TestCase):
     """
@@ -50,4 +50,3 @@ class TestDefaultArgs(unittest.TestCase):
         default_output = self.runner.run_enroads()
 
         self.assertNotEqual(no_default_output, default_output)
-

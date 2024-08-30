@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 
 from generate_url import actions_to_url
 
+
 class LinkComponent():
     """
     Component in charge of displaying the links to En-ROADS.
@@ -21,6 +22,10 @@ class LinkComponent():
         self.demands = [f"Primary energy demand of {energy}" for energy in self.energies]
 
     def plot_energy_policy(self, energy_policy_jsonl, cand_idx):
+        """
+        Plots density chart from energy policy.
+        Removes demands that are all 0.
+        """
         policy_df = pd.DataFrame(energy_policy_jsonl[cand_idx])
 
         # Preprocess our policy df making it cumulative
@@ -90,10 +95,12 @@ class LinkComponent():
                     fluid=True,
                     className="py-3 d-flex flex-column justify-content-center",
                     children=[
-                        html.H2("View Energy Policy and Visualize/Modify Actions in En-ROADS", className="text-center mb-2"),
+                        html.H2("View Energy Policy and Visualize/Modify Actions in En-ROADS",
+                                className="text-center mb-2"),
                         html.P("Click on a candidate to preview the distribution of energy sources over time due to \
-                            its prescribed energy policy. Then click on the link to view the full policy in En-ROADS.",
-                            className="text-center w-70 mb-2 mx-auto"),
+                               its prescribed energy policy. Then click on the link to view the full policy in \
+                               En-ROADS.",
+                               className="text-center w-70 mb-2 mx-auto"),
                         html.Div(
                             className="w-50 mx-auto",
                             children=[self.create_button_group()]
@@ -105,7 +112,11 @@ class LinkComponent():
                                 dcc.Graph(id="energy-policy-graph", className="mb-2")
                             ]
                         ),
-                        dbc.Button("View in En-ROADS", id="cand-link", target="_blank", rel="noopener noreferrer", className="w-25 mx-auto")
+                        dbc.Button("View in En-ROADS",
+                                   id="cand-link",
+                                   target="_blank",
+                                   rel="noopener noreferrer",
+                                   className="w-25 mx-auto")
                     ]
                 )
             ]
@@ -133,4 +144,3 @@ class LinkComponent():
             cand_dict = context_actions_dicts[cand_idx]
             link = actions_to_url(cand_dict)
             return link
-

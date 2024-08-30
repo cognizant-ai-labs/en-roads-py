@@ -1,7 +1,6 @@
 """
 Unit tests for the evaluator class.
 """
-import shutil
 import unittest
 
 import numpy as np
@@ -10,6 +9,7 @@ import pandas as pd
 from evolution.utils import modify_config
 from evolution.candidate import Candidate
 from evolution.evaluation.evaluator import Evaluator
+
 
 class TestEvaluator(unittest.TestCase):
     """
@@ -168,13 +168,11 @@ class TestEvaluator(unittest.TestCase):
         Checks that our default input equals the input specs file.
         """
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
-        self.evaluator.enroads_runner.construct_enroads_input({})
-        with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
-            enroads_input = f.read()
-            split_input = enroads_input.split(" ")
-            for i, (default, inp) in enumerate(zip(input_specs["defaultValue"].to_list(), split_input)):
-                _, inp_val = inp.split(":")
-                self.assertEqual(float(inp_val), float(default), f"Input {i} doesn't match default")
+        enroads_input = self.evaluator.enroads_runner.construct_enroads_input({})
+        split_input = enroads_input.split(" ")
+        for i, (default, inp) in enumerate(zip(input_specs["defaultValue"].to_list(), split_input)):
+            _, inp_val = inp.split(":")
+            self.assertEqual(float(inp_val), float(default), f"Input {i} doesn't match default")
 
     def test_construct_input(self):
         """
@@ -183,16 +181,15 @@ class TestEvaluator(unittest.TestCase):
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         vals = input_specs["defaultValue"].to_list()
 
-        self.evaluator.enroads_runner.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
-        with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
-            enroads_input = f.read()
-            split_input = enroads_input.split(" ")
-            for i, (default, inp) in enumerate(zip(vals, split_input)):
-                _, inp_val = inp.split(":")
-                if i == 0:
-                    self.assertEqual(float(inp_val), 100, "Didn't modify first input correctly")
-                else:
-                    self.assertEqual(float(inp_val), default, f"Messed up input {i}: {inp_val} != {default}")
+        actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
+        enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
+        split_input = enroads_input.split(" ")
+        for i, (default, inp) in enumerate(zip(vals, split_input)):
+            _, inp_val = inp.split(":")
+            if i == 0:
+                self.assertEqual(float(inp_val), 100, "Didn't modify first input correctly")
+            else:
+                self.assertEqual(float(inp_val), default, f"Messed up input {i}: {inp_val} != {default}")
 
     def test_repeat_constructs(self):
         """
@@ -201,27 +198,25 @@ class TestEvaluator(unittest.TestCase):
         input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         vals = input_specs["defaultValue"].to_list()
 
-        self.evaluator.enroads_runner.construct_enroads_input({"_source_subsidy_delivered_coal_tce": 100})
-        with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
-            enroads_input = f.read()
-            split_input = enroads_input.split(" ")
-            for i, (default, inp) in enumerate(zip(vals, split_input)):
-                _, inp_val = inp.split(":")
-                if i == 0:
-                    self.assertTrue(np.isclose(float(inp_val), 100), "Didn't modify first input correctly")
-                else:
-                    self.assertTrue(np.isclose(float(inp_val), default), "Messed up first input")
+        actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
+        enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
+        split_input = enroads_input.split(" ")
+        for i, (default, inp) in enumerate(zip(vals, split_input)):
+            _, inp_val = inp.split(":")
+            if i == 0:
+                self.assertTrue(np.isclose(float(inp_val), 100), "Didn't modify first input correctly")
+            else:
+                self.assertTrue(np.isclose(float(inp_val), default), "Messed up first input")
 
-        self.evaluator.enroads_runner.construct_enroads_input({"_source_subsidy_start_time_delivered_coal": 2040})
-        with open("tests/temp/enroads_input.txt", "r", encoding="utf-8") as f:
-            enroads_input = f.read()
-            split_input = enroads_input.split(" ")
-            for i, (default, inp) in enumerate(zip(vals, split_input)):
-                _, inp_val = inp.split(":")
-                if i == 1:
-                    self.assertTrue(np.isclose(float(inp_val), 2040), "Didn't modify second input correctly")
-                else:
-                    self.assertTrue(np.isclose(float(inp_val), default), "Second input contaminated")
+        actions_dict = {"_source_subsidy_start_time_delivered_coal": 2040}
+        enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
+        split_input = enroads_input.split(" ")
+        for i, (default, inp) in enumerate(zip(vals, split_input)):
+            _, inp_val = inp.split(":")
+            if i == 1:
+                self.assertTrue(np.isclose(float(inp_val), 2040), "Didn't modify second input correctly")
+            else:
+                self.assertTrue(np.isclose(float(inp_val), default), "Second input contaminated")
 
     def test_consistent_eval(self):
         """
@@ -306,7 +301,3 @@ class TestEvaluator(unittest.TestCase):
                     bad_actions.append(action)
 
         self.assertEqual(len(bad_actions), 0, f"Sliders {bad_actions} changed the past")
-
-    def tearDown(self):
-        shutil.rmtree("tests/temp")
-

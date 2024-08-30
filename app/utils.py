@@ -12,6 +12,7 @@ from enroads_runner import EnroadsRunner
 from evolution.candidate import Candidate
 from evolution.outcomes.outcome_manager import OutcomeManager
 
+
 class EvolutionHandler():
     """
     Handles evolution results and running of prescriptors for the app.
@@ -76,7 +77,7 @@ class EvolutionHandler():
             metrics_df["Total energy below baseline"] *= -1
 
         return metrics_df
-    
+
     def prescribe_all(self, context_dict: dict[str, float]):
         """
         Takes a dict containing a single context and prescribes actions for it using all the candidates.
@@ -103,9 +104,9 @@ class EvolutionHandler():
         for context_actions_dict in context_actions_dicts:
             outcomes_df = self.runner.evaluate_actions(context_actions_dict)
             outcomes_dfs.append(outcomes_df)
-        
+
         return outcomes_dfs
-    
+
     def context_baseline_outcomes(self, context_dict: dict[str, float]):
         """
         Takes a context dict and returns the outcomes when no actions are performed.

@@ -8,6 +8,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 
+
 class EnroadsRunner():
     """
     Class that handles the running of the En-ROADS simulator.
@@ -54,9 +55,9 @@ class EnroadsRunner():
         input_specs["value"] = value
 
         # # Format the values to strings with the correct number of decimals
-        input_specs["value_str"] = input_specs.apply(lambda row: self.format_string_input(row["value"], row["decimal"]), axis=1)
-        # input_specs["value_str"] = input_specs["value"].astype(str)
-        
+        input_specs["value_str"] = input_specs.apply(lambda row: self.format_string_input(row["value"],
+                                                                                          row["decimal"]), axis=1)
+
         # Format string for En-ROADS input
         input_specs["input_col"] = input_specs["index"].astype(str) + ":" + input_specs["value_str"]
         input_str = " ".join(input_specs["input_col"])
@@ -103,4 +104,3 @@ class EnroadsRunner():
             raw_output = self.run_enroads()
         outcomes_df = pd.read_table(io.StringIO(raw_output), sep="\t")
         return outcomes_df
-
