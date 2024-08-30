@@ -89,6 +89,76 @@ class ParallelComponent():
 
         return fig
 
+    def create_spider_plot(self, cand_idxs: list[str]):
+        """
+        Creates spider plot of metrics.
+        TODO: There is currently a bug where if only "other" and "baseline" are selected, the legend will not show.
+        """
+        fig = go.Figure()
+
+        normalized_df = self.metrics_df[self.outcomes.keys()]
+        normalized_df = (normalized_df - normalized_df.mean()) / (normalized_df.std() + 1e-10)
+        normalized_df["cand_id"] = self.metrics_df["cand_id"]
+
+        outcomes_list = list(self.outcomes.keys())
+        showlegend=True
+        # If "other" is in the cand_idxs, plot all other candidates in lightgray
+        if "other" in cand_idxs:
+            for cand_idx in normalized_df["cand_id"].unique():
+                if cand_idx not in cand_idxs and cand_idx != "baseline":
+                    cand_metrics = normalized_df[normalized_df["cand_id"] == cand_idx]
+                    fig.add_trace(go.Scatterpolar(
+                        r=cand_metrics.values[0],
+                        theta=outcomes_list,
+                        # fill='toself',
+                        legendgroup="other",
+                        name="other" + " " * ((len("baseline") - len("other")) + 5),  # TODO: Hack to make legend spacing consistent
+                        line=dict(color="lightgray"),
+                        showlegend=showlegend
+                    ))
+                    showlegend=False
+
+        # Plot selected candidates besides baseline so it can be on top
+        for cand_idx in cand_idxs:
+            if cand_idx != "baseline" and cand_idx != "other":
+                cand_metrics = normalized_df[normalized_df["cand_id"] == cand_idx]
+                fig.add_trace(go.Scatterpolar(
+                    theta=outcomes_list,
+                    r=cand_metrics.values[0],
+                    # fill="toself",
+                    name=str(cand_idx) + " " * ((len("baseline") - len(str(cand_idx))) + 5),  # TODO: Hack to make legend spacing consistent
+                    line=dict(color=px.colors.qualitative.Plotly[self.all_cand_idxs.index(cand_idx)])
+                ))
+
+        # Plot baseline if selected
+        if "baseline" in cand_idxs:
+            baseline_metrics = normalized_df[normalized_df["cand_id"] == "baseline"]
+            fig.add_trace(go.Scatterpolar(
+                theta=outcomes_list,
+                r=baseline_metrics.values[0],
+                # fill="toself",
+                name="baseline",
+                line=dict(color="black")
+            ))
+
+        fig.update_layout(
+            title={
+                'text': "Prescriptor Metrics Averaged Across All SSPs",
+                'x': 0.45,  # TODO: The graph is a little off center so the title can't be centered
+                'xanchor': 'center',  # Anchor it at the center
+                'yanchor': 'top'  # Optionally keep it anchored to the top
+            },
+            polar={
+                "radialaxis":{
+                    "visible": True,
+                    "range": [normalized_df[outcomes_list].min().min(), normalized_df[outcomes_list].max().max()]
+                }
+            },
+            margin=dict(l=0, r=0, t=60, b=25)
+        )
+
+        return fig
+
     def create_button_group(self):
         """
         Creates button group to select candidates to display.
@@ -113,12 +183,29 @@ class ParallelComponent():
             children=[
                 dbc.Container(
                     fluid=True,
-                    className="py-3 d-flex flex-column",
+                    className="py-3",
                     children=[
-                        html.H2("Select a Prescriptor to Optimize With", className="text-center mb-2"),
-                        html.Div(children=dcc.Graph(id="parallel-coordinates")),
-                        html.P("Selected Prescriptors", className="text-center"),
-                        self.create_button_group()
+                        dbc.Row(
+                            html.H2("Select AI Model to Optimize With", className="text-center mb-2"),
+                        ),
+                        dbc.Row(
+                            className="text-center mb-2 w-70 mx-auto",
+                            children=[
+                                html.P("A population of AI models are trained using an evolutionary algorithm, with fitness \
+                                    being rated by the En-ROADS simulator on their average performance across all \
+                                    scenarios. The plot below shows model performances, with points closer to the middle \
+                                    being more desirable. Select and deselect points to compare models.")
+                            ]
+                        ),
+                        dbc.Row(
+                            dbc.Col(html.Div(children=dcc.Graph(id="parallel-coordinates")), width={"size": 11, "offset": 1})  # TODO: Hack to center graph
+                        ),
+                        dbc.Row(
+                            html.P("Selected Prescriptors", className="text-center"),
+                        ),
+                        dbc.Row(
+                            self.create_button_group()
+                        )
                     ]
                 )
             ]
@@ -149,4 +236,5 @@ class ParallelComponent():
             for cand_idx, deselect in zip(self.all_cand_idxs, deselected):
                 if not deselect:
                     cand_idxs.append(cand_idx)
-            return self.plot_parallel_coordinates_line(cand_idxs)
+            # return self.plot_parallel_coordinates_line(cand_idxs)
+            return self.create_spider_plot(cand_idxs)

@@ -90,35 +90,6 @@ class OutcomeComponent():
         Note: We have nested loads here. The outer load is for both graphs and triggers when the outcomes store
         is updated. Otherwise, we have individual loads for each graph.
         """
-        # div = html.Div(
-        #     className="contentBox",
-        #     children=[
-        #         html.H2("Outcomes of Prescribed Actions", style={"textAlign": "center"}),
-        #         html.Div([
-        #             html.Div([
-        #                 html.Div([
-        #                     dcc.Dropdown(self.plot_outcomes, self.plot_outcomes[0], id="outcome-dropdown-1")
-        #                 ], style={"width": "50%", "display": "inline-block"}),
-        #                 html.Div([
-        #                     dcc.Dropdown(self.plot_outcomes, self.plot_outcomes[1], id="outcome-dropdown-2")
-        #                 ], style={"width": "50%", "display": "inline-block"}),
-        #             ]),
-        #             html.Div([
-        #                 dcc.Loading([
-        #                     dcc.Store(id="context-actions-store"),
-        #                     dcc.Store(id="outcomes-store"),
-        #                     html.Div([
-        #                         dcc.Graph(id="outcome-graph-1")
-        #                     ], style={"width": "50%", "display": "inline-block"}),
-        #                     html.Div([
-        #                         dcc.Graph(id="outcome-graph-2")
-        #                     ], style={"width": "50%", "display": "inline-block"}),
-        #                 ], type="circle", target_components={"context-actions-store": "*", "outcomes-store": "*"})
-        #             ])
-        #         ])
-        #     ]
-        # )
-
         div = html.Div(
             className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
             children=[
@@ -180,12 +151,14 @@ class OutcomeComponent():
         @app.callback(
             Output("context-actions-store", "data"),
             Output("outcomes-store", "data"),
+            Output("energy-policy-store", "data"),
             [Input(f"context-slider-{i}", "value") for i in range(4)]
         )
         def update_outcomes_store(*context_values):
             """
             When the context sliders are changed, prescribe actions for the context for all candidates and return
             the actions and outcomes.
+            Also stores the energy policies in the energy-policy-store in link.py.
             TODO: Make this only load selected candidates.
             """
             context_dict = dict(zip(self.context_cols, context_values))
@@ -195,7 +168,15 @@ class OutcomeComponent():
             outcomes_dfs.append(baseline_outcomes_df)
 
             outcomes_jsonl = [outcomes_df[self.plot_outcomes].to_dict("records") for outcomes_df in outcomes_dfs]
-            return context_actions_dicts, outcomes_jsonl
+
+            # Parse energy demand policy
+            colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
+            energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
+            demands = [f"Primary energy demand of {energy}" for energy in energies]
+            selected_dfs = [outcomes_dfs[i] for i in self.all_cand_idxs[:-2]]
+            energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in selected_dfs]
+
+            return context_actions_dicts, outcomes_jsonl, energy_policy_jsonl
 
         @app.callback(
             Output("outcome-graph-1", "figure"),

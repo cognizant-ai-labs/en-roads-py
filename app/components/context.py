@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 class ContextComponent():
     """
@@ -20,8 +21,8 @@ class ContextComponent():
                              "_global_population_in_2100"]
         self.varnames = ["Long-Term Economic Growth (GDPPP)",
                          "Near-Term Economic Growth (GDPPP)",
-                         "Transition Time",
-                         "Population"]
+                         "Transition Time (years)",
+                         "Population (B)"]
         
         # Round context df here instead of automatically by Dash so that we know for sure how it's rounding.
         self.context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
@@ -58,13 +59,26 @@ class ContextComponent():
                                     "SSP4: Inequality",
                                     "SSP5: Fossil-Fueled"]
 
-        fig = px.scatter(context_chart_df,
-                        x="population",
-                        y="gdp",
-                        color="scenario",
-                        color_discrete_sequence=px.colors.qualitative.Safe,
-                        labels={"population": "Population 2100 (B)", "gdp": "GDPPP 2100 (T)"},
-                        hover_data={"description": True, "population": False, "scenario": False, "gdp": False})
+        fig = go.Figure()
+
+        # fig = px.scatter(context_chart_df,
+        #                 x="population",
+        #                 y="gdp",
+        #                 color="scenario",
+        #                 text="description",
+        #                 color_discrete_sequence=px.colors.qualitative.Safe,
+        #                 labels={"population": "Population 2100 (B)", "gdp": "GDPPP 2100 (T)"},
+        #                 hover_data={"description": True, "population": False, "scenario": False, "gdp": False})
+
+        # pylint: disable=unsubscriptable-object
+        fig.add_trace(go.Scatter(
+            x=context_chart_df["population"],
+            y=context_chart_df["gdp"],
+            mode="markers+text",
+            text=context_chart_df["scenario"],
+            textposition="top center",
+            marker=dict(color=px.colors.qualitative.Safe)
+        ))
 
         fig.update_layout(
             title = {
@@ -72,9 +86,9 @@ class ContextComponent():
                 "x": 0.5,
                 "xanchor": "center"
             },
-            xaxis_title="Population 2100 (B)",
-            yaxis_title="GDP 2100 (T$)",
-            showlegend=True
+            xaxis_title="Population in 2100 (B)",
+            yaxis_title="GDP in 2100 (T$)",
+            showlegend=False,
         )
         return fig
     
@@ -123,6 +137,13 @@ class ContextComponent():
                     children=[
                         dbc.Row(html.H2("Select a Context Scenario to Optimize For", className="text-center mb-5")),
                         dbc.Row(
+                            className="mb-2 w-70 text-center mx-auto",
+                            children=[html.P("According to the AR6 climate report: 'The five Shared Socioeconomic Pathways \
+                                       were designed to span a range of challenges to climate change \
+                                       mitigation and adaptation.' Select one of these scenarios by clicking it in the \
+                                       scatter plot below. If desired, manually modify the scenario with the sliders.")]
+                        ),
+                        dbc.Row(
                             className="flex-grow-1",
                             children=[
                                 dbc.Col(dcc.Graph(id="context-scatter", figure=self.create_context_scatter()), className="h-100"),
@@ -154,7 +175,10 @@ class ContextComponent():
         """
         ssp_row = self.ssp_df.iloc[ssp_idx]
         div = html.Div([
-            html.H4(ssp_row["ssp"] + ": " + ssp_row["description"]),
+            html.H4([
+                ssp_row["ssp"] + ": " + ssp_row["description"] + " ",
+                html.I(className=f"bi bi-{ssp_row['icon']}")
+            ]),
             html.P(ssp_row["text"])
         ])
         return div
@@ -173,7 +197,8 @@ class ContextComponent():
             TODO: Sometimes this function lags, not sure why.
             """
             if click_data:
-                scenario = int(click_data["points"][0]["customdata"][1][-1]) - 1
+                # TODO: This assumes the SSPs in the ssps.csv file are in order which they are
+                scenario = int(click_data["points"][0]["pointNumber"])
             else:
                 scenario = 0
             
