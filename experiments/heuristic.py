@@ -1,3 +1,5 @@
+import argparse
+import json
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -6,15 +8,16 @@ import pandas as pd
 
 from evolution.outcomes.enroads import EnroadsOutcome
 from enroads_runner import EnroadsRunner
+from generate_url import actions_to_url
 
 
 class Heuristic:
 
     def __init__(self, actions: list[str]):
         self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
-        self.runner = EnroadsRunner("experiments/temp")
+        self.runner = EnroadsRunner()
         self.outcome_parser = EnroadsOutcome("CO2 Equivalent Net Emissions")
-        self.actions = actions
+        self.actions = [action for action in actions]
 
     def check_action_values(self, actions_dict: dict[str, float], action: str) -> tuple[float, float]:
         row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
@@ -41,7 +44,7 @@ class Heuristic:
         action_order = []
         actions_dict = {}
 
-        actions_left = self.actions
+        actions_left = [action for action in self.actions]
         while len(actions_left) > 0:
             best_action = None
             best_action_outcome = None
@@ -88,71 +91,26 @@ class Heuristic:
         plt.imshow(grid, cmap=ListedColormap(["lightgreen", "white", "green"]))
         plt.show()
 
+    def get_heuristic_urls(self, action_order: list[str], actions_dict: dict[str, float]) -> list[str]:
+        """
+        Get the URL adding each sequential action from the action order.
+        """
+        urls = []
+        for i in range(len(action_order)):
+            url_dict = {action: actions_dict[action] for action in action_order[:i+1]}
+            urls.append(actions_to_url(url_dict))
+        return urls
+
 
 def main():
-    actions = [
-        "_source_subsidy_delivered_coal_tce",
-        "_source_subsidy_start_time_delivered_coal",
-        "_source_subsidy_stop_time_delivered_coal",
-        "_no_new_coal",
-        "_year_of_no_new_capacity_coal",
-        "_utilization_adjustment_factor_delivered_coal",
-        "_utilization_policy_start_time_delivered_coal",
-        "_utilization_policy_stop_time_delivered_coal",
-        "_target_accelerated_retirement_rate_electric_coal",
-        "_source_subsidy_delivered_oil_boe",
-        "_source_subsidy_start_time_delivered_oil",
-        "_source_subsidy_stop_time_delivered_oil",
-        "_no_new_oil",
-        "_year_of_no_new_capacity_oil",
-        "_utilization_adjustment_factor_delivered_oil",
-        "_utilization_policy_start_time_delivered_oil",
-        "_utilization_policy_stop_time_delivered_oil",
-        "_source_subsidy_delivered_gas_mcf",
-        "_source_subsidy_start_time_delivered_gas",
-        "_source_subsidy_stop_time_delivered_gas",
-        "_no_new_gas",
-        "_year_of_no_new_capacity_gas",
-        "_utilization_adjustment_factor_delivered_gas",
-        "_utilization_policy_start_time_delivered_gas",
-        "_utilization_policy_stop_time_delivered_gas",
-        "_source_subsidy_renewables_kwh",
-        "_source_subsidy_start_time_renewables",
-        "_source_subsidy_stop_time_renewables",
-        "_use_subsidies_by_feedstock",
-        "_source_subsidy_delivered_bio_boe",
-        "_source_subsidy_start_time_delivered_bio",
-        "_source_subsidy_stop_time_delivered_bio",
-        "_no_new_bio",
-        "_year_of_no_new_capacity_bio",
-        "_wood_feedstock_subsidy_boe",
-        "_crop_feedstock_subsidy_boe",
-        "_other_feedstock_subsidy_boe",
-        "_source_subsidy_nuclear_kwh",
-        "_source_subsidy_start_time_nuclear",
-        "_source_subsidy_stop_time_nuclear",
-        "_carbon_tax_initial_target",
-        "_carbon_tax_phase_1_start",
-        "_carbon_tax_time_to_achieve_initial_target",
-        "_carbon_tax_final_target",
-        "_carbon_tax_phase_3_start",
-        "_carbon_tax_time_to_achieve_final_target",
-        "_apply_carbon_tax_to_biofuels",
-        "_ccs_carbon_tax_qualifier",
-        "_qualifying_path_renewables",
-        "_qualifying_path_nuclear",
-        "_qualifying_path_new_zero_carbon",
-        "_qualifying_path_beccs",
-        "_qualifying_path_bioenergy",
-        "_qualifying_path_fossil_ccs",
-        "_qualifying_path_gas",
-        "_electric_standard_active",
-        "_electric_standard_target",
-        "_electric_standard_start_year",
-        "_electric_standard_target_time",
-        "_emissions_performance_standard",
-        "_performance_standard_time"
-    ]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, required=True)
+    args = parser.parse_args()
+    
+    with open(args.config, "r", encoding="utf-8") as f:
+        config = json.load(f)
+    actions = config["actions"]
+
     heuristic = Heuristic(actions)
     action_order, actions_dict = heuristic.find_heuristic()
     heuristic.plot_actions_used(action_order, actions_dict)

@@ -1,20 +1,6 @@
 {
-    "evolution_params": {
-        "n_generations": 100,
-        "pop_size": 100,
-        "n_elites": 10
-    },
-    "remove_population_pct": 0.7,
-    "mutation_factor": 0.1,
-    "mutation_rate": 0.1,
-    "model_params": {
-        "hidden_size": 64
-    },
-    "eval_params": {
-        "temp_dir": "evolution/temp"
-    },
-    "context": [
-    ],
+    "n_generations": 100,
+    "pop_size": 100,
     "actions": [
         "_source_subsidy_delivered_coal_tce",
         "_source_subsidy_start_time_delivered_coal",
@@ -79,14 +65,8 @@
         "_performance_standard_time"
     ],
     "outcomes": {
-        "CO2 Equivalent Net Emissions": true,
-        "Adjusted cost of energy per GJ": true,
-        "Average Percent Energy Change": true,
-        "Government net revenue below zero": false
+        "Temperature above 1.5C": true,
+        "Max cost of energy": true
     },
-    "save_path": "results/presentation/revenue",
-    "seed_params": {
-        "seed_path": "evolution/seeding/seeds/presentation",
-        "epochs": 5000
-    }
+    "save_path": "results/pymoo/novelty"
 }

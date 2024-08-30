@@ -5,6 +5,7 @@ from evolution.candidate import Candidate
 from evolution.sorting.distance_calculation.crowding_distance import CrowdingDistanceCalculator
 from evolution.sorting.nsga2_sorter import NSGA2Sorter
 
+
 class TestSorter(unittest.TestCase):
     def setUp(self):
         crowding_distance = CrowdingDistanceCalculator()
