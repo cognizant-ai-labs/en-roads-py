@@ -15,7 +15,7 @@ class Heuristic:
 
     def __init__(self, actions: list[str]):
         self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
-        self.runner = EnroadsRunner("moo/temp")
+        self.runner = EnroadsRunner()
         self.outcome_parser = EnroadsOutcome("CO2 Equivalent Net Emissions")
         self.actions = [action for action in actions]
 

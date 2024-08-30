@@ -27,7 +27,7 @@ class NNProblem(ElementwiseProblem):
         super().__init__(n_var=num_params, n_obj=len(outcomes), n_ieq_constr=0, xl=xl, xu=xu)
 
         # To evaluate candidate solutions
-        self.runner = EnroadsRunner("moo/temp")
+        self.runner = EnroadsRunner()
         self.actions = [action for action in actions]
         self.outcomes = {k: v for k, v in outcomes.items()}
         self.model_params = model_params

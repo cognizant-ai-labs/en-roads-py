@@ -9,10 +9,7 @@ from enroads_runner import EnroadsRunner
 class TotalEnergyOutcome(Outcome):
 
     def __init__(self):
-        # TODO: Can this cause a race condition?
-        temp_dir = Path("evolution/outcomes/temp")
-        temp_dir.mkdir(parents=True, exist_ok=True)
-        runner = EnroadsRunner(temp_dir=str(temp_dir))
+        runner = EnroadsRunner()
         baseline_df = runner.evaluate_actions({})
         self.baseline_energy = baseline_df["Total Primary Energy Demand"]
 

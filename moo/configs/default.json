@@ -1,6 +1,6 @@
 {
-    "n_generations": 25,
-    "pop_size": 100,
+    "n_generations": 100,
+    "pop_size": 200,
     "crowding_func": "mnn",
     "actions": [
         "_source_subsidy_delivered_coal_tce",
@@ -69,7 +69,8 @@
         "Temperature above 1.5C": true,
         "Max cost of energy": true,
         "Government net revenue below zero": false,
-        "Total energy below baseline": false
+        "Total energy below baseline": false,
+        "Action magnitude": true
     },
-    "save_path": "results/pymoo/context_test"
+    "save_path": "results/pymoo/context-updated2"
 }
