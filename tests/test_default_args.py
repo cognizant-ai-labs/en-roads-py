@@ -1,14 +1,13 @@
 """
 Tests the enroads model
 """
-from pathlib import Path
-import shutil
+import io
 import unittest
 
-import numpy as np
 import pandas as pd
 
 from enroads_runner import EnroadsRunner
+
 
 class TestDefaultArgs(unittest.TestCase):
     """
@@ -17,41 +16,27 @@ class TestDefaultArgs(unittest.TestCase):
     the default answer.
     """
     def setUp(self):
-        self.runner = EnroadsRunner("tests/temp_dir")
+        self.runner = EnroadsRunner()
         self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         self.input_specs["index"] = range(len(self.input_specs))
-        self.temp_dir = Path("tests/temp_dir")
 
-    def df_close(self, df1, df2):
+    def test_construct_default_args(self):
         """
-        Checks if the dataframe is close enough to be considered the same.
+        Tests if no args is the same as default args is the same as manually constructing default args
         """
-        vals1 = df1.values
-        vals2 = df2.values
-        close = np.isclose(vals1, vals2, rtol=1e-4, atol=1e-4)
-        num_close = close.sum()
-        return num_close > 0.99 * close.size
+        input_str = self.runner.construct_enroads_input({})
+        default_str = " ".join(self.input_specs["index"].astype(str) + ":" + self.input_specs["defaultValue"].astype(str))
+        
+        no_arg_output = self.runner.run_enroads()
+        input_output = self.runner.run_enroads(input_str)
+        default_output = self.runner.run_enroads(default_str)
 
-    def test_default_args(self):
-        """
-        Test if not passing arguments is the same as taking the default args.
-        WARNING: For some reason this test fails with one variable being 0.3 off and another being 0.5
-        off in 1 row out of 112.
-        I think it works fine? We fudge the df_close checker so that this test passes.
-        """
-        input_col = self.input_specs["index"].astype(str) + ":" + self.input_specs["defaultValue"].astype(str)
-        input_str = " ".join(input_col)
-        with open(self.temp_dir / "temp_input.txt", "w", encoding="utf-8") as f:
-            f.write(input_str)
+        no_arg_df = pd.read_table(io.StringIO(no_arg_output), sep="\t")
+        input_df = pd.read_table(io.StringIO(input_output), sep="\t")
+        default_df = pd.read_table(io.StringIO(default_output), sep="\t")
 
-        self.runner.run_enroads(self.temp_dir / "no_default.txt")
-        self.runner.run_enroads(self.temp_dir / "default.txt", self.temp_dir / "temp_input.txt")
-
-        no_default_df = pd.read_csv(self.temp_dir / "no_default.txt", sep="\t")
-        default_df = pd.read_csv(self.temp_dir / "default.txt", sep="\t")
-        pd.testing.assert_frame_equal(no_default_df, default_df)
-        self.assertTrue(no_default_df.equals(default_df))
-        # self.assertTrue(self.df_close(no_default_df, default_df))
+        pd.testing.assert_frame_equal(input_df, default_df)
+        pd.testing.assert_frame_equal(no_arg_df, default_df)
 
     def test_non_default_args(self):
         """
@@ -60,16 +45,8 @@ class TestDefaultArgs(unittest.TestCase):
         avg_col = (self.input_specs["minValue"] + self.input_specs["maxValue"]) / 2
         input_col = self.input_specs["index"].astype(str) + ":" + avg_col.astype(str)
         input_str = " ".join(input_col)
-        with open(self.temp_dir / "temp_input.txt", "w", encoding="utf-8") as f:
-            f.write(input_str)
 
-        self.runner.run_enroads(self.temp_dir / "no_default.txt")
-        self.runner.run_enroads(self.temp_dir / "avg.txt", self.temp_dir / "temp_input.txt")
+        no_default_output = self.runner.run_enroads(input_str)
+        default_output = self.runner.run_enroads()
 
-        no_default_df = pd.read_csv(self.temp_dir / "no_default.txt", sep="\t")
-        avg_df = pd.read_csv(self.temp_dir / "avg.txt", sep="\t")
-
-        self.assertFalse(self.df_close(no_default_df, avg_df))
-
-    def tearDown(self):
-        shutil.rmtree(self.temp_dir)
+        self.assertNotEqual(no_default_output, default_output)

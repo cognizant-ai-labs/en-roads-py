@@ -1,12 +1,18 @@
 import pandas as pd
 
 from evolution.outcomes.actions import ActionsOutcome
+from evolution.outcomes.action_magnitude import ActionMagnitudeOutcome
 from evolution.outcomes.average_cost import AverageCostOutcome
+from evolution.outcomes.cost_change_year import CostChangeYearOutcome
 from evolution.outcomes.energy_change import EnergyChangeOutcome
 from evolution.outcomes.enroads import EnroadsOutcome
+from evolution.outcomes.gdp_mse import GDPOutcome
+from evolution.outcomes.max_cost import MaxCostOutcome
 from evolution.outcomes.near_cost import NearCostOutcome
+from evolution.outcomes.paris_relax import ParisRelaxOutcome
 from evolution.outcomes.paris import ParisOutcome
 from evolution.outcomes.revenue import RevenueOutcome
+from evolution.outcomes.total_energy import TotalEnergyOutcome
 from evolution.outcomes.zero_emissions import ZeroEmissionsOutcome
 
 
@@ -19,6 +25,8 @@ class OutcomeManager():
         for outcome in outcomes:
             if outcome == "Actions taken":
                 outcome_dict[outcome] = ActionsOutcome()
+            elif outcome == "Action magnitude":
+                outcome_dict[outcome] = ActionMagnitudeOutcome()
             elif outcome == "Average Adjusted cost of energy per GJ":
                 outcome_dict[outcome] = AverageCostOutcome()
             elif outcome == "Average Percent Energy Change":
@@ -31,6 +39,17 @@ class OutcomeManager():
                 outcome_dict[outcome] = RevenueOutcome()
             elif outcome == "Emissions Above Paris Agreement":
                 outcome_dict[outcome] = ParisOutcome()
+            elif outcome == "Max cost of energy":
+                outcome_dict[outcome] = MaxCostOutcome()
+            elif outcome == "Cost change year":
+                outcome_dict[outcome] = CostChangeYearOutcome()
+            elif outcome == "Total energy below baseline":
+                outcome_dict[outcome] = TotalEnergyOutcome()
+            elif outcome == "Temperature above 1.5C":
+                outcome_dict[outcome] = ParisRelaxOutcome()
+            elif "GDP MSE" in outcome:
+                scenario = int(outcome.split(" ")[-1])
+                outcome_dict[outcome] = GDPOutcome(scenario)
             else:
                 outcome_dict[outcome] = EnroadsOutcome(outcome)
 
