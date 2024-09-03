@@ -1,6 +1,8 @@
 """
 OutcomeComponent class for the outcome section of the app.
 """
+import sys
+
 from dash import Input, Output, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
