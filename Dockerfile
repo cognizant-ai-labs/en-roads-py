@@ -1,5 +1,8 @@
 FROM python:3.10-slim
 
+ARG ENROADS_ID
+ARG ENROADS_PASSWORD
+
 WORKDIR /en-roads-py
 
 # Debian basics and cleaning up in one RUN statement to reduce image size
@@ -15,8 +18,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy source files over
 COPY . .
 
-# Python setup script - downloads data and processes it
-RUN python -m app.process_data
+# Download En-ROADS SDK and extract it
+ENV ENROADS_ID=$ENROADS_ID
+ENV ENROADS_PASSWORD=$ENROADS_PASSWORD
+RUN python -m enroadspy.download_sdk
 
 # Expose Flask (Dash) port
 EXPOSE 4057
