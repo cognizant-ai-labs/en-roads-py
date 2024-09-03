@@ -10,9 +10,13 @@ from evolution.candidate import Candidate
 
 
 class Experimenter:
+    """
+    Helper functions to be used in experimentation.
+    """
     def __init__(self, results_dir: Path):
         self.results_dir = results_dir
-        config = json.load(open(results_dir / "config.json", "r", encoding="utf-8"))
+        with open(results_dir / "config.json", "r", encoding="utf-8") as f:
+            config = json.load(f)
         self.context = config["context"]
         self.actions = config["actions"]
         self.outcomes = config["outcomes"]
@@ -20,9 +24,9 @@ class Experimenter:
         self.model_params = config["model_params"]
 
     def get_candidate_actions(self,
-                            candidate: Candidate,
-                            torch_context: torch.Tensor,
-                            context_vals: torch.Tensor) -> dict[str, float]:
+                              candidate: Candidate,
+                              torch_context: torch.Tensor,
+                              context_vals: torch.Tensor) -> dict[str, float]:
         """
         Gets actions from a candidate given a context
         """
@@ -30,7 +34,6 @@ class Experimenter:
         context_dict = dict(zip(self.context, context_vals.tolist()))
         actions_dict.update(context_dict)
         return actions_dict
-
 
     def get_candidate_from_id(self, cand_id: str) -> Candidate:
         """

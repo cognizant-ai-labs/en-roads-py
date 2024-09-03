@@ -43,8 +43,8 @@ class NoveltyProblem(ElementwiseProblem):
 
         # To evaluate candidate solutions
         self.runner = EnroadsRunner()
-        self.actions = [action for action in actions]
-        self.outcomes = {k: v for k, v in outcomes.items()}
+        self.actions = list(actions)
+        self.outcomes = dict(outcomes.items())
         self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
 
         # To parse switches

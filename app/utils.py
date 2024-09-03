@@ -61,7 +61,7 @@ class EvolutionHandler():
             baseline_metrics = self.outcome_manager.process_outcomes(context_dict, baseline_outcomes)
             for outcome, val in baseline_metrics.items():
                 baseline_metrics_avg[outcome] += val
-        
+
         # Finish preprocessing baseline metrics
         for outcome in self.outcomes:
             baseline_metrics_avg[outcome] /= len(self.context_df)

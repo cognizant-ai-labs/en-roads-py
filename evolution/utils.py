@@ -1,7 +1,8 @@
 """
-Utility functions to be used throughout the project.
+Utility functions to be used throughout the evolution module.
 """
 import pandas as pd
+
 
 def modify_config(config: dict):
     """
@@ -15,7 +16,8 @@ def modify_config(config: dict):
     actions = config["actions"]
     if len(config["context"]) == 0:
         adj_context = input_specs[~input_specs["varId"].isin(actions)]
-        assert len(adj_context) == len(input_specs) - len(actions), f"Context is not the correct length. Expected {len(input_specs) - len(actions)}, got {len(adj_context)}."
+        assert len(adj_context) == len(input_specs) - len(actions), \
+            f"Context is not the correct length. Expected {len(input_specs) - len(actions)}, got {len(adj_context)}."
         config["context"] = adj_context["varId"].tolist()
 
     # Set up model params

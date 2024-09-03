@@ -1,3 +1,6 @@
+"""
+Comparing our evolution results to a greedy heuristic.
+"""
 import argparse
 import json
 
@@ -12,14 +15,21 @@ from generate_url import actions_to_url
 
 
 class Heuristic:
-
+    """
+    Finds the best action by maxing or minning every action and taking the best one.
+    We can also generate a plot of these results to visualize which actions are most important greedily.
+    """
     def __init__(self, actions: list[str]):
         self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
         self.runner = EnroadsRunner()
         self.outcome_parser = EnroadsOutcome("CO2 Equivalent Net Emissions")
-        self.actions = [action for action in actions]
+        self.actions = list(actions)
 
     def check_action_values(self, actions_dict: dict[str, float], action: str) -> tuple[float, float]:
+        """
+        Takes an action and sees if the max or the min is better. Then returns either the max or min and the resulting
+        value.
+        """
         row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
         if row["kind"] == "switch":
             possibilities = [row["onValue"], row["offValue"]]
@@ -41,10 +51,14 @@ class Heuristic:
 
     # pylint: disable=no-member
     def find_heuristic(self) -> tuple[list[str], dict[str, float]]:
+        """
+        Finds the best actions greedily by going over each action we haven't used left, looking at if its max or 
+        min value is the best, then adding it if so.
+        """
         action_order = []
         actions_dict = {}
 
-        actions_left = [action for action in self.actions]
+        actions_left = list(self.actions)
         while len(actions_left) > 0:
             best_action = None
             best_action_outcome = None
@@ -61,18 +75,20 @@ class Heuristic:
             actions_left.remove(best_action)
 
         return action_order, actions_dict
-    
     # pylint: enable=no-member
 
     def plot_actions_used(self, action_order: list[str], actions_dict: dict[str, float]):
+        """
+        Plot our actions used in a nice grid. This will form a staircase ideally that shows the actions used.
+        """
         grid = []
-        
+
         for i, action in enumerate(action_order):
             val = actions_dict[action]
             row = np.zeros(len(action_order))
             max_value = self.input_specs[self.input_specs["varId"] == action].iloc[0]["maxValue"]
             on_value = self.input_specs[self.input_specs["varId"] == action].iloc[0]["onValue"]
-            if val == max_value or val == on_value:
+            if val in (max_value, on_value):
                 row[:i+1] = 1
             else:
                 row[:i+1] = -1
@@ -84,7 +100,7 @@ class Heuristic:
 
         grid = np.stack(grid).T
         grid = np.flip(grid, axis=0)
-        plt.figure(figsize=(9,9))
+        plt.figure(figsize=(9, 9))
         plt.yticks(range(len(action_labels)), reversed(action_labels))
         plt.xticks(range(len(action_labels)), rotation=90)
         plt.title("Greedy Heuristic Actions Used")
@@ -103,10 +119,13 @@ class Heuristic:
 
 
 def main():
+    """
+    Main method to run and plot our heuristics.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
     args = parser.parse_args()
-    
+
     with open(args.config, "r", encoding="utf-8") as f:
         config = json.load(f)
     actions = config["actions"]
