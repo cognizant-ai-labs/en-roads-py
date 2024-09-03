@@ -12,6 +12,7 @@ import pandas as pd
 from evolution.candidate import Candidate
 from evolution.evaluation.evaluator import Evaluator
 
+
 def main():
     """
     Takes in a candidate id and opens the browser to the enroads model with the candidate's actions.
@@ -25,6 +26,7 @@ def main():
     results_dir = Path(args.results_dir)
     cand_id = args.cand_id
     open_browser(results_dir, cand_id, 0)
+
 
 def open_browser(results_dir, cand_id, input_idx):
     """
@@ -46,10 +48,9 @@ def open_browser(results_dir, cand_id, input_idx):
     actions_dict.update(context_dict)
 
     url = actions_to_url(actions_dict)
-    
+
     webbrowser.open(url)
 
-    shutil.rmtree(temp_dir)
 
 def actions_to_url(actions_dict: dict[str, float]) -> str:
     """
@@ -82,6 +83,7 @@ def generate_actions_dict(url: str):
         actions_dict[row["varId"]] = float(val)
 
     return actions_dict
+
 
 if __name__ == "__main__":
     main()
