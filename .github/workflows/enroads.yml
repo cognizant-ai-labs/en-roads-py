@@ -22,6 +22,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install pylint flake8
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Download En-ROADS sdk
+      env:
+        ENROADS_ID: ${{ secrets.ENROADS_ID }}
+        ENROADS_PASSWORD: ${{ secrets.ENROADS_PASSWORD }}
+      run: python -m enroadspy.download_sdk
     - name: Lint with PyLint
       run: pylint .
     - name: Lint with Flake8
