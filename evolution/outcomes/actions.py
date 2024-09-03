@@ -1,12 +1,17 @@
-import pandas as pd
-
+"""
+Outcome counting number of actions taken.
+"""
 from evolution.outcomes.outcome import Outcome
+
+from enroadspy import load_input_specs
 
 
 class ActionsOutcome(Outcome):
-
+    """
+    Counts number of actions taken by seeing which ones differ from the default.
+    """
     def __init__(self):
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
 
     def process_outcomes(self, actions_dict: dict[str, float], _) -> float:
         """

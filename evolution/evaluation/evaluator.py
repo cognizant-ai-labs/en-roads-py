@@ -10,7 +10,8 @@ from tqdm import tqdm
 from evolution.candidate import Candidate
 from evolution.evaluation.data import ContextDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
-from enroads_runner import EnroadsRunner
+from enroadspy import load_input_specs
+from enroadspy.enroads_runner import EnroadsRunner
 
 
 class Evaluator:
@@ -25,7 +26,7 @@ class Evaluator:
         self.outcome_manager = OutcomeManager(outcomes)
 
         # Precise float is required to load the enroads inputs properly
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
 
         self.context = context
         # Context Dataset outputs a scaled tensor and nonscaled tensor. The scaled tensor goes into PyTorch and

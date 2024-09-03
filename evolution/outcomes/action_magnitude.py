@@ -1,6 +1,10 @@
-import pandas as pd
-
+"""
+Outcome to see the difference between the actions taken and the default actions.
+"""
 from evolution.outcomes.outcome import Outcome
+
+from enroadspy import load_input_specs
+
 
 class ActionMagnitudeOutcome(Outcome):
     """
@@ -9,7 +13,7 @@ class ActionMagnitudeOutcome(Outcome):
     """
     # pylint: disable=no-member
     def __init__(self):
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         scaling_values = {}
         for _, row in input_specs.iterrows():
             if row["kind"] == "slider":

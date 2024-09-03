@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 import shutil
 
-import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -14,7 +13,9 @@ from tqdm import tqdm
 from evolution.candidate import NNPrescriptor
 from evolution.evaluation.evaluator import Evaluator
 from evolution.utils import modify_config
-from generate_url import generate_actions_dict
+from enroadspy import load_input_specs
+from enroadspy.generate_url import generate_actions_dict
+
 
 def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: DataLoader, label: torch.Tensor):
     """
@@ -43,12 +44,13 @@ def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: Dat
             pbar.set_description(f"Avg Loss: {(avg_loss / n):.5f}")
     torch.save(model.state_dict(), seed_path)
 
+
 def encode_action_labels(actions: list[str], actions_dict: dict[str, float]) -> torch.Tensor:
     """
     Encodes actions in en-roads format to torch format to be used in the model.
     Min/max scales slider variables and sets switches to 0 or 1 based on off/on.
     """
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    input_specs = load_input_specs()
     label = []
     for action in actions:
         value = actions_dict[action]
@@ -60,7 +62,7 @@ def encode_action_labels(actions: list[str], actions_dict: dict[str, float]) -> 
             label.append(1 if value == row["onValue"] else 0)
         else:
             raise ValueError(f"Unknown kind {row['kind']}")
-        
+
     return torch.tensor(label, dtype=torch.float32)
 
 
@@ -68,7 +70,7 @@ def create_default_labels(actions: list[str]):
     """
     WARNING: Labels have to be added in the exact same order as the model.
     """
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    input_specs = load_input_specs()
     categories = []
     for action in actions:
         possibilities = []
@@ -89,11 +91,12 @@ def create_default_labels(actions: list[str]):
         labels.append(label)
     return labels
 
+
 def create_custom_labels(actions: list[str], seed_urls: list[str]):
     """
     WARNING: Labels have to be added in the exact same order as the model.
     """
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    input_specs = load_input_specs()
     actions_dicts = [generate_actions_dict(url) for url in seed_urls]
     labels = []
     for actions_dict in actions_dicts:
@@ -106,6 +109,7 @@ def create_custom_labels(actions: list[str], seed_urls: list[str]):
         labels.append(label)
 
     return labels
+
 
 def main():
     """
@@ -151,6 +155,7 @@ def main():
                    seed_dir / f"0_{i}.pt",
                    context_dataloader,
                    label)
+
 
 if __name__ == "__main__":
     main()
