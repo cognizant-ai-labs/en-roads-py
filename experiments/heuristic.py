@@ -7,11 +7,11 @@ import json
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
-import pandas as pd
 
 from evolution.outcomes.enroads import EnroadsOutcome
-from enroads_runner import EnroadsRunner
-from generate_url import actions_to_url
+from enroadspy import load_input_specs
+from enroadspy.enroads_runner import EnroadsRunner
+from enroadspy.generate_url import actions_to_url
 
 
 class Heuristic:
@@ -20,7 +20,7 @@ class Heuristic:
     We can also generate a plot of these results to visualize which actions are most important greedily.
     """
     def __init__(self, actions: list[str]):
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
         self.runner = EnroadsRunner()
         self.outcome_parser = EnroadsOutcome("CO2 Equivalent Net Emissions")
         self.actions = list(actions)
