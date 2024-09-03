@@ -18,7 +18,7 @@ class EvolutionHandler():
     Handles evolution results and running of prescriptors for the app.
     """
     def __init__(self):
-        save_path = "results/pymoo/context-updated"
+        save_path = "app/results"
         with open(save_path + "/config.json", 'r', encoding="utf-8") as f:
             config = json.load(f)
 
