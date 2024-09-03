@@ -86,6 +86,9 @@ def optimize(config: dict, nn: bool):
     with open(Path(config["save_path"]) / "results", "wb") as f:
         dill.dump(res, f)
 
+    np.save(Path(config["save_path"]) / "X.npy", res.pop.get("X"))
+    np.save(Path(config["save_path"]) / "F.npy", res.pop.get("F"))
+
 
 def main():
     """

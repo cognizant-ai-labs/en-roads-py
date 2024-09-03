@@ -3,7 +3,7 @@ Utilities for the demo app.
 """
 import json
 
-import dill
+import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import torch
@@ -27,11 +27,8 @@ class EvolutionHandler():
         # TODO: Make this not hard-coded
         self.model_params = {"in_size": 4, "hidden_size": 16, "out_size": len(self.actions)}
 
-        with open(save_path + "/results", 'rb') as f:
-            res = dill.load(f)
-
-        self.X = res.X
-        self.F = res.F
+        self.X = np.load(save_path + "/X.npy")
+        self.F = np.load(save_path + "/F.npy")
 
         context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
         self.context_df = context_df.drop(columns=["F", "scenario"])
