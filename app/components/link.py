@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 
-from generate_url import actions_to_url
+from enroadspy.generate_url import actions_to_url
 
 
 class LinkComponent():

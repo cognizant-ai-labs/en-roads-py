@@ -8,6 +8,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from enroadspy import load_input_specs
+
 
 class ContextComponent():
     """
@@ -27,7 +29,7 @@ class ContextComponent():
 
         # Round context df here instead of automatically by Dash so that we know for sure how it's rounding.
         self.context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         for col in self.context_cols:
             row = input_specs[input_specs["varId"] == col].iloc[0]
             step = row["step"]
@@ -88,7 +90,7 @@ class ContextComponent():
         """
         Creates div showing context scatter plot next to context sliders.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         sliders = []
         for i, (context_col, varname) in enumerate(zip(self.context_cols, self.varnames)):
             row = input_specs[input_specs["varId"] == context_col].iloc[0]
