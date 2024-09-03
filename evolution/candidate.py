@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import torch
 
+from enroadspy import load_input_specs
+
 
 class Candidate():
     """
@@ -34,7 +36,7 @@ class Candidate():
         self.model = NNPrescriptor(**model_params).to("mps")
         self.model.eval()
 
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
         self.scaling_params = self.initialize_scaling_params(actions)
 
     @classmethod
@@ -89,7 +91,7 @@ class Candidate():
         """
         Records information from inputSpecs that we need to parse our outputs.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         bias = []
         scaler = []
         binary_mask = []

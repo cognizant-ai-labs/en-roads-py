@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
-from enroads_runner import EnroadsRunner
+from enroadspy.enroads_runner import EnroadsRunner
 
 
 class TotalEnergyOutcome(Outcome):
