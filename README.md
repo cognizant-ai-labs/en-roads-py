@@ -4,7 +4,7 @@ Immediate action is required to combat climate change. The technology behind Cog
 
 ## En-ROADS Wrapper
 
-En-ROADS is a climate change simulator developed by Climate Interactive. We have created a wrapper around the SDK to make it simple to use in a Python application. See `enroads_runner.py` for the main class that runs the SDK. The SDK is not included in this repository and must be requested from Climate Interactive.
+En-ROADS is a climate change simulator developed by Climate Interactive. We have created a wrapper around the SDK to make it simple to use in a Python application which can be found in `enroadspy`. See `enroads_runner.py` for the main class that runs the SDK. The SDK is not included in this repository and must be requested from Climate Interactive.
 
 The input data format is a crazy long JSON object which I copied out of the source code, pasted into `inputSpecs.py`, and parsed into `inputSpecs.jsonl`. This format is used by the rest of the code.
 

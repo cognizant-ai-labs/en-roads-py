@@ -3,9 +3,8 @@ Tests URL Generation.
 """
 import unittest
 
-import pandas as pd
-
-from generate_url import actions_to_url, generate_actions_dict
+from enroadspy import load_input_specs
+from enroadspy.generate_url import actions_to_url, generate_actions_dict
 
 
 class TestURLGenerator(unittest.TestCase):
@@ -14,7 +13,7 @@ class TestURLGenerator(unittest.TestCase):
     TODO: The default URL doesn't work for some reason.
     """
     def setUp(self):
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
 
     def test_generate_url(self):
         """

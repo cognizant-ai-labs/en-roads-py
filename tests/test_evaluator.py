@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
+from enroadspy import load_input_specs
 from evolution.utils import modify_config
 from evolution.candidate import Candidate
 from evolution.evaluation.evaluator import Evaluator
@@ -167,7 +168,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Checks that our default input equals the input specs file.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input({})
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(input_specs["defaultValue"].to_list(), split_input)):
@@ -178,7 +179,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Tests that only the actions we choose to change are changed in the input.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
         actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
@@ -195,7 +196,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Tests inputs don't contaminate each other.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
         actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
@@ -234,7 +235,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Checks to see if the checkboxes actually change the output of the model.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         # Switch all checkboxes to true
         true_actions = {}
         for action in self.config["actions"]:
@@ -258,7 +259,7 @@ class TestEvaluator(unittest.TestCase):
         Checks to see if changing each switch messes up the past.
         TODO: We hard-code some exceptions because we believe it's ok for them to change the past.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
         for action in self.config["actions"]:
@@ -286,7 +287,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Checks to see if setting the slider to the min or max value changes the past.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
         # TODO: When we set this to input_specs['varId'].unique() we get some fails we need to account for.
