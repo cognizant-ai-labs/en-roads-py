@@ -4,7 +4,6 @@ Script that allows us to visualize the results of our model on the En-ROADS webs
 import argparse
 import json
 from pathlib import Path
-import shutil
 import webbrowser
 
 import pandas as pd
@@ -33,7 +32,8 @@ def open_browser(results_dir, cand_id, input_idx):
     Loads seed from results_dir, loads context based on results_dir's config, runs context through model,
     then opens browser to en-roads with the prescribed actions and proper context.
     """
-    config = json.load(open(results_dir / "config.json", encoding="utf-8"))
+    with open(results_dir / "config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
 
     # Get prescribed actions from model
     evaluator = Evaluator(config["context"], config["actions"], config["outcomes"])

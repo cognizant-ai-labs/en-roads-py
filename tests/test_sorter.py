@@ -1,3 +1,6 @@
+"""
+Tests NSGA-II Sorting.
+"""
 import itertools
 import unittest
 
@@ -7,6 +10,9 @@ from evolution.sorting.nsga2_sorter import NSGA2Sorter
 
 
 class TestSorter(unittest.TestCase):
+    """
+    Class that tests the NSGA-II sorting implementation in our evolution.
+    """
     def setUp(self):
         crowding_distance = CrowdingDistanceCalculator()
         self.sorter = NSGA2Sorter(crowding_distance)
@@ -26,7 +32,7 @@ class TestSorter(unittest.TestCase):
                 return False
             if cand1_a > cand2_a:
                 better = True
-        
+
         if b_asc:
             if cand1_b > cand2_b:
                 return False
@@ -39,7 +45,6 @@ class TestSorter(unittest.TestCase):
                 better = True
         return better
 
-
     def test_domination(self):
         """
         Tests domination for all possible combinations of ascension or descending A and B objectives.
@@ -47,10 +52,12 @@ class TestSorter(unittest.TestCase):
         # Iterate over every possible combination of A ascending B descending, etc.
         ascending_combinations = list(itertools.product([True, False], repeat=2))
         for a_asc, b_asc in ascending_combinations:
-            cand_config = {"parents": [],
-                        "model_params": {"in_size": 1, "hidden_size": 1, "out_size": 1},
-                        "actions": ["_source_subsidy_delivered_coal_tce"],
-                        "outcomes": {"A": a_asc, "B": b_asc}}
+            cand_config = {
+                "parents": [],
+                "model_params": {"in_size": 1, "hidden_size": 1, "out_size": 1},
+                "actions": ["_source_subsidy_delivered_coal_tce"],
+                "outcomes": {"A": a_asc, "B": b_asc}
+            }
 
             points = [(0, 0), (1, 1), (0, 1), (1, 0)]
             # Iterate over every possible combination of metric values
@@ -63,5 +70,6 @@ class TestSorter(unittest.TestCase):
 
                 dominates_pred = self.sorter.dominates(candidate1, candidate2)
                 dominates_true = self.manual_dominates(a_asc, b_asc, cand1_a, cand1_b, cand2_a, cand2_b)
-                self.assertEqual(dominates_pred, dominates_true, msg=f"Failed for {a_asc, b_asc} and {cand1_a, cand1_b} and {cand2_a, cand2_b}")
-        
+                self.assertEqual(dominates_pred,
+                                 dominates_true,
+                                 msg=f"Failed for {a_asc, b_asc} and {cand1_a, cand1_b} and {cand2_a, cand2_b}")

@@ -14,7 +14,12 @@ class Candidate():
     Candidate class that holds the model and stores evaluation and sorting information for evolution.
     Model can be persisted to disk.
     """
-    def __init__(self, cand_id: str, parents: list[str], model_params: dict, actions: list[str], outcomes: dict[str, bool]):
+    def __init__(self,
+                 cand_id: str,
+                 parents: list[str],
+                 model_params: dict,
+                 actions: list[str],
+                 outcomes: dict[str, bool]):
         self.cand_id = cand_id
         self.actions = actions
         self.outcomes = outcomes
@@ -110,7 +115,7 @@ class Candidate():
                 binary_mask.append(True)
             else:
                 raise ValueError(f"Unknown kind: {row['kind']}")
-            
+
         bias = torch.tensor(bias, dtype=torch.float32)
         scaler = torch.tensor(scaler, dtype=torch.float32)
         steps = torch.tensor(steps, dtype=torch.float32)
@@ -122,9 +127,9 @@ class Candidate():
         Takes switches and makes them binary by sigmoiding then snapping to 0 or 1
         :param scaled: Tensor of shape (batch_size, num_actions)
         """
-        scaled[:,binary_mask] = (scaled[:,binary_mask] > 0.5).float()
+        scaled[:, binary_mask] = (scaled[:, binary_mask] > 0.5).float()
         return scaled
-    
+
     def scale_end_times(self, output: torch.Tensor, end_date_idxs: list[int], scaler: torch.Tensor, bias: torch.Tensor):
         """
         Scales end time based on start time's value.
@@ -192,7 +197,7 @@ class Candidate():
         outputs = self.decode_torch_output(nn_outputs)
         actions_dicts = []
         for output in outputs:
-            actions_dict = {action: value for action, value in zip(self.actions, output)}
+            actions_dict = dict(zip(self.actions, output))
             self.fix_switch_values(actions_dict)
             self.clip_min_max(actions_dict)
             actions_dicts.append(actions_dict)
@@ -214,9 +219,10 @@ class Candidate():
 
     def __str__(self):
         return f"Candidate({self.cand_id})"
-    
+
     def __repr__(self):
         return f"Candidate({self.cand_id})"
+
 
 class NNPrescriptor(torch.nn.Module):
     """
@@ -245,4 +251,3 @@ class NNPrescriptor(torch.nn.Module):
         """
         nn_output = self.nn(x)
         return nn_output
-    

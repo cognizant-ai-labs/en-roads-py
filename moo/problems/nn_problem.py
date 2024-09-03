@@ -16,7 +16,12 @@ class NNProblem(ElementwiseProblem):
     """
     Multi-objective optimization problem for En-ROADS in which we optimize the parameters of a neural network.
     """
-    def __init__(self, context_df: pd.DataFrame, model_params: dict, actions: list[str], outcomes: dict[str, bool], batch_size=128):
+    def __init__(self,
+                 context_df: pd.DataFrame,
+                 model_params: dict,
+                 actions: list[str],
+                 outcomes: dict[str, bool],
+                 batch_size=128):
         in_size = model_params["in_size"]
         hidden_size = model_params["hidden_size"]
         out_size = model_params["out_size"]
@@ -28,8 +33,8 @@ class NNProblem(ElementwiseProblem):
 
         # To evaluate candidate solutions
         self.runner = EnroadsRunner()
-        self.actions = [action for action in actions]
-        self.outcomes = {k: v for k, v in outcomes.items()}
+        self.actions = list(actions)
+        self.outcomes = dict(outcomes.items())
         self.model_params = model_params
         self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
 
@@ -54,7 +59,7 @@ class NNProblem(ElementwiseProblem):
             actions_dict.update(context_dict)
 
         return context_actions_dicts
-    
+
     def run_enroads(self, context_actions_dicts: list[dict[str, float]]) -> list[pd.DataFrame]:
         """
         Takes a list of context + actions dicts and runs enroads for each, returning a list of outcomes_dfs.
@@ -69,13 +74,13 @@ class NNProblem(ElementwiseProblem):
     def _evaluate(self, x, out, *args, **kwargs):
         context_actions_dicts = self.params_to_context_actions_dicts(x)
         outcomes_dfs = self.run_enroads(context_actions_dicts)
-        
+
         # Process outcomes into metrics
         results = []
         for context_actions_dict, outcomes_df in zip(context_actions_dicts, outcomes_dfs):
             results_dict = self.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
             results.append(results_dict)
-        
+
         # For each outcome, take the mean over all contexts, then negate if we are maximizing
         f = []
         for outcome, minimize in self.outcomes.items():
@@ -100,6 +105,6 @@ class ContextDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.context_tensor)
-    
+
     def __getitem__(self, idx):
         return self.context_tensor[idx], self.label_tensor[idx]

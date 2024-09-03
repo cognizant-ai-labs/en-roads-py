@@ -107,8 +107,7 @@ class EnroadsRunner():
 
         if result.returncode == 0:
             return result.stdout
-        else:
-            raise ValueError(f"Enroads failed with error code {result.returncode} and message {result.stderr}")
+        raise ValueError(f"Enroads failed with error code {result.returncode} and message {result.stderr}")
 
     def evaluate_actions(self, actions_dict: dict[str, str]):
         """
