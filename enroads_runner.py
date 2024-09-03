@@ -65,6 +65,23 @@ class EnroadsRunner():
         return input_str
     # pylint: enable=no-member
 
+    def check_input_string(self, input_str: str) -> bool:
+        """
+        Checks if the input string is valid for security purposes.
+        1. Makes sure the input string is below a certain size in bytes (10,000).
+        2. Makes sure the input string's values are numeric.
+        """
+        if len(input_str.encode('utf-8')) > 10000:
+            return False
+        for pair in input_str.split(" "):
+            try:
+                idx, val = pair.split(":")
+                int(idx)
+                float(val)
+            except ValueError:
+                return False
+        return True
+
     def run_enroads(self, input_str=None):
         """
         Simple function to run the enroads simulator. A temporary file is created storing our input string as the
@@ -75,6 +92,9 @@ class EnroadsRunner():
             index number from the value number with no spaces. Index numbers are zero-based.
         NOTE: The indices are the line numbers in inputSpecs.jsonl starting from 0, NOT the id column.
         """
+        if input_str and not self.check_input_string(input_str):
+            raise ValueError("Invalid input string")
+
         command = ["./en-roads-sdk-v24.6.0-beta1/c/enroads"]
         if input_str:
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as temp_file:
