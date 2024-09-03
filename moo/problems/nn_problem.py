@@ -7,7 +7,7 @@ from pymoo.core.problem import ElementwiseProblem
 from sklearn.preprocessing import StandardScaler
 import torch
 
-from enroads_runner import EnroadsRunner
+from enroadspy.enroads_runner import EnroadsRunner
 from evolution.candidate import Candidate
 from evolution.outcomes.outcome_manager import OutcomeManager
 

@@ -17,6 +17,7 @@ from pymoo.operators.survival.rank_and_crowding import RankAndCrowding
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
 
+from enroadspy import load_input_specs
 from moo.problems.enroads_problem import EnroadsProblem
 from moo.problems.nn_problem import NNProblem
 
@@ -46,7 +47,7 @@ def seed_default(actions: list[str], pop_size: int) -> np.ndarray:
     """
     X = np.random.random((pop_size, len(actions)))
 
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    input_specs = load_input_specs()
     for i, action in enumerate(actions):
         row = input_specs[input_specs["varId"] == action].iloc[0]
         X[0, i] = row["defaultValue"]

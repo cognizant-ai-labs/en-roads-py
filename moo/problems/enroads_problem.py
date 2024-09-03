@@ -2,10 +2,10 @@
 Custom problem for PyMoo to optimize En-ROADS.
 """
 import numpy as np
-import pandas as pd
 from pymoo.core.problem import ElementwiseProblem
 
-from enroads_runner import EnroadsRunner
+from enroadspy import load_input_specs
+from enroadspy.enroads_runner import EnroadsRunner
 from evolution.outcomes.outcome_manager import OutcomeManager
 
 
@@ -18,7 +18,7 @@ class EnroadsProblem(ElementwiseProblem):
     All outcomes are minimized so we have to pre and post process them.
     """
     def __init__(self, actions: list[str], outcomes: dict[str, bool]):
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
         xl = np.zeros(len(actions))
         xu = np.ones(len(actions))
         switch_idxs = []
