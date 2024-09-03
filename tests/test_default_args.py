@@ -3,9 +3,8 @@ Tests the enroads model
 """
 import unittest
 
-import pandas as pd
-
-from enroads_runner import EnroadsRunner
+from enroadspy import load_input_specs
+from enroadspy.enroads_runner import EnroadsRunner
 
 
 class TestDefaultArgs(unittest.TestCase):
@@ -16,7 +15,7 @@ class TestDefaultArgs(unittest.TestCase):
     """
     def setUp(self):
         self.runner = EnroadsRunner()
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
         self.input_specs["index"] = range(len(self.input_specs))
 
     def test_construct_default_args(self):
