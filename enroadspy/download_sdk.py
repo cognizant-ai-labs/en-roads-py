@@ -25,6 +25,8 @@ def main():
 
         username = os.getenv("ENROADS_ID")
         password = os.getenv("ENROADS_PASSWORD")
+        assert username is not None and password is not None, \
+            "Please set the ENROADS_ID and ENROADS_PASSWORD environment variables."
 
         r = requests.get(url, auth=(username, password), timeout=60)
 
