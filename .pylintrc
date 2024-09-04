@@ -1,7 +1,13 @@
 [MASTER]
 
+ignore=inputSpecs.py
+
+recursive=y
+
 max-line-length=120
 
 suggestion-mode=yes
 
-good-names=X,F
+good-names=X,F,X0
+
+fail-under=9.8

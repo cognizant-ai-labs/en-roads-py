@@ -1,14 +1,19 @@
+"""
+Tests URL Generation.
+"""
 import unittest
 
-import pandas as pd
+from enroadspy import load_input_specs
+from enroadspy.generate_url import actions_to_url, generate_actions_dict
 
-from generate_url import actions_to_url, generate_actions_dict
-import webbrowser
 
 class TestURLGenerator(unittest.TestCase):
-
+    """
+    Class to test URL generation converting context/actions to an En-ROADS URL.
+    TODO: The default URL doesn't work for some reason.
+    """
     def setUp(self):
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
 
     def test_generate_url(self):
         """
@@ -22,22 +27,8 @@ class TestURLGenerator(unittest.TestCase):
                 actions_dict[action] = row["maxValue"] if row["defaultValue"] != row["maxValue"] else row["minValue"]
             else:
                 actions_dict[action] = row["onValue"] if row["defaultValue"] != row["onValue"] else row["offValue"]
-        
+
         url = actions_to_url(actions_dict)
         reverse_url = generate_actions_dict(url)
 
         self.assertEqual(actions_dict, reverse_url)
-
-    # def test_default_url(self):
-    #     """
-    #     Tests that the default URL sends us to a page with no actions.
-    #     """
-    #     actions_dict = {}
-    #     for action in self.input_specs["varId"].tolist():
-    #         row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
-    #         actions_dict[action] = int(row["defaultValue"])
-    #         url = actions_to_url(actions_dict)
-    #         webbrowser.open(url)
-    #         actions_dict.pop(action)
-
-    #     self.assertEqual(False, True)

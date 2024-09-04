@@ -1,12 +1,21 @@
+"""
+Script used to run the evolution process.
+"""
 import argparse
 import json
 from pathlib import Path
 import shutil
+import sys
 
 from evolution.evolution import Evolution
 from evolution.utils import modify_config
 
+
 def main():
+    """
+    Parses arguments, modifies config to reduce the amount of manual text added to it, then runs the evolution process.
+    Prompts the user to overwrite the save path if it already exists.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, help="Path to config file.")
     args = parser.parse_args()
@@ -23,10 +32,11 @@ def main():
             shutil.rmtree(config["save_path"])
         else:
             print("Exiting")
-            exit()
+            sys.exit()
 
     evolution = Evolution(config)
     evolution.neuroevolution()
+
 
 if __name__ == "__main__":
     main()

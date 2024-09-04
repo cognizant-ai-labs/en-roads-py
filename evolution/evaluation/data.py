@@ -7,6 +7,9 @@ from sklearn.preprocessing import MinMaxScaler
 import torch
 from torch.utils.data import Dataset
 
+from enroadspy import load_input_specs
+
+
 class ContextDataset(Dataset):
     """
     Dataset holding the context for the model.
@@ -16,7 +19,7 @@ class ContextDataset(Dataset):
         """
         Generates the default context, which is just a single row of the default values for all the context variables.
         """
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         data = input_specs[["varId", "defaultValue"]]
         data = data[data["varId"].isin(context)]
         rotated = data.set_index("varId").T
@@ -37,7 +40,7 @@ class ContextDataset(Dataset):
         Generates our renewables breakthrough context.
         """
         rng = np.random.default_rng(seed)
-        input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        input_specs = load_input_specs()
         data = {}
         for col in context:
             default_val = input_specs[input_specs["varId"] == col]["defaultValue"].iloc[0]

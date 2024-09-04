@@ -1,7 +1,8 @@
 """
-Utility functions to be used throughout the project.
+Utility functions to be used throughout the evolution module.
 """
-import pandas as pd
+from enroadspy import load_input_specs
+
 
 def modify_config(config: dict):
     """
@@ -11,11 +12,12 @@ def modify_config(config: dict):
     We set up the eval params with the context, actions, and outcomes.
     """
     # Set up context if not provided
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    input_specs = load_input_specs()
     actions = config["actions"]
     if len(config["context"]) == 0:
         adj_context = input_specs[~input_specs["varId"].isin(actions)]
-        assert len(adj_context) == len(input_specs) - len(actions), f"Context is not the correct length. Expected {len(input_specs) - len(actions)}, got {len(adj_context)}."
+        assert len(adj_context) == len(input_specs) - len(actions), \
+            f"Context is not the correct length. Expected {len(input_specs) - len(actions)}, got {len(adj_context)}."
         config["context"] = adj_context["varId"].tolist()
 
     # Set up model params
