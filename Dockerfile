@@ -7,7 +7,7 @@ WORKDIR /en-roads-py
 
 # Debian basics and cleaning up in one RUN statement to reduce image size
 RUN apt-get update -y && \
-    apt-get install --no-install-recommends curl git gcc g++ -y && \
+    apt-get install --no-install-recommends curl git gcc g++ make clang -y && \
     rm -rf /var/lib/apt/lists/* 
 
 # Dependencies

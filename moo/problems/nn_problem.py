@@ -41,6 +41,7 @@ class NNProblem(ElementwiseProblem):
         self.context_df = context_df
         context_ds = ContextDataset(context_df)
         self.context_dl = torch.utils.data.DataLoader(context_ds, batch_size=batch_size, shuffle=False)
+        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
     def params_to_context_actions_dicts(self, x: np.ndarray) -> list[dict[str, float]]:
         """
@@ -52,7 +53,7 @@ class NNProblem(ElementwiseProblem):
         context_actions_dicts = []
         for batch in self.context_dl:
             context_tensor, _ = batch
-            context_actions_dicts.extend(candidate.prescribe(context_tensor.to("mps")))
+            context_actions_dicts.extend(candidate.prescribe(context_tensor.to(self.device)))
 
         for actions_dict, (_, row) in zip(context_actions_dicts, self.context_df.iterrows()):
             context_dict = row.to_dict()

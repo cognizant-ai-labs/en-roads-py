@@ -16,15 +16,17 @@ from evolution.utils import modify_config
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
 
+DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+
 
 def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: DataLoader, label: torch.Tensor):
     """
     Simple PyTorch training loop training a seed model with model_params using data from dataloader to match
     label label for epochs epochs.
     """
-    label_tensor = label.to("mps")
+    label_tensor = label.to(DEVICE)
     model = NNPrescriptor(**model_params)
-    model.to("mps")
+    model.to(DEVICE)
     model.train()
     optimizer = torch.optim.AdamW(model.parameters())
     criterion = torch.nn.MSELoss()
@@ -34,7 +36,7 @@ def train_seed(epochs: int, model_params: dict, seed_path: Path, dataloader: Dat
             n = 0
             for x, _ in dataloader:
                 optimizer.zero_grad()
-                x = x.to("mps")
+                x = x.to(DEVICE)
                 output = model(x)
                 loss = criterion(output, label_tensor.repeat(x.shape[0], 1))
                 loss.backward()
@@ -141,7 +143,7 @@ def main():
     context_dataloader = evaluator.context_dataloader
     model_params = config["model_params"]
     print(model_params)
-    
+
     labels = create_default_labels(config["actions"])
     # Add custom seed URLs
     if "seed_urls" in seed_params and len(seed_params["seed_urls"]) > 0:

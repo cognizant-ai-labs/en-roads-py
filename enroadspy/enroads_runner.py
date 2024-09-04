@@ -24,7 +24,7 @@ class EnroadsRunner():
         Compiles the en-roads model.
         Make sure you extracted the zip file in the current directory.
         """
-        subprocess.run(["make"], cwd="enroadspy/en-roads-sdk-v24.6.0-beta1/c", check=True)
+        subprocess.run(["make"], cwd="./enroadspy/en-roads-sdk-v24.6.0-beta1/c", check=True)
 
     def format_string_input(self, value, decimal):
         """
@@ -97,7 +97,7 @@ class EnroadsRunner():
         if input_str and not self.check_input_string(input_str):
             raise ValueError("Invalid input string")
 
-        command = ["enroadspy/en-roads-sdk-v24.6.0-beta1/c/enroads"]
+        command = ["./enroadspy/en-roads-sdk-v24.6.0-beta1/c/enroads"]
         if input_str:
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as temp_file:
                 temp_file.write(input_str)

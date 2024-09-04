@@ -1,6 +1,6 @@
 {
     "n_generations": 2,
-    "pop_size": 100,
+    "pop_size": 20,
     "crowding_func": "mnn",
     "actions": [
         "_source_subsidy_delivered_coal_tce",

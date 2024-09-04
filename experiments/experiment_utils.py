@@ -22,6 +22,7 @@ class Experimenter:
         self.outcomes = config["outcomes"]
 
         self.model_params = config["model_params"]
+        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
     def get_candidate_actions(self,
                               candidate: Candidate,
@@ -30,7 +31,7 @@ class Experimenter:
         """
         Gets actions from a candidate given a context
         """
-        [actions_dict] = candidate.prescribe(torch_context.to("mps").unsqueeze(0))
+        [actions_dict] = candidate.prescribe(torch_context.to(self.device).unsqueeze(0))
         context_dict = dict(zip(self.context, context_vals.tolist()))
         actions_dict.update(context_dict)
         return actions_dict

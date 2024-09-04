@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import webbrowser
 
-import pandas as pd
+import torch
 
 from evolution.candidate import Candidate
 from evolution.evaluation.evaluator import Evaluator
@@ -43,7 +43,8 @@ def open_browser(results_dir, cand_id, input_idx):
                                     config["actions"],
                                     config["outcomes"])
     context_tensor, context_vals = evaluator.context_dataset[input_idx]
-    actions_dicts = candidate.prescribe(context_tensor.to("mps").unsqueeze(0))
+    device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+    actions_dicts = candidate.prescribe(context_tensor.to(device).unsqueeze(0))
     actions_dict = actions_dicts[0]
     context_dict = evaluator.reconstruct_context_dicts([context_vals])[0]
     actions_dict.update(context_dict)
