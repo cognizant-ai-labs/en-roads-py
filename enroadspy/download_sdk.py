@@ -24,6 +24,8 @@ def main():
         url = os.getenv("ENROADS_URL")
         username = os.getenv("ENROADS_ID")
         password = os.getenv("ENROADS_PASSWORD")
+        assert url is not None, \
+            "Please set the ENROADS_URL environment variable."
         assert username is not None and password is not None, \
             "Please set the ENROADS_ID and ENROADS_PASSWORD environment variables. \
             To get access to them go to https://en-roads.climateinteractive.org/ and sign up."
