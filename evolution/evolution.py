@@ -15,7 +15,14 @@ from evolution.sorting.distance_calculation.crowding_distance import CrowdingDis
 from evolution.sorting.nsga2_sorter import NSGA2Sorter
 from evolution.parent_selection.tournament_selector import TournamentSelector
 
+
 class Evolution():
+    """
+    Class handling the overall NSGA-II evolutionary loop.
+    Takes in a config file that determines parent selection, mutation, crossover, distance calcuation, sorting,
+    and evaluation.
+    Saves the config file and intermediate candidates + results to disk.
+    """
     def __init__(self, config: dict):
         self.save_path = Path(config["save_path"])
         self.save_path.mkdir(parents=True, exist_ok=False)
@@ -36,7 +43,7 @@ class Evolution():
         self.crossover = UniformCrossover(mutator=self.mutator)
         distance_calculator = CrowdingDistanceCalculator()
         self.sorter = NSGA2Sorter(distance_calculator)
-        
+
         self.model_params = config["model_params"]
         self.actions = config["actions"]
         self.outcomes = config["outcomes"]

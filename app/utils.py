@@ -3,12 +3,12 @@ Utilities for the demo app.
 """
 import json
 
-import dill
+import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import torch
 
-from enroads_runner import EnroadsRunner
+from enroadspy.enroads_runner import EnroadsRunner
 from evolution.candidate import Candidate
 from evolution.outcomes.outcome_manager import OutcomeManager
 
@@ -18,7 +18,7 @@ class EvolutionHandler():
     Handles evolution results and running of prescriptors for the app.
     """
     def __init__(self):
-        save_path = "results/pymoo/context-updated"
+        save_path = "app/results"
         with open(save_path + "/config.json", 'r', encoding="utf-8") as f:
             config = json.load(f)
 
@@ -26,12 +26,10 @@ class EvolutionHandler():
         self.outcomes = config["outcomes"]
         # TODO: Make this not hard-coded
         self.model_params = {"in_size": 4, "hidden_size": 16, "out_size": len(self.actions)}
+        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
-        with open(save_path + "/results", 'rb') as f:
-            res = dill.load(f)
-
-        self.X = res.X
-        self.F = res.F
+        self.X = np.load(save_path + "/X.npy")
+        self.F = np.load(save_path + "/F.npy")
 
         context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
         self.context_df = context_df.drop(columns=["F", "scenario"])
@@ -61,7 +59,7 @@ class EvolutionHandler():
             baseline_metrics = self.outcome_manager.process_outcomes(context_dict, baseline_outcomes)
             for outcome, val in baseline_metrics.items():
                 baseline_metrics_avg[outcome] += val
-        
+
         # Finish preprocessing baseline metrics
         for outcome in self.outcomes:
             baseline_metrics_avg[outcome] /= len(self.context_df)
@@ -89,7 +87,7 @@ class EvolutionHandler():
             # Process context_dict into tensor
             context_list = [context_dict[context] for context in self.context_df.columns]
             context_scaled = self.scaler.transform([context_list])
-            context_tensor = torch.tensor(context_scaled, dtype=torch.float32, device="mps")
+            context_tensor = torch.tensor(context_scaled, dtype=torch.float32, device=self.device)
             actions_dict = candidate.prescribe(context_tensor)[0]
             actions_dict.update(context_dict)
             context_actions_dicts.append(actions_dict)

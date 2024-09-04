@@ -8,13 +8,15 @@ import tempfile
 import numpy as np
 import pandas as pd
 
+from enroadspy import load_input_specs
+
 
 class EnroadsRunner():
     """
     Class that handles the running of the En-ROADS simulator.
     """
     def __init__(self):
-        self.input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+        self.input_specs = load_input_specs()
         self.compile_enroads()
 
     def compile_enroads(self):
@@ -22,7 +24,7 @@ class EnroadsRunner():
         Compiles the en-roads model.
         Make sure you extracted the zip file in the current directory.
         """
-        subprocess.run(["make"], cwd="en-roads-sdk-v24.6.0-beta1/c", check=True)
+        subprocess.run(["make"], cwd="./enroadspy/en-roads-sdk-v24.6.0-beta1/c", check=True)
 
     def format_string_input(self, value, decimal):
         """
@@ -65,6 +67,23 @@ class EnroadsRunner():
         return input_str
     # pylint: enable=no-member
 
+    def check_input_string(self, input_str: str) -> bool:
+        """
+        Checks if the input string is valid for security purposes.
+        1. Makes sure the input string is below a certain size in bytes (10,000).
+        2. Makes sure the input string's values are numeric.
+        """
+        if len(input_str.encode('utf-8')) > 10000:
+            return False
+        for pair in input_str.split(" "):
+            try:
+                idx, val = pair.split(":")
+                int(idx)
+                float(val)
+            except ValueError:
+                return False
+        return True
+
     def run_enroads(self, input_str=None):
         """
         Simple function to run the enroads simulator. A temporary file is created storing our input string as the
@@ -75,7 +94,10 @@ class EnroadsRunner():
             index number from the value number with no spaces. Index numbers are zero-based.
         NOTE: The indices are the line numbers in inputSpecs.jsonl starting from 0, NOT the id column.
         """
-        command = ["./en-roads-sdk-v24.6.0-beta1/c/enroads"]
+        if input_str and not self.check_input_string(input_str):
+            raise ValueError("Invalid input string")
+
+        command = ["./enroadspy/en-roads-sdk-v24.6.0-beta1/c/enroads"]
         if input_str:
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as temp_file:
                 temp_file.write(input_str)
@@ -87,8 +109,7 @@ class EnroadsRunner():
 
         if result.returncode == 0:
             return result.stdout
-        else:
-            raise ValueError(f"Enroads failed with error code {result.returncode} and message {result.stderr}")
+        raise ValueError(f"Enroads failed with error code {result.returncode} and message {result.stderr}")
 
     def evaluate_actions(self, actions_dict: dict[str, str]):
         """

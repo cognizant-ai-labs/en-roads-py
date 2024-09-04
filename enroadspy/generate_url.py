@@ -4,13 +4,14 @@ Script that allows us to visualize the results of our model on the En-ROADS webs
 import argparse
 import json
 from pathlib import Path
-import shutil
 import webbrowser
 
-import pandas as pd
+import torch
 
 from evolution.candidate import Candidate
 from evolution.evaluation.evaluator import Evaluator
+from enroadspy import load_input_specs
+
 
 def main():
     """
@@ -26,12 +27,14 @@ def main():
     cand_id = args.cand_id
     open_browser(results_dir, cand_id, 0)
 
+
 def open_browser(results_dir, cand_id, input_idx):
     """
     Loads seed from results_dir, loads context based on results_dir's config, runs context through model,
     then opens browser to en-roads with the prescribed actions and proper context.
     """
-    config = json.load(open(results_dir / "config.json", encoding="utf-8"))
+    with open(results_dir / "config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
 
     # Get prescribed actions from model
     evaluator = Evaluator(config["context"], config["actions"], config["outcomes"])
@@ -40,23 +43,23 @@ def open_browser(results_dir, cand_id, input_idx):
                                     config["actions"],
                                     config["outcomes"])
     context_tensor, context_vals = evaluator.context_dataset[input_idx]
-    actions_dicts = candidate.prescribe(context_tensor.to("mps").unsqueeze(0))
+    device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+    actions_dicts = candidate.prescribe(context_tensor.to(device).unsqueeze(0))
     actions_dict = actions_dicts[0]
     context_dict = evaluator.reconstruct_context_dicts([context_vals])[0]
     actions_dict.update(context_dict)
 
     url = actions_to_url(actions_dict)
-    
+
     webbrowser.open(url)
 
-    shutil.rmtree(temp_dir)
 
 def actions_to_url(actions_dict: dict[str, float]) -> str:
     """
     Converts an actions dict to a URL.
     """
     # Parse actions into format for URL
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    input_specs = load_input_specs()
     id_vals = {}
     for action, val in actions_dict.items():
         row = input_specs[input_specs["varId"] == action].iloc[0]
@@ -73,7 +76,7 @@ def generate_actions_dict(url: str):
     """
     Reverse-engineers an actions dict based on a given URL.
     """
-    input_specs = pd.read_json("inputSpecs.jsonl", lines=True, precise_float=True)
+    input_specs = load_input_specs()
     actions_dict = {}
     for param_val in url.split("&")[1:]:
         param, val = param_val.split("=")
@@ -82,6 +85,7 @@ def generate_actions_dict(url: str):
         actions_dict[row["varId"]] = float(val)
 
     return actions_dict
+
 
 if __name__ == "__main__":
     main()
