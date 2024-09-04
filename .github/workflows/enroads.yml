@@ -26,6 +26,7 @@ jobs:
       env:
         ENROADS_ID: ${{ secrets.ENROADS_ID }}
         ENROADS_PASSWORD: ${{ secrets.ENROADS_PASSWORD }}
+        ENROADS_URL: ${{ secrets.ENROADS_URL }}
       run: python -m enroadspy.download_sdk
     - name: Lint with PyLint
       run: pylint .
