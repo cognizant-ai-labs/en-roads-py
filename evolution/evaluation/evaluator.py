@@ -33,6 +33,7 @@ class Evaluator:
         # the nonscaled tensor is used to reconstruct the context that goes into enroads.
         self.context_dataset = ContextDataset(context)
         self.context_dataloader = DataLoader(self.context_dataset, batch_size=3, shuffle=False)
+        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
         self.enroads_runner = EnroadsRunner()
 
@@ -66,7 +67,7 @@ class Evaluator:
         # Iterate over batches of contexts
         for batch_tensor, batch_context in self.context_dataloader:
             context_dicts = self.reconstruct_context_dicts(batch_context)
-            actions_dicts = candidate.prescribe(batch_tensor.to("mps"))
+            actions_dicts = candidate.prescribe(batch_tensor.to(self.device))
             for actions_dict, context_dict in zip(actions_dicts, context_dicts):
                 # Add context to actions so we can pass it into the model
                 actions_dict.update(context_dict)

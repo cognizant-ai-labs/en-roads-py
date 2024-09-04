@@ -28,6 +28,7 @@ references_component = ReferencesComponent()
 
 # Initialize the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP, "assets/styles.css"])
+server = app.server
 app.title = "Climate Change Decision Making"
 
 context_component.register_callbacks(app)

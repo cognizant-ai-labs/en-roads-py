@@ -33,7 +33,8 @@ class Candidate():
 
         # Model
         self.model_params = model_params
-        self.model = NNPrescriptor(**model_params).to("mps")
+        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = NNPrescriptor(**model_params).to(self.device)
         self.model.eval()
 
         self.input_specs = load_input_specs()
