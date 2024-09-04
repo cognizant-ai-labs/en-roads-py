@@ -1,10 +1,15 @@
+"""
+Paris agreement outcome implementation.
+"""
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
 
 
 class ParisOutcome(Outcome):
-
+    """
+    Worst-case paris agreement goal.
+    """
     def __init__(self):
         self.paris_start_emissions = 54.4789
 

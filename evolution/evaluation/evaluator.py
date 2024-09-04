@@ -19,8 +19,7 @@ class Evaluator:
     Evaluates candidates by generating the actions and running the enroads model on them.
     Generates and stores context data based on config using ContextDataset.
     """
-    def __init__(self, context: list[str], actions: list[str], outcomes: dict[str, bool]):        
-
+    def __init__(self, context: list[str], actions: list[str], outcomes: dict[str, bool]):
         self.actions = actions
         self.outcomes = outcomes
         self.outcome_manager = OutcomeManager(outcomes)

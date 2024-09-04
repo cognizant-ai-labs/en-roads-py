@@ -52,7 +52,7 @@ class Heuristic:
     # pylint: disable=no-member
     def find_heuristic(self) -> tuple[list[str], dict[str, float]]:
         """
-        Finds the best actions greedily by going over each action we haven't used left, looking at if its max or 
+        Finds the best actions greedily by going over each action we haven't used left, looking at if its max or
         min value is the best, then adding it if so.
         """
         action_order = []

@@ -1,9 +1,15 @@
+"""
+Government revenue outcome implementation.
+"""
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
 
 
 class RevenueOutcome(Outcome):
+    """
+    Gets government spending.
+    """
     def process_outcomes(self, _, outcomes_df: pd.DataFrame) -> float:
         """
         Returns the total government net revenue from adjustments, or 0 if it is positive.

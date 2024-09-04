@@ -5,7 +5,6 @@ from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import torch
 
 from enroadspy import load_input_specs

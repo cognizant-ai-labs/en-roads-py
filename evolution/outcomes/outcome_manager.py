@@ -1,3 +1,7 @@
+"""
+Converts the title of an outcome from the config to the corresponding outcome object that processes the outcomes_df and
+actions_dict.
+"""
 import pandas as pd
 
 from evolution.outcomes.actions import ActionsOutcome

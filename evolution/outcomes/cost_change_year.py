@@ -1,9 +1,15 @@
+"""
+Outcome that checks the first year the cost of energy changes by more than a given threshold.
+"""
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
 
 
 class CostChangeYearOutcome(Outcome):
+    """
+    Cost change year outcome implementation
+    """
     def process_outcomes(self, _, outcomes_df: pd.DataFrame) -> float:
         """
         Returns the first year the cost of energy changes by more than a given threshold (2 default)
