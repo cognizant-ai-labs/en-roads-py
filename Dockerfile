@@ -1,5 +1,6 @@
 FROM python:3.10-slim
 
+ARG ENROADS_URL
 ARG ENROADS_ID
 ARG ENROADS_PASSWORD
 
@@ -19,6 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . .
 
 # Download En-ROADS SDK and extract it
+ENV ENROADS_URL=$ENROADS_URL
 ENV ENROADS_ID=$ENROADS_ID
 ENV ENROADS_PASSWORD=$ENROADS_PASSWORD
 RUN python -m enroadspy.download_sdk

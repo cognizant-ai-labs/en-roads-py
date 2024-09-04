@@ -14,19 +14,19 @@ def main():
     If we already have the zip file but no SDK, we just extract the zip file.
     """
     zip_path = "enroadspy/en-roads-sdk-v24.6.0-beta1.zip"
-    sdk_path = "enroadspy/en-roads-sdk-v24.6.0-beta1"
+    sdk_path = "enroadspy/"
 
-    if os.path.exists(sdk_path):
+    if os.path.exists(sdk_path + "en-roads-sdk-v24.6.0-beta1"):
         print("SDK already exists.")
         return
 
     if not os.path.exists(zip_path):
-        url = "https://en-roads.dev.climateinteractive.org/branch/release/24.6.0/en-roads-sdk-v24.6.0-beta1.zip"
-
+        url = os.getenv("ENROADS_URL")
         username = os.getenv("ENROADS_ID")
         password = os.getenv("ENROADS_PASSWORD")
         assert username is not None and password is not None, \
-            "Please set the ENROADS_ID and ENROADS_PASSWORD environment variables."
+            "Please set the ENROADS_ID and ENROADS_PASSWORD environment variables. \
+            To get access to them go to https://en-roads.climateinteractive.org/ and sign up."
 
         r = requests.get(url, auth=(username, password), timeout=60)
 
