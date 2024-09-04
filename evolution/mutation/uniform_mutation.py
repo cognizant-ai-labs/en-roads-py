@@ -1,9 +1,13 @@
+"""
+Standard uniform mutation implementation.
+"""
 from evolution.candidate import Candidate
 from evolution.mutation.mutation import Mutation
 
+
 class UniformMutation(Mutation):
     """
-    Uniformly mutates 
+    Uniformly mutates
     """
     def __init__(self, mutation_factor, mutation_rate):
         super().__init__(mutation_factor, mutation_rate)

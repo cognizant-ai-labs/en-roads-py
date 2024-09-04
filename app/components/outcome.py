@@ -1,8 +1,6 @@
 """
 OutcomeComponent class for the outcome section of the app.
 """
-import sys
-
 from dash import Input, Output, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -26,7 +24,7 @@ class OutcomeComponent():
                              "_global_population_in_2100"]
         self.plot_outcomes = ["Temperature change from 1850",
                               "Adjusted cost of energy per GJ",
-                              "Government net revenue from adjustments", 
+                              "Government net revenue from adjustments",
                               "Total Primary Energy Demand"]
 
     def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]], cand_idxs: list[int]):
@@ -36,7 +34,7 @@ class OutcomeComponent():
         TODO: Fix colors to match parcoords
         """
         outcomes_dfs = [pd.DataFrame(outcomes_json) for outcomes_json in outcomes_jsonl]
-        color_map = [c for c in px.colors.qualitative.Plotly]
+        color_map = px.colors.qualitative.Plotly
 
         fig = go.Figure()
         showlegend = True
@@ -87,7 +85,7 @@ class OutcomeComponent():
                 "xanchor": "center"},
         )
         return fig
-    
+
     def create_outcomes_div(self):
         """
         Note: We have nested loads here. The outer load is for both graphs and triggers when the outcomes store
@@ -173,7 +171,7 @@ class OutcomeComponent():
             outcomes_jsonl = [outcomes_df[self.plot_outcomes].to_dict("records") for outcomes_df in outcomes_dfs]
 
             # Parse energy demand policy
-            colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
+            # colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
             energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
             demands = [f"Primary energy demand of {energy}" for energy in energies]
             selected_dfs = [outcomes_dfs[i] for i in self.all_cand_idxs[:-2]]

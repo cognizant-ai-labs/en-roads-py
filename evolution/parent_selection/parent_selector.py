@@ -1,17 +1,21 @@
+"""
+Abstract parent selector to be implemented.
+"""
 from abc import ABC, abstractmethod
 
 import numpy as np
 
 from evolution.candidate import Candidate
 
+
 class ParentSelector(ABC):
     """
     Takes a list of sorted parents and selects n parents to mate.
     """
-    def __init__(self, remove_population_pct: float, seed: int=None):
+    def __init__(self, remove_population_pct: float, seed: int = None):
         self.remove_pop_pct = remove_population_pct
         self.rng = np.random.default_rng(seed)
-    
+
     @abstractmethod
     def select_parents(self, sorted_parents: list[Candidate], n=2) -> list[Candidate]:
         """

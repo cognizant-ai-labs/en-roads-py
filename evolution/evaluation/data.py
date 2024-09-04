@@ -34,7 +34,7 @@ class ContextDataset(Dataset):
             "_new_tech_breakthrough_setting": [0, 1, 2]
         }
         return pd.DataFrame(data)
-    
+
     def generate_renewable_df(self, context: list[str], n=10, seed=42) -> pd.DataFrame:
         """
         Generates our renewables breakthrough context.
@@ -47,7 +47,7 @@ class ContextDataset(Dataset):
             min_val = input_specs[input_specs["varId"] == col]["minValue"].iloc[0]
             max_val = input_specs[input_specs["varId"] == col]["maxValue"].iloc[0]
             data[col] = [default_val] + rng.uniform(min_val, max_val, n-1).tolist()
-        
+
         data_df = pd.DataFrame(data)
         return data_df
 
@@ -62,7 +62,7 @@ class ContextDataset(Dataset):
         if context == ["_new_tech_breakthrough_setting"]:
             df = self.generate_new_zero_carbon_df()
             self.context_vals = df[context].values
-        
+
         elif context == breakthrough_cols:
             df = self.generate_renewable_df(context)
             self.context_vals = df[context].values
@@ -79,7 +79,7 @@ class ContextDataset(Dataset):
             else:
                 df[col] = scaler.fit_transform(df[col].values.reshape(-1, 1))
         self.tensor_context = torch.tensor(df.values, dtype=torch.float32)
-        
+
     def __getitem__(self, idx):
         return self.tensor_context[idx], self.context_vals[idx]
 

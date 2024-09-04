@@ -1,9 +1,15 @@
+"""
+Energy change outcome implementation
+"""
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
 
 
 class EnergyChangeOutcome(Outcome):
+    """
+    Checks the percent the distribution changed in a given year averaged over the whole outcomes_df.
+    """
     def __init__(self):
         # We don't want fossil fuels because it double counts
         energies = ["bio", "coal", "gas", "oil", "renew and hydro", "new tech", "nuclear"]

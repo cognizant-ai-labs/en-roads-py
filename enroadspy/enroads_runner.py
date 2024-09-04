@@ -90,7 +90,7 @@ class EnroadsRunner():
         En-ROADS main function requires a file as input.
         Possible variable values are stored in inputSpecs.jsonl.
         From the documentation:
-            The input string is a space-delimited list of index-value pairs, where a colon separates the 
+            The input string is a space-delimited list of index-value pairs, where a colon separates the
             index number from the value number with no spaces. Index numbers are zero-based.
         NOTE: The indices are the line numbers in inputSpecs.jsonl starting from 0, NOT the id column.
         """
