@@ -1,6 +1,10 @@
+"""
+Abstract distance calcuator to be implemented.
+"""
 from abc import ABC, abstractmethod
 
 from evolution.candidate import Candidate
+
 
 class DistanceCalculator(ABC):
     """
@@ -12,4 +16,3 @@ class DistanceCalculator(ABC):
         Calculates the distances of each candidate in the front.
         """
         raise NotImplementedError
-

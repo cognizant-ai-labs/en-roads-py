@@ -1,12 +1,24 @@
+"""
+Sorter implementation sorting via. NSGA-II.
+"""
 from evolution.candidate import Candidate
 from evolution.sorting.sorter import Sorter
 from evolution.sorting.distance_calculation.distance_calculator import DistanceCalculator
 
+
 class NSGA2Sorter(Sorter):
+    """
+    Sorts candidates using NSGA-II.
+    Performs non-dominated sort to get the ranks of each candidate then within each front calculates distance and sorts
+    by them.
+    """
     def __init__(self, distance_calculator: DistanceCalculator):
         self.distance_calculator = distance_calculator
 
     def sort_candidates(self, candidates: list[Candidate]):
+        """
+        Computes rank and distance within each front, then sorts by front then distance ascending and descending.
+        """
         # Get ranks of each candidate
         fronts = self.fast_non_dominated_sort(candidates)
 
@@ -20,6 +32,9 @@ class NSGA2Sorter(Sorter):
 
     # pylint: disable=consider-using-enumerate
     def fast_non_dominated_sort(self, candidates: list[Candidate]):
+        """
+        NSGA-II fast non dominated sort algorithm.
+        """
         S = [[] for _ in range(len(candidates))]
         n = [0 for _ in range(len(candidates))]
         fronts = [[]]

@@ -1,10 +1,15 @@
+"""
+A more relaxed Paris Agreement implementation.
+"""
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
 
 
 class ParisRelaxOutcome(Outcome):
-
+    """
+    A more relaxed Paris Agreement goal.
+    """
     def __init__(self):
         self.paris_goal_temp = 1.5
 

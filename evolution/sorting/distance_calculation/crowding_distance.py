@@ -1,3 +1,6 @@
+"""
+Crowding distance implementation for distance calculation.
+"""
 from evolution.candidate import Candidate
 from evolution.sorting.distance_calculation.distance_calculator import DistanceCalculator
 
@@ -16,7 +19,7 @@ class CrowdingDistanceCalculator(DistanceCalculator):
         """
         for c in front:
             c.distance = 0
-        
+
         # Front is sorted by each metric
         for m in front[0].metrics.keys():
             front.sort(key=lambda c: c.metrics[m])

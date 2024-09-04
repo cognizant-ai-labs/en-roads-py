@@ -1,5 +1,6 @@
-from pathlib import Path
-
+"""
+Total energy outcome implementation.
+"""
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
@@ -7,7 +8,9 @@ from enroadspy.enroads_runner import EnroadsRunner
 
 
 class TotalEnergyOutcome(Outcome):
-
+    """
+    Sums all the energy below the baseline and compares it to the baseline.
+    """
     def __init__(self):
         runner = EnroadsRunner()
         baseline_df = runner.evaluate_actions({})

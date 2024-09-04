@@ -1,6 +1,10 @@
+"""
+Abstract mutation class to implement.
+"""
 from abc import ABC, abstractmethod
 
 import torch
+
 
 class Mutation(ABC):
     """
@@ -31,5 +35,3 @@ class Mutation(ABC):
         Mutate model in-place
         """
         raise NotImplementedError
-
-    

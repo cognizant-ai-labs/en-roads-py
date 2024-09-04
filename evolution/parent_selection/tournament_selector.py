@@ -1,5 +1,9 @@
+"""
+Tournament selection implementation of parent selector.
+"""
 from evolution.candidate import Candidate
 from evolution.parent_selection.parent_selector import ParentSelector
+
 
 class TournamentSelector(ParentSelector):
     """
@@ -8,7 +12,7 @@ class TournamentSelector(ParentSelector):
     def __init__(self, remove_population_pct: float):
         super().__init__(remove_population_pct)
         self.type = "tournament"
-    
+
     def select_parents(self, sorted_parents: list[Candidate], n=2) -> list[Candidate]:
         """
         Selects n parents to mate.

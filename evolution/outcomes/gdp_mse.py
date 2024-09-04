@@ -1,6 +1,10 @@
+"""
+This outcome is not used in our evolution but rather is how we get the correct slider values to match the ar6 ssps.
+"""
 import pandas as pd
 
 from evolution.outcomes.outcome import Outcome
+
 
 class GDPOutcome(Outcome):
     """

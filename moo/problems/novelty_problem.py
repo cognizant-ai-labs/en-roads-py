@@ -2,7 +2,6 @@
 Custom problem for PyMoo to optimize En-ROADS.
 """
 import numpy as np
-import pandas as pd
 from pymoo.core.problem import ElementwiseProblem
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
