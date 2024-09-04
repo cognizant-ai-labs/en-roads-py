@@ -26,11 +26,12 @@ def main():
         password = os.getenv("ENROADS_PASSWORD")
         assert url is not None, \
             "Please set the ENROADS_URL environment variable."
-        assert len(url) == 96, \
-            f"ENROADS_URL is not the correct length, it is {len(url)} characters instead of 96."
         assert username is not None and password is not None, \
             "Please set the ENROADS_ID and ENROADS_PASSWORD environment variables. \
             To get access to them go to https://en-roads.climateinteractive.org/ and sign up."
+        
+        assert len(url) > 0 and len(username) > 0 and len(password) > 0, \
+            "There was an issue with the environment variables, one or more are empty."
 
         r = requests.get(url, auth=(username, password), timeout=60)
 
