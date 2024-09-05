@@ -1,7 +1,7 @@
 """
 OutcomeComponent class for the outcome section of the app.
 """
-from dash import Input, Output, html, dcc
+from dash import Input, Output, State, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -26,6 +26,8 @@ class OutcomeComponent():
                               "Adjusted cost of energy per GJ",
                               "Government net revenue from adjustments",
                               "Total Primary Energy Demand"]
+
+        self.metric_ids = [metric.replace(" ", "-").replace(".", "_") for metric in self.evolution_handler.outcomes]
 
     def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]], cand_idxs: list[int]):
         """
@@ -64,7 +66,7 @@ class OutcomeComponent():
                     y=outcomes_df[outcome],
                     mode='lines',
                     name=str(cand_idx),
-                    line=dict(color=color_map[self.all_cand_idxs.index(cand_idx)])
+                    line=dict(color=color_map[cand_idxs.index(cand_idx)])
                 ))
 
         if "baseline" in cand_idxs:
@@ -127,6 +129,7 @@ class OutcomeComponent():
                             children=[
                                 dcc.Store(id="context-actions-store"),
                                 dcc.Store(id="outcomes-store"),
+                                dcc.Store(id="metrics-store"),
                                 dbc.Row(
                                     children=[
                                         dbc.Col(
@@ -152,13 +155,15 @@ class OutcomeComponent():
         @app.callback(
             Output("context-actions-store", "data"),
             Output("outcomes-store", "data"),
+            Output("metrics-store", "data"),
             Output("energy-policy-store", "data"),
             [Input(f"context-slider-{i}", "value") for i in range(4)]
         )
-        def update_outcomes_store(*context_values):
+        def update_results_stores(*context_values):
             """
-            When the context sliders are changed, prescribe actions for the context for all candidates and return
-            the actions and outcomes.
+            When the context sliders are changed, prescribe actions for the context for all candidates. Then run them
+            through En-ROADS to get the outcomes. Finally process the outcomes into metrics. Store the context-actions
+            dicts, outcomes dfs, and metrics df in stores.
             Also stores the energy policies in the energy-policy-store in link.py.
             TODO: Make this only load selected candidates.
             """
@@ -170,6 +175,9 @@ class OutcomeComponent():
 
             outcomes_jsonl = [outcomes_df[self.plot_outcomes].to_dict("records") for outcomes_df in outcomes_dfs]
 
+            metrics_df = self.evolution_handler.outcomes_to_metrics(context_actions_dicts, outcomes_dfs)
+            metrics_json = metrics_df.to_dict("records")
+
             # Parse energy demand policy
             # colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
             energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
@@ -177,38 +185,30 @@ class OutcomeComponent():
             selected_dfs = [outcomes_dfs[i] for i in self.all_cand_idxs[:-2]]
             energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in selected_dfs]
 
-            return context_actions_dicts, outcomes_jsonl, energy_policy_jsonl
+            return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
 
         @app.callback(
             Output("outcome-graph-1", "figure"),
-            Input("outcome-dropdown-1", "value"),
-            Input("outcomes-store", "data"),
-            [Input(f"cand-button-{cand_idx}", "outline") for cand_idx in self.all_cand_idxs]
-        )
-        def update_outcomes_plot_1(outcome, outcomes_jsonl, *deselected):
-            """
-            Updates outcome plot when specific outcome is selected or context scatter point is clicked.
-            """
-            cand_idxs = []
-            for cand_idx, deselect in zip(self.all_cand_idxs, deselected):
-                if not deselect:
-                    cand_idxs.append(cand_idx)
-            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
-            return fig
-
-        @app.callback(
             Output("outcome-graph-2", "figure"),
+            State("metrics-store", "data"),
+            Input("outcome-dropdown-1", "value"),
             Input("outcome-dropdown-2", "value"),
             Input("outcomes-store", "data"),
-            [Input(f"cand-button-{cand_idx}", "outline") for cand_idx in self.all_cand_idxs]
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
         )
-        def update_outcomes_plot_2(outcome, outcomes_jsonl, *deselected):
+        def update_outcomes_plots(metrics_json, outcome1, outcome2, outcomes_jsonl, *metric_ranges):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
-            cand_idxs = []
-            for cand_idx, deselect in zip(self.all_cand_idxs, deselected):
-                if not deselect:
-                    cand_idxs.append(cand_idx)
-            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
-            return fig
+            metrics_df = pd.DataFrame(metrics_json)
+            metric_names = list(self.evolution_handler.outcomes.keys())
+            metric_name_and_range = zip(metric_names, metric_ranges)
+            for metric_name, metric_range in metric_name_and_range:
+                metrics_df = metrics_df[metrics_df[metric_name].between(*metric_range)]
+
+            top_10_idxs = metrics_df.index[:10]
+
+            fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, top_10_idxs)
+            fig2 = self.plot_outcome_over_time(outcome2, outcomes_jsonl, top_10_idxs)
+            return fig1, fig2
+

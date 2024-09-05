@@ -104,6 +104,21 @@ class EvolutionHandler():
             outcomes_dfs.append(outcomes_df)
 
         return outcomes_dfs
+    
+    def outcomes_to_metrics(self,
+                            context_actions_dicts: list[dict[str, float]],
+                            outcomes_dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """
+        Takes parallel lists of context_actions_dicts and outcomes_dfs and processes them into a metrics dict.
+        All of these metrics dicts are then concatenated into a single DataFrame.
+        """
+        metrics_dicts = []
+        for context_actions_dict, outcomes_df in zip(context_actions_dicts, outcomes_dfs):
+            metrics = self.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
+            metrics_dicts.append(metrics)
+
+        metrics_df = pd.DataFrame(metrics_dicts)
+        return metrics_df
 
     def context_baseline_outcomes(self, context_dict: dict[str, float]):
         """
