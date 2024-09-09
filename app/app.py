@@ -15,12 +15,13 @@ from app.components.references import ReferencesComponent
 from app.utils import EvolutionHandler
 
 evolution_handler = EvolutionHandler()
+metrics = evolution_handler.outcomes.keys()
 # The candidates are sorted by rank then distance so the 'best' ones are the first 10
 sample_idxs = list(range(10))
 
 intro_component = IntroComponent()
 context_component = ContextComponent()
-filter_component = FilterComponent()
+filter_component = FilterComponent(metrics)
 parallel_component = ParallelComponent(evolution_handler.load_initial_metrics_df(),
                                        sample_idxs,
                                        evolution_handler.outcomes)
@@ -45,7 +46,7 @@ app.layout = html.Div(
         intro_component.create_intro_div(),
         context_component.create_context_div(),
         filter_component.create_filter_div(),
-        parallel_component.create_parallel_div(),
+        # parallel_component.create_parallel_div(),
         outcome_component.create_outcomes_div(),
         link_component.create_link_div(),
         references_component.create_references_div()

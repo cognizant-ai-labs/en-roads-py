@@ -35,56 +35,62 @@ class OutcomeComponent():
         Also plots the baseline given the context.
         TODO: Fix colors to match parcoords
         """
+        best_cand_idxs = cand_idxs[:10]
         outcomes_dfs = [pd.DataFrame(outcomes_json) for outcomes_json in outcomes_jsonl]
         color_map = px.colors.qualitative.Plotly
 
         fig = go.Figure()
         showlegend = True
-        if "other" in cand_idxs:
-            for cand_idx, outcomes_df in enumerate(outcomes_dfs[:-1]):
-                if cand_idx not in cand_idxs:
-                    outcomes_df["year"] = list(range(1990, 2101))
-                    # Legend group other so all the other candidates get removed when we click on it.
-                    # Name other because the first other candidate represents them all in the legend
-                    fig.add_trace(go.Scatter(
-                        x=outcomes_df["year"],
-                        y=outcomes_df[outcome],
-                        mode='lines',
-                        legendgroup="other",
-                        name="other",
-                        showlegend=showlegend,
-                        line=dict(color="lightgray")
-                    ))
-                    showlegend = False
-
-        for cand_idx in cand_idxs:
-            if cand_idx != "baseline" and cand_idx != "other":
-                outcomes_df = outcomes_dfs[cand_idx]
-                outcomes_df["year"] = list(range(1990, 2101))
-                fig.add_trace(go.Scatter(
-                    x=outcomes_df["year"],
-                    y=outcomes_df[outcome],
-                    mode='lines',
-                    name=str(cand_idx),
-                    line=dict(color=color_map[cand_idxs.index(cand_idx)])
-                ))
-
-        if "baseline" in cand_idxs:
-            baseline_outcomes_df = outcomes_dfs[-1]
-            baseline_outcomes_df["year"] = list(range(1990, 2101))
+        for cand_idx in cand_idxs[10:]:
+            outcomes_df = outcomes_dfs[cand_idx]
+            outcomes_df["year"] = list(range(1990, 2101))
+            # Legend group other so all the other candidates get removed when we click on it.
+            # Name other because the first other candidate represents them all in the legend
             fig.add_trace(go.Scatter(
-                x=baseline_outcomes_df["year"],
-                y=baseline_outcomes_df[outcome],
+                x=outcomes_df["year"],
+                y=outcomes_df[outcome],
                 mode='lines',
-                name="baseline",
-                line=dict(color="black")
+                legendgroup="other",
+                name="other",
+                showlegend=showlegend,
+                line=dict(color="lightgray")
             ))
+            showlegend = False
+
+        for cand_idx in best_cand_idxs:
+            outcomes_df = outcomes_dfs[cand_idx]
+            outcomes_df["year"] = list(range(1990, 2101))
+            fig.add_trace(go.Scatter(
+                x=outcomes_df["year"],
+                y=outcomes_df[outcome],
+                mode='lines',
+                name=str(cand_idx),
+                line=dict(color=color_map[cand_idxs.index(cand_idx)]),
+                showlegend=True
+            ))
+
+        baseline_outcomes_df = outcomes_dfs[-1]
+        baseline_outcomes_df["year"] = list(range(1990, 2101))
+        fig.add_trace(go.Scatter(
+            x=baseline_outcomes_df["year"],
+            y=baseline_outcomes_df[outcome],
+            mode='lines',
+            name="baseline",
+            line=dict(color="black"),
+            showlegend=True
+        ))
+
+        # Standardize the max and min of the y-axis so that the graphs are comparable when we start filtering
+        # models.
+        y_min = min([outcomes_df[outcome].min() for outcomes_df in outcomes_dfs])
+        y_max = max([outcomes_df[outcome].max() for outcomes_df in outcomes_dfs])
 
         fig.update_layout(
             title={
                 "text": f"{outcome} Over Time",
                 "x": 0.5,
                 "xanchor": "center"},
+            yaxis_range=[y_min, y_max]
         )
         return fig
 
@@ -129,7 +135,6 @@ class OutcomeComponent():
                             children=[
                                 dcc.Store(id="context-actions-store"),
                                 dcc.Store(id="outcomes-store"),
-                                dcc.Store(id="metrics-store"),
                                 dbc.Row(
                                     children=[
                                         dbc.Col(
@@ -150,6 +155,18 @@ class OutcomeComponent():
         )
 
         return div
+
+    def filter_metrics_json(self, metrics_json: pd.DataFrame, metric_ranges: list[tuple[float, float]]):
+        """
+        Converts metrics json stored in the metrics store to a DataFrame then filters it based on metric ranges from
+        sliders.
+        """
+        metrics_df = pd.DataFrame(metrics_json)
+        metric_names = list(self.evolution_handler.outcomes.keys())
+        metric_name_and_range = zip(metric_names, metric_ranges)
+        for metric_name, metric_range in metric_name_and_range:
+            metrics_df = metrics_df[metrics_df[metric_name].between(*metric_range)]
+        return metrics_df
 
     def register_callbacks(self, app):
         @app.callback(
@@ -182,8 +199,7 @@ class OutcomeComponent():
             # colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
             energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
             demands = [f"Primary energy demand of {energy}" for energy in energies]
-            selected_dfs = [outcomes_dfs[i] for i in self.all_cand_idxs[:-2]]
-            energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in selected_dfs]
+            energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in outcomes_dfs]
 
             return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
 
@@ -200,15 +216,20 @@ class OutcomeComponent():
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
-            metrics_df = pd.DataFrame(metrics_json)
-            metric_names = list(self.evolution_handler.outcomes.keys())
-            metric_name_and_range = zip(metric_names, metric_ranges)
-            for metric_name, metric_range in metric_name_and_range:
-                metrics_df = metrics_df[metrics_df[metric_name].between(*metric_range)]
+            metrics_df = self.filter_metrics_json(metrics_json, metric_ranges)
+            cand_idxs = list(metrics_df.index)
 
-            top_10_idxs = metrics_df.index[:10]
-
-            fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, top_10_idxs)
-            fig2 = self.plot_outcome_over_time(outcome2, outcomes_jsonl, top_10_idxs)
+            fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, cand_idxs)
+            fig2 = self.plot_outcome_over_time(outcome2, outcomes_jsonl, cand_idxs)
             return fig1, fig2
-
+        
+        @app.callback(
+            Output("cand-link-select", "options"),
+            State("metrics-store", "data"),
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids]
+        )
+        def update_cand_link_select(metrics_json: dict[str, list],
+                                    *metric_ranges: list[tuple[float, float]]) -> list[int]:
+            metrics_df = self.filter_metrics_json(metrics_json, metric_ranges)
+            cand_idxs = list(metrics_df.index)
+            return cand_idxs

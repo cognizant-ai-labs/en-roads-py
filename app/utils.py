@@ -104,7 +104,7 @@ class EvolutionHandler():
             outcomes_dfs.append(outcomes_df)
 
         return outcomes_dfs
-    
+
     def outcomes_to_metrics(self,
                             context_actions_dicts: list[dict[str, float]],
                             outcomes_dfs: list[pd.DataFrame]) -> pd.DataFrame:

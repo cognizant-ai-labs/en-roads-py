@@ -21,7 +21,7 @@ class LinkComponent():
         self.energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
         self.demands = [f"Primary energy demand of {energy}" for energy in self.energies]
 
-    def plot_energy_policy(self, energy_policy_jsonl, cand_idx):
+    def plot_energy_policy(self, energy_policy_jsonl: list[dict[str, list]], cand_idx: int) -> go.Figure:
         """
         Plots density chart from energy policy.
         Removes demands that are all 0.
@@ -54,15 +54,21 @@ class LinkComponent():
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=1.02,
+                y=1,
                 xanchor="right",
                 x=1
             ),
-            margin=dict(l=0, r=0, t=0, b=0),
+            margin=dict(l=0, r=0, t=100, b=0),
+            title=dict(
+                text=f"Model {cand_idx} Energy Policy",
+                x=0.5,
+                y=0.9,
+                xanchor="center"
+            )
         )
         return fig
 
-    def create_button_group(self):
+    def create_button_group(self) -> html.Div:
         """
         Creates button group to select candidate to link to.
         """
@@ -93,18 +99,14 @@ class LinkComponent():
             children=[
                 dbc.Container(
                     fluid=True,
-                    className="py-3 d-flex flex-column justify-content-center",
+                    className="py-3 justify-content-center",
                     children=[
                         html.H2("View Energy Policy and Visualize/Modify Actions in En-ROADS",
                                 className="text-center mb-2"),
-                        html.P("Click on a candidate to preview the distribution of energy sources over time due to \
+                        html.P("Select a candidate to preview the distribution of energy sources over time due to \
                                its prescribed energy policy. Then click on the link to view the full policy in \
                                En-ROADS.",
                                className="text-center w-70 mb-2 mx-auto"),
-                        html.Div(
-                            className="w-50 mx-auto",
-                            children=[self.create_button_group()]
-                        ),
                         dcc.Loading(
                             type="circle",
                             children=[
@@ -112,11 +114,29 @@ class LinkComponent():
                                 dcc.Graph(id="energy-policy-graph", className="mb-2")
                             ]
                         ),
-                        dbc.Button("View in En-ROADS",
-                                   id="cand-link",
-                                   target="_blank",
-                                   rel="noopener noreferrer",
-                                   className="w-25 mx-auto")
+                        dbc.Row(
+                            className="w-75 mx-auto",
+                            justify="center",
+                            children=[
+                                dbc.Col(
+                                    dcc.Dropdown(
+                                        id="cand-link-select",
+                                        options=[],
+                                        placeholder="Select an AI Model"
+                                    ),
+                                    width={"size": 3, "offset": 3}
+                                ),
+                                dbc.Col(
+                                    dbc.Button(
+                                        "View in En-ROADS",
+                                        id="cand-link",
+                                        target="_blank",
+                                        rel="noopener noreferrer",
+                                        disabled=True
+                                    ),
+                                )
+                            ]
+                        ),
                     ]
                 )
             ]
@@ -129,18 +149,34 @@ class LinkComponent():
             Input("energy-policy-store", "data"),
             Input("cand-link-select", "value")
         )
-        def update_energy_policy_graph(energy_policy_jsonl, cand_idx):
-            return self.plot_energy_policy(energy_policy_jsonl, cand_idx)
+        def update_energy_policy_graph(energy_policy_jsonl: list[dict[str, list]], cand_idx) -> go.Figure:
+            if cand_idx is not None:
+                return self.plot_energy_policy(energy_policy_jsonl, cand_idx)
+            
+            # If we have no cand id just return a blank figure asking the user to select a candidate.
+            fig = go.Figure()
+            fig.update_layout(
+                title=dict(
+                    text="Select an AI model to view its policy",
+                    x=0.5,
+                    xanchor="center"
+                )
+            )
+            return fig
 
         @app.callback(
             Output("cand-link", "href"),
+            Output("cand-link", "disabled"),
             Input("context-actions-store", "data"),
             Input("cand-link-select", "value")
         )
-        def update_cand_links(context_actions_dicts: list[dict[str, float]], cand_idx):
+        def update_cand_link(context_actions_dicts: list[dict[str, float]], cand_idx) -> tuple[str, bool]:
             """
             Updates the candidate link when a specific candidate is selected.
+            Additionally un-disables the button if this is the first time we're selecting a candidate.
             """
-            cand_dict = context_actions_dicts[cand_idx]
-            link = actions_to_url(cand_dict)
-            return link
+            if cand_idx is not None:
+                cand_dict = context_actions_dicts[cand_idx]
+                link = actions_to_url(cand_dict)
+                return link, False
+            return "", True
