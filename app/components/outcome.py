@@ -6,7 +6,8 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from app.utils import EvolutionHandler
+
+from app.utils import EvolutionHandler, filter_metrics_json
 
 
 class OutcomeComponent():
@@ -15,9 +16,8 @@ class OutcomeComponent():
     Has drop downs to allow the user to select which outcomes they want to see.
     TODO: Make it so we only load the selected prescriptors.
     """
-    def __init__(self, evolution_handler: EvolutionHandler, all_cand_idxs: list[str]):
+    def __init__(self, evolution_handler: EvolutionHandler):
         self.evolution_handler = evolution_handler
-        self.all_cand_idxs = all_cand_idxs + ["baseline", "other"]
         self.context_cols = ["_long_term_gdp_per_capita_rate",
                              "_near_term_gdp_per_capita_rate",
                              "_transition_time_to_reach_long_term_gdp_per_capita_rate",
@@ -106,7 +106,7 @@ class OutcomeComponent():
                     fluid=True,
                     className="py-3",
                     children=[
-                        dbc.Row(html.H2("Outcomes of Prescribed Actions", className="text-center mb-5")),
+                        dbc.Row(html.H2("Outcomes for Selected Policies", className="text-center mb-5")),
                         dbc.Row(
                             children=[
                                 dbc.Col(
@@ -156,19 +156,10 @@ class OutcomeComponent():
 
         return div
 
-    def filter_metrics_json(self, metrics_json: pd.DataFrame, metric_ranges: list[tuple[float, float]]):
-        """
-        Converts metrics json stored in the metrics store to a DataFrame then filters it based on metric ranges from
-        sliders.
-        """
-        metrics_df = pd.DataFrame(metrics_json)
-        metric_names = list(self.evolution_handler.outcomes.keys())
-        metric_name_and_range = zip(metric_names, metric_ranges)
-        for metric_name, metric_range in metric_name_and_range:
-            metrics_df = metrics_df[metrics_df[metric_name].between(*metric_range)]
-        return metrics_df
-
     def register_callbacks(self, app):
+        """
+        Registers callbacks relating to the outcomes section of the app.
+        """
         @app.callback(
             Output("context-actions-store", "data"),
             Output("outcomes-store", "data"),
@@ -184,19 +175,22 @@ class OutcomeComponent():
             Also stores the energy policies in the energy-policy-store in link.py.
             TODO: Make this only load selected candidates.
             """
+            # Prescribe actions for all candidates via. torch
             context_dict = dict(zip(self.context_cols, context_values))
             context_actions_dicts = self.evolution_handler.prescribe_all(context_dict)
-            outcomes_dfs = self.evolution_handler.context_actions_to_outcomes(context_actions_dicts)
-            baseline_outcomes_df = self.evolution_handler.context_baseline_outcomes(context_dict)
-            outcomes_dfs.append(baseline_outcomes_df)
 
+            # Attach baseline (no actions)
+            context_actions_dicts.append(dict(**context_dict))
+
+            # Run En-ROADS on all candidates and save as jsonl
+            outcomes_dfs = self.evolution_handler.context_actions_to_outcomes(context_actions_dicts)
             outcomes_jsonl = [outcomes_df[self.plot_outcomes].to_dict("records") for outcomes_df in outcomes_dfs]
 
+            # Process outcomes into metrics and save
             metrics_df = self.evolution_handler.outcomes_to_metrics(context_actions_dicts, outcomes_dfs)
             metrics_json = metrics_df.to_dict("records")
 
-            # Parse energy demand policy
-            # colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
+            # Parse energy demand policy from outcomes for use in link.py
             energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
             demands = [f"Primary energy demand of {energy}" for energy in energies]
             energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in outcomes_dfs]
@@ -216,7 +210,7 @@ class OutcomeComponent():
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
-            metrics_df = self.filter_metrics_json(metrics_json, metric_ranges)
+            metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)
 
             fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, cand_idxs)
@@ -230,6 +224,9 @@ class OutcomeComponent():
         )
         def update_cand_link_select(metrics_json: dict[str, list],
                                     *metric_ranges: list[tuple[float, float]]) -> list[int]:
-            metrics_df = self.filter_metrics_json(metrics_json, metric_ranges)
+            """
+            Updates the available candidates in the link dropdown based on metric ranges.
+            """
+            metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)
             return cand_idxs

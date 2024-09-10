@@ -60,7 +60,7 @@ class LinkComponent():
             ),
             margin=dict(l=0, r=0, t=100, b=0),
             title=dict(
-                text=f"Model {cand_idx} Energy Policy",
+                text=f"Policy {cand_idx} Energy Source Distribution Over Time",
                 x=0.5,
                 y=0.9,
                 xanchor="center"
@@ -101,11 +101,10 @@ class LinkComponent():
                     fluid=True,
                     className="py-3 justify-content-center",
                     children=[
-                        html.H2("View Energy Policy and Visualize/Modify Actions in En-ROADS",
-                                className="text-center mb-2"),
-                        html.P("Select a candidate to preview the distribution of energy sources over time due to \
-                               its prescribed energy policy. Then click on the link to view the full policy in \
-                               En-ROADS.",
+                        html.H2("View Policy Energy Sources and Explore Policy in En-ROADS",
+                                className="text-center mb-5"),
+                        html.P("Select a policy to preview its resulting distribution of energy sources over time. \
+                               Then click on the link to explore and fine-tune the policy in En-ROADS.",
                                className="text-center w-70 mb-2 mx-auto"),
                         dcc.Loading(
                             type="circle",
@@ -116,24 +115,26 @@ class LinkComponent():
                         ),
                         dbc.Row(
                             className="w-75 mx-auto",
-                            justify="center",
+                            align="center",
                             children=[
                                 dbc.Col(
                                     dcc.Dropdown(
                                         id="cand-link-select",
                                         options=[],
-                                        placeholder="Select an AI Model"
+                                        placeholder="Select a policy"
                                     ),
-                                    width={"size": 3, "offset": 3}
+                                    width={"size": 3, "offset": 1}
                                 ),
                                 dbc.Col(
                                     dbc.Button(
-                                        "View in En-ROADS",
+                                        "Explore & Fine-Tune Policy in En-ROADS",
                                         id="cand-link",
                                         target="_blank",
                                         rel="noopener noreferrer",
+                                        size="lg",
                                         disabled=True
                                     ),
+                                    width={"size": 4}
                                 )
                             ]
                         ),
@@ -157,7 +158,7 @@ class LinkComponent():
             fig = go.Figure()
             fig.update_layout(
                 title=dict(
-                    text="Select an AI model to view its policy",
+                    text="Select a policy to view its energy source distribution",
                     x=0.5,
                     xanchor="center"
                 )

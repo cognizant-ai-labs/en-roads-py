@@ -1,9 +1,13 @@
 """
 Component in charge of filtering out prescriptors by metric.
 """
-from dash import html, dcc, Input, Output
+from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+from app.utils import filter_metrics_json
 
 
 class FilterComponent:
@@ -38,6 +42,7 @@ class FilterComponent:
         div = html.Div(
             children=[
                 dbc.Row(
+                    className="mb-2",
                     children=[
                         dbc.Col(html.Label(self.metrics[i]), width=4),
                         dbc.Col(sliders[i], width=8)
@@ -47,6 +52,75 @@ class FilterComponent:
             ]
         )
         return div
+    
+    def plot_parallel_coordinates_line(self,
+                                       metrics_json: dict[str, list],
+                                       metric_ranges: list[tuple[float, float]]) -> go.Figure:
+        """
+        NOTE: This is legacy code that may be brought back in later for a user toggle.
+        Plots a parallel coordinates plot of the prescriptor metrics.
+        Starts by plotting "other" if selected so that it's the bottom of the z axis.
+        Then plots selected candidates in color.
+        Finally plots the baseline on top if selected.
+        """
+        fig = go.Figure()
+
+        normalized_df = filter_metrics_json(metrics_json, metric_ranges, normalize=True)
+
+        cand_idxs = list(normalized_df.index)[:-1]  # Leave out the baseline
+        n_special_cands = min(10, len(cand_idxs))
+
+        showlegend = True
+        # If "other" is in the cand_idxs, plot all other candidates in lightgray
+        for cand_idx in cand_idxs[n_special_cands:]:
+            cand_metrics = normalized_df.loc[cand_idx].values
+            fig.add_trace(go.Scatter(
+                x=normalized_df.columns,
+                y=cand_metrics,
+                mode='lines',
+                legendgroup="other",
+                name="other",
+                line=dict(color="lightgray"),
+                showlegend=showlegend
+            ))
+            showlegend = False
+
+        # Plot selected candidates besides baseline so it can be on top
+        for color_idx, cand_idx in enumerate(cand_idxs[:n_special_cands]):
+            cand_metrics = normalized_df.loc[cand_idx].values
+            fig.add_trace(go.Scatter(
+                x=normalized_df.columns,
+                y=cand_metrics,
+                mode='lines',
+                name=str(cand_idx),
+                line=dict(color=px.colors.qualitative.Plotly[color_idx])
+            ))
+
+        baseline_metrics = normalized_df.iloc[-1]
+        fig.add_trace(go.Scatter(
+            x=normalized_df.columns,
+            y=baseline_metrics.values,
+            mode='lines',
+            name="baseline",
+            line=dict(color="black")
+        ))
+
+        for i in range(len(normalized_df.columns)):
+            fig.add_vline(x=i, line_color="black")
+
+        full_metrics_df = pd.DataFrame(metrics_json)
+        normalized_full = (full_metrics_df - full_metrics_df.mean()) / (full_metrics_df.std() + 1e-10)
+        fig.update_layout(
+            yaxis_range=[normalized_full.min().min(), normalized_full.max().max()],
+            title={
+                'text': "Normalized Policy Metrics",
+                'x': 0.5,  # Center the title
+                'xanchor': 'center',  # Anchor it at the center
+                'yanchor': 'top'  # Optionally keep it anchored to the top
+            }
+        )
+
+        return fig
 
     def create_filter_div(self):
         """
@@ -60,11 +134,12 @@ class FilterComponent:
                     fluid=True,
                     className="py-3",
                     children=[
-                        html.H2("Filter AI Models by Desired Metric", className="text-center mb-5"),
-                        html.P("One hundred AI models are trained to create different energy policies that have a \
-                               diverse range of outcomes. Use the sliders below to filter the models that align with a \
-                               desired behavior resulting from their automatically generated energy policy. See how \
-                               this filtering affects the behavior of the policies in the below sections.",
+                        html.H2("Filter Policies by Desired Behavior", className="text-center mb-5"),
+                        html.P("One hundred AI models are trained to create different energy policies that make trade \
+                               offs in metrics. Use the sliders below to filter the AI generated policies \
+                               that produce desired behavior resulting from their automatically generated energy \
+                               policy. See how this filtering affects the behavior of the policies in the below \
+                               sections.",
                                className="text-center"),
                         dcc.Loading(
                             type="circle",
@@ -73,6 +148,30 @@ class FilterComponent:
                                 self.create_metric_sliders(),
                                 dcc.Store(id="metrics-store")
                             ],
+                        ),
+                        html.Div(
+                            className="d-flex flex-column align-items-center",
+                            children=[
+                                dbc.Button(
+                                    "Toggle Detailed Select",
+                                    id="parcoords-collapse-button",
+                                    className="mb-3",
+                                    color="secondary",
+                                    outline=True,
+                                    n_clicks=0
+                                ),
+                                dbc.Collapse(
+                                    children=[
+                                        dbc.Card(
+                                            dcc.Graph(id="parcoords-figure"),
+                                            color="secondary"
+                                        )
+                                    ],
+                                    id="parcoords-collapse",
+                                    className="bg-gray rounded-5",
+                                    is_open=False
+                                )
+                            ]
                         )
                     ]
                 )
@@ -111,3 +210,27 @@ class FilterComponent:
                 total_output.extend(metric_output)
 
             return total_output
+
+        @app.callback(
+            Output("parcoords-collapse", "is_open"),
+            Input("parcoords-collapse-button", "n_clicks"),
+            State("parcoords-collapse", "is_open")
+        )
+        def toggle_parcoords_collapse(n, is_open):
+            """
+            Toggles collapse. From dbc documentation.
+            """
+            if n:
+                return not is_open
+            return is_open
+        
+        @app.callback(
+            Output("parcoords-figure", "figure"),
+            State("metrics-store", "data"),
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids]
+        )
+        def filter_parcoords_figure(metrics_json: dict[str, list], *metric_ranges) -> go.Figure:
+            """
+            Filters parallel coordinates figure based on the metric ranges from the sliders.
+            """
+            return self.plot_parallel_coordinates_line(metrics_json, metric_ranges)

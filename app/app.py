@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 from app.components.intro import IntroComponent
 from app.components.context import ContextComponent
 from app.components.filter import FilterComponent
-from app.components.parallel import ParallelComponent
+# from app.components.parallel import ParallelComponent
 from app.components.outcome import OutcomeComponent
 from app.components.link import LinkComponent
 from app.components.references import ReferencesComponent
@@ -22,10 +22,10 @@ sample_idxs = list(range(10))
 intro_component = IntroComponent()
 context_component = ContextComponent()
 filter_component = FilterComponent(metrics)
-parallel_component = ParallelComponent(evolution_handler.load_initial_metrics_df(),
-                                       sample_idxs,
-                                       evolution_handler.outcomes)
-outcome_component = OutcomeComponent(evolution_handler, sample_idxs)
+# parallel_component = ParallelComponent(evolution_handler.load_initial_metrics_df(),
+#                                        sample_idxs,
+#                                        evolution_handler.outcomes)
+outcome_component = OutcomeComponent(evolution_handler)
 link_component = LinkComponent(sample_idxs)
 references_component = ReferencesComponent()
 
@@ -36,7 +36,7 @@ app.title = "Climate Change Decision Making"
 
 context_component.register_callbacks(app)
 filter_component.register_callbacks(app)
-parallel_component.register_callbacks(app)
+# parallel_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
 
