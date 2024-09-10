@@ -8,6 +8,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
 from enroadspy import load_input_specs
 
 
@@ -123,18 +124,18 @@ class ContextComponent():
         )
 
         div = html.Div(
-            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
+            className=JUMBOTRON,
             children=[
                 dbc.Container(
                     fluid=True,
-                    className="py-3 d-flex flex-column h-100 w-70",
+                    className=CONTAINER,
                     children=[
-                        html.H2("Select a Context Scenario to Optimize For", className="text-center mb-5"),
+                        html.H2("Select a Context Scenario to Optimize For", className=HEADER),
                         html.P("According to the AR6 climate report: 'The five Shared Socioeconomic \
                                             Pathways were designed to span a range of challenges to climate change \
-                                            mitigation and adaptation.' Select one of these scenarios by clicking it \
+                                            mitigation and adaptation'. Select one of these scenarios by clicking it \
                                             in the scatter plot below. If desired, manually modify the scenario \
-                                            with the sliders.", className="mb-2 text-center mx-auto"),
+                                            with the sliders.", className=DESC_TEXT),
                         dbc.Row(
                             className="flex-grow-1",
                             children=[

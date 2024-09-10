@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
 from app.utils import filter_metrics_json
 
 
@@ -41,11 +42,11 @@ class FilterComponent:
 
         div = html.Div(
             children=[
-                dbc.Row(
-                    className="mb-2",
+                html.Div(
+                    className="d-flex flex-row",
                     children=[
-                        dbc.Col(html.Label(self.metrics[i]), width=4),
-                        dbc.Col(sliders[i], width=8)
+                        html.Label(self.metrics[i], className="w-25"),  # w-25 and flex-grow-1 ensures they line up
+                        html.Div(sliders[i], className="flex-grow-1")
                     ]
                 )
                 for i in range(len(self.metrics))
@@ -128,50 +129,37 @@ class FilterComponent:
         TODO: Currently the slider tooltips show even while loading which is a bit of an eyesore.
         """
         div = html.Div(
-            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
+            className=JUMBOTRON,
             children=[
                 dbc.Container(
                     fluid=True,
-                    className="py-3",
+                    className=CONTAINER,
                     children=[
-                        html.H2("Filter Policies by Desired Behavior", className="text-center mb-5"),
-                        html.P("One hundred AI models are trained to create different energy policies that make trade \
+                        html.H2("Filter Policies by Desired Behavior", className=HEADER),
+                        html.P("One hundred AI models are trained to create energy policies that make different trade \
                                offs in metrics. Use the sliders below to filter the AI generated policies \
                                that produce desired behavior resulting from their automatically generated energy \
                                policy. See how this filtering affects the behavior of the policies in the below \
                                sections.",
-                               className="text-center"),
-                        dcc.Loading(
-                            type="circle",
-                            target_components={"metrics-store": "*"},
-                            children=[
-                                self.create_metric_sliders(),
-                                dcc.Store(id="metrics-store")
-                            ],
+                               className=DESC_TEXT),
+                        html.Div(
+                            dcc.Loading(
+                                type="circle",
+                                target_components={"metrics-store": "*"},
+                                children=[
+                                    self.create_metric_sliders(),
+                                    dcc.Store(id="metrics-store")
+                                ],
+                            ),
+                            className="w-100 mb-5"
                         ),
                         html.Div(
-                            className="d-flex flex-column align-items-center",
-                            children=[
-                                dbc.Button(
-                                    "Toggle Detailed Select",
-                                    id="parcoords-collapse-button",
-                                    className="mb-3",
-                                    color="secondary",
-                                    outline=True,
-                                    n_clicks=0
-                                ),
-                                dbc.Collapse(
-                                    children=[
-                                        dbc.Card(
-                                            dcc.Graph(id="parcoords-figure"),
-                                            color="secondary"
-                                        )
-                                    ],
-                                    id="parcoords-collapse",
-                                    className="bg-gray rounded-5",
-                                    is_open=False
-                                )
-                            ]
+                            dbc.Accordion(
+                                dbc.AccordionItem(dcc.Graph(id="parcoords-figure"), title="View Parallel Coordinates"),
+                                start_collapsed=True,
+                                flush=True
+                            ),
+                            className="w-100"
                         )
                     ]
                 )
@@ -211,18 +199,18 @@ class FilterComponent:
 
             return total_output
 
-        @app.callback(
-            Output("parcoords-collapse", "is_open"),
-            Input("parcoords-collapse-button", "n_clicks"),
-            State("parcoords-collapse", "is_open")
-        )
-        def toggle_parcoords_collapse(n, is_open):
-            """
-            Toggles collapse. From dbc documentation.
-            """
-            if n:
-                return not is_open
-            return is_open
+        # @app.callback(
+        #     Output("parcoords-collapse", "is_open"),
+        #     Input("parcoords-collapse-button", "n_clicks"),
+        #     State("parcoords-collapse", "is_open")
+        # )
+        # def toggle_parcoords_collapse(n, is_open):
+        #     """
+        #     Toggles collapse. From dbc documentation.
+        #     """
+        #     if n:
+        #         return not is_open
+        #     return is_open
         
         @app.callback(
             Output("parcoords-figure", "figure"),

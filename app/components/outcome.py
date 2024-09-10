@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
 from app.utils import EvolutionHandler, filter_metrics_json
 
 
@@ -100,32 +101,31 @@ class OutcomeComponent():
         is updated. Otherwise, we have individual loads for each graph.
         """
         div = html.Div(
-            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
+            className=JUMBOTRON,
             children=[
                 dbc.Container(
                     fluid=True,
-                    className="py-3",
+                    className=CONTAINER,
                     children=[
-                        dbc.Row(html.H2("Outcomes for Selected Policies", className="text-center mb-5")),
-                        dbc.Row(
+                        html.H2("Outcomes for Selected Policies", className=HEADER),
+                        html.Div(
+                            className="d-flex flex-row w-100",
                             children=[
-                                dbc.Col(
-                                    children=[
-                                        dcc.Dropdown(
-                                            id="outcome-dropdown-1",
-                                            options=self.plot_outcomes,
-                                            value=self.plot_outcomes[0]
-                                        )
-                                    ]
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id="outcome-dropdown-1",
+                                        options=self.plot_outcomes,
+                                        value=self.plot_outcomes[0]
+                                    ),
+                                    className="flex-fill"
                                 ),
-                                dbc.Col(
-                                    children=[
-                                        dcc.Dropdown(
-                                            id="outcome-dropdown-2",
-                                            options=self.plot_outcomes,
-                                            value=self.plot_outcomes[1]
-                                        )
-                                    ]
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id="outcome-dropdown-2",
+                                        options=self.plot_outcomes,
+                                        value=self.plot_outcomes[1]
+                                    ),
+                                    className="flex-fill"
                                 )
                             ]
                         ),
@@ -135,16 +135,11 @@ class OutcomeComponent():
                             children=[
                                 dcc.Store(id="context-actions-store"),
                                 dcc.Store(id="outcomes-store"),
-                                dbc.Row(
+                                html.Div(
+                                    className="d-flex flex-row w-100",
                                     children=[
-                                        dbc.Col(
-                                            dcc.Graph(id="outcome-graph-1"),
-                                            width=6
-                                        ),
-                                        dbc.Col(
-                                            dcc.Graph(id="outcome-graph-2"),
-                                            width=6
-                                        )
+                                        dcc.Graph(id="outcome-graph-1"),
+                                        dcc.Graph(id="outcome-graph-2")
                                     ]
                                 )
                             ]
