@@ -43,7 +43,7 @@ class FilterComponent:
         div = html.Div(
             children=[
                 html.Div(
-                    className="d-flex flex-row",
+                    className="d-flex flex-row mb-2",
                     children=[
                         html.Label(self.metrics[i], className="w-25"),  # w-25 and flex-grow-1 ensures they line up
                         html.Div(sliders[i], className="flex-grow-1")
