@@ -13,6 +13,27 @@ from evolution.candidate import Candidate
 from evolution.outcomes.outcome_manager import OutcomeManager
 
 
+def filter_metrics_json(metrics_json: dict[str, list],
+                        metric_ranges: list[tuple[float, float]],
+                        normalize=False) -> pd.DataFrame:
+    """
+    Converts metrics json stored in the metrics store to a DataFrame then filters it based on metric ranges from
+    sliders.
+    """
+    metrics_df = pd.DataFrame(metrics_json)
+    mu = metrics_df.mean()
+    sigma = metrics_df.std()
+    metric_names = metrics_df.columns
+    metric_name_and_range = zip(metric_names, metric_ranges)
+    for metric_name, metric_range in metric_name_and_range:
+        # Never filter out the baseline
+        condition = (metrics_df[metric_name].between(*metric_range)) | (metrics_df.index == metrics_df.index[-1])
+        metrics_df = metrics_df[condition]
+    if normalize:
+        metrics_df = (metrics_df - mu) / (sigma + 1e-10)
+    return metrics_df
+
+
 class EvolutionHandler():
     """
     Handles evolution results and running of prescriptors for the app.
@@ -104,6 +125,21 @@ class EvolutionHandler():
             outcomes_dfs.append(outcomes_df)
 
         return outcomes_dfs
+
+    def outcomes_to_metrics(self,
+                            context_actions_dicts: list[dict[str, float]],
+                            outcomes_dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """
+        Takes parallel lists of context_actions_dicts and outcomes_dfs and processes them into a metrics dict.
+        All of these metrics dicts are then concatenated into a single DataFrame.
+        """
+        metrics_dicts = []
+        for context_actions_dict, outcomes_df in zip(context_actions_dicts, outcomes_dfs):
+            metrics = self.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
+            metrics_dicts.append(metrics)
+
+        metrics_df = pd.DataFrame(metrics_dicts)
+        return metrics_df
 
     def context_baseline_outcomes(self, context_dict: dict[str, float]):
         """

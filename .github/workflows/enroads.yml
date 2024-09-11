@@ -29,7 +29,7 @@ jobs:
         ENROADS_PASSWORD: ${{ secrets.ENROADS_PASSWORD }}
       run: python -m enroadspy.download_sdk
     - name: Lint with PyLint
-      run: pylint ./*
+      run: pylint .
     - name: Lint with Flake8
       run: flake8
     - name: Run unit tests

@@ -1,4 +1,5 @@
 """
+NOTE: This is legacy code that may be brought back in later.
 File containing component in charge of visualizing the candidates' metrics.
 """
 from dash import html, dcc, Input, Output

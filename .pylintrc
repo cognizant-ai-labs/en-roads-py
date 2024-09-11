@@ -10,4 +10,4 @@ suggestion-mode=yes
 
 good-names=X,F,X0
 
-fail-under=9.6
+fail-under=9.8
