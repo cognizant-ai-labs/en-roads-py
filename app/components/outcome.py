@@ -133,11 +133,11 @@ class OutcomeComponent():
                             target_components={"context-actions-store": "*", "outcomes-store": "*"},
                             type="circle",
                             children=[
-                                dcc.Store(id="context-actions-store"),
-                                dcc.Store(id="outcomes-store"),
                                 dbc.Row(
                                     className="g-0",
                                     children=[
+                                        dcc.Store(id="context-actions-store"),
+                                        dcc.Store(id="outcomes-store"),
                                         dbc.Col(dcc.Graph(id="outcome-graph-1"), width=6),
                                         dbc.Col(dcc.Graph(id="outcome-graph-2"), width=6)
                                     ]
@@ -211,7 +211,7 @@ class OutcomeComponent():
             fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, cand_idxs)
             fig2 = self.plot_outcome_over_time(outcome2, outcomes_jsonl, cand_idxs)
             return fig1, fig2
-        
+
         @app.callback(
             Output("cand-link-select", "options"),
             State("metrics-store", "data"),

@@ -53,16 +53,15 @@ class FilterComponent:
             ]
         )
         return div
-    
+
     def plot_parallel_coordinates_line(self,
                                        metrics_json: dict[str, list],
                                        metric_ranges: list[tuple[float, float]]) -> go.Figure:
         """
-        NOTE: This is legacy code that may be brought back in later for a user toggle.
         Plots a parallel coordinates plot of the prescriptor metrics.
-        Starts by plotting "other" if selected so that it's the bottom of the z axis.
+        Starts by plotting "other" so that it's the bottom of the z axis.
         Then plots selected candidates in color.
-        Finally plots the baseline on top if selected.
+        Finally plots the baseline on top.
         """
         fig = go.Figure()
 
@@ -157,7 +156,6 @@ class FilterComponent:
                             dbc.Accordion(
                                 dbc.AccordionItem(dcc.Graph(id="parcoords-figure"), title="View Parallel Coordinates"),
                                 start_collapsed=True,
-                                flush=True
                             ),
                             className="w-100"
                         )
@@ -199,19 +197,6 @@ class FilterComponent:
 
             return total_output
 
-        # @app.callback(
-        #     Output("parcoords-collapse", "is_open"),
-        #     Input("parcoords-collapse-button", "n_clicks"),
-        #     State("parcoords-collapse", "is_open")
-        # )
-        # def toggle_parcoords_collapse(n, is_open):
-        #     """
-        #     Toggles collapse. From dbc documentation.
-        #     """
-        #     if n:
-        #         return not is_open
-        #     return is_open
-        
         @app.callback(
             Output("parcoords-figure", "figure"),
             State("metrics-store", "data"),

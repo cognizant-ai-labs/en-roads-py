@@ -109,6 +109,7 @@ class LinkComponent():
                                className=DESC_TEXT),
                         dcc.Loading(
                             type="circle",
+                            target_components={"energy-policy-store": "*"},
                             children=[
                                 dcc.Store(id="energy-policy-store"),
                                 dcc.Graph(id="energy-policy-graph", className="mb-2")
@@ -157,7 +158,7 @@ class LinkComponent():
         def update_energy_policy_graph(energy_policy_jsonl: list[dict[str, list]], cand_idx) -> go.Figure:
             if cand_idx is not None:
                 return self.plot_energy_policy(energy_policy_jsonl, cand_idx)
-            
+
             # If we have no cand id just return a blank figure asking the user to select a candidate.
             fig = go.Figure()
             fig.update_layout(
