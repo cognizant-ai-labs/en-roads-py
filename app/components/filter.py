@@ -137,9 +137,7 @@ class FilterComponent:
                         html.H2("Filter Policies by Desired Behavior", className=HEADER),
                         html.P("One hundred AI models are trained to create energy policies that make different trade \
                                offs in metrics. Use the sliders below to filter the AI generated policies \
-                               that produce desired behavior resulting from their automatically generated energy \
-                               policy. See how this filtering affects the behavior of the policies in the below \
-                               sections.",
+                               that produce desired behavior. See the results of the filtering in the below sections.",
                                className=DESC_TEXT),
                         html.Div(
                             dcc.Loading(
