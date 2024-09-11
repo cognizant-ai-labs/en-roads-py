@@ -206,7 +206,7 @@ class OutcomeComponent():
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
-            cand_idxs = list(metrics_df.index)
+            cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
 
             fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, cand_idxs)
             fig2 = self.plot_outcome_over_time(outcome2, outcomes_jsonl, cand_idxs)
@@ -223,5 +223,5 @@ class OutcomeComponent():
             Updates the available candidates in the link dropdown based on metric ranges.
             """
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
-            cand_idxs = list(metrics_df.index)
+            cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
             return cand_idxs

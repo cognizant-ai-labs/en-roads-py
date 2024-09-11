@@ -148,7 +148,21 @@ class FilterComponent:
                                     dcc.Store(id="metrics-store")
                                 ],
                             ),
-                            className="w-100 mb-5"
+                            className="w-100"
+                        ),
+                        html.Div(
+                            className="d-flex flex-row mb-2",
+                            children=[
+                                dbc.Button(
+                                    "0 Policies Selected",
+                                    id="cand-counter",
+                                    disabled=True,
+                                    outline=True,
+                                    className="me-1",
+                                    style={"width": "200px"}  # TODO: We hard-code the width here because of text size
+                                ),
+                                dbc.Button("Reset Filters", id="reset-button")
+                            ]
                         ),
                         html.Div(
                             dbc.Accordion(
@@ -169,12 +183,14 @@ class FilterComponent:
         """
         @app.callback(
             [Output(f"{metric_id}-slider", param) for metric_id in self.metric_ids for param in self.updated_params],
-            Input("metrics-store", "data")
+            Input("metrics-store", "data"),
+            Input("reset-button", "n_clicks")
         )
-        def update_filter_sliders(metrics_jsonl: list[dict[str, list]]) -> list:
+        def update_filter_sliders(metrics_jsonl: list[dict[str, list]], _) -> list:
             """
             Update the filter slider min/max/value/marks based on the incoming metrics data. The output of this function
             is a list of the updated parameters for each slider concatenated.
+            This also happens whenever we click the reset button.
             """
             metrics_df = pd.DataFrame(metrics_jsonl)
             total_output = []
@@ -205,3 +221,15 @@ class FilterComponent:
             Filters parallel coordinates figure based on the metric ranges from the sliders.
             """
             return self.plot_parallel_coordinates_line(metrics_json, metric_ranges)
+
+        @app.callback(
+            Output("cand-counter", "children"),
+            State("metrics-store", "data"),
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids]
+        )
+        def count_selected_cands(metrics_json: dict[str, list], *metric_ranges) -> str:
+            """
+            Counts the number of selected candidates based on the metric ranges from the sliders.
+            """
+            metrics_df = filter_metrics_json(metrics_json, metric_ranges)
+            return f"{len(metrics_df) - 1} Policies Selected"
