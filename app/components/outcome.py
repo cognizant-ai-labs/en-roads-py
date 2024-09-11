@@ -135,11 +135,11 @@ class OutcomeComponent():
                             children=[
                                 dcc.Store(id="context-actions-store"),
                                 dcc.Store(id="outcomes-store"),
-                                html.Div(
-                                    className="d-flex flex-row w-100",
+                                dbc.Row(
+                                    className="g-0",
                                     children=[
-                                        dcc.Graph(id="outcome-graph-1"),
-                                        dcc.Graph(id="outcome-graph-2")
+                                        dbc.Col(dcc.Graph(id="outcome-graph-1"), width=6),
+                                        dbc.Col(dcc.Graph(id="outcome-graph-2"), width=6)
                                     ]
                                 )
                             ]
