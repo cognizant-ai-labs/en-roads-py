@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 
+from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
 from enroadspy.generate_url import actions_to_url
 
 
@@ -95,17 +96,17 @@ class LinkComponent():
         TODO: Make link unclickable while outcomes are loading.
         """
         div = html.Div(
-            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
+            className=JUMBOTRON,
             children=[
                 dbc.Container(
                     fluid=True,
-                    className="py-3 justify-content-center",
+                    className=CONTAINER,
                     children=[
                         html.H2("View Policy Energy Sources and Explore Policy in En-ROADS",
-                                className="text-center mb-5"),
+                                className=HEADER),
                         html.P("Select a policy to preview its resulting distribution of energy sources over time. \
                                Then click on the link to explore and fine-tune the policy in En-ROADS.",
-                               className="text-center w-70 mb-2 mx-auto"),
+                               className=DESC_TEXT),
                         dcc.Loading(
                             type="circle",
                             children=[
@@ -145,6 +146,9 @@ class LinkComponent():
         return div
 
     def register_callbacks(self, app):
+        """
+        Registers callbacks for the links component.
+        """
         @app.callback(
             Output("energy-policy-graph", "figure"),
             Input("energy-policy-store", "data"),

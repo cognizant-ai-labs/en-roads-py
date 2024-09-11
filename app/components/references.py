@@ -4,6 +4,8 @@ References Component file
 from dash import html
 import dash_bootstrap_components as dbc
 
+from app.classes import JUMBOTRON, CONTAINER, HEADER
+
 
 class ReferencesComponent():
     """
@@ -14,13 +16,13 @@ class ReferencesComponent():
         Creates div displaying references
         """
         div = html.Div(
-            className="p-3 bg-white rounded-5 mx-auto w-75 mb-3",
+            className=JUMBOTRON,
             children=[
                 dbc.Container(
                     fluid=True,
-                    className="py-3",
+                    className=CONTAINER[:-18],  # Left-align our references
                     children=[
-                        html.H2("References", className="text-center mb-2"),
+                        html.H2("References", className=HEADER),
                         html.P([
                             "For more info about Project Resilience, visit the ",
                             html.A("United Nations ITU Page",

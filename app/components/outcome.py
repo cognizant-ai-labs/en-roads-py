@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
+from app.classes import JUMBOTRON, CONTAINER, HEADER
 from app.utils import EvolutionHandler, filter_metrics_json
 
 
