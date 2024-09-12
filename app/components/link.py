@@ -78,7 +78,7 @@ class LinkComponent():
             )
         )
         return fig
-    
+
     def translate_context_actions_dict(self, context_actions_dict: dict[str, float]) -> html.Div:
         """
         Translates a context actions dict into a nice div to display
