@@ -1,12 +1,15 @@
 """
 Link Component.
 """
-from dash import Input, Output, html, dcc
+import json
+
+from dash import Input, Output, State, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 
 from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
+from enroadspy import load_input_specs
 from enroadspy.generate_url import actions_to_url
 
 
@@ -22,12 +25,18 @@ class LinkComponent():
         self.energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
         self.demands = [f"Primary energy demand of {energy}" for energy in self.energies]
 
+        with open("app/categories.json", "r", encoding="utf-8") as f:
+            self.categories = json.load(f)
+        self.input_specs = load_input_specs()
+
     def plot_energy_policy(self, energy_policy_jsonl: list[dict[str, list]], cand_idx: int) -> go.Figure:
         """
         Plots density chart from energy policy.
         Removes demands that are all 0.
         """
-        policy_df = pd.DataFrame(energy_policy_jsonl[cand_idx])
+        policy_dfs = [pd.DataFrame(policy) for policy in energy_policy_jsonl]
+        max_val = max(policy_df[self.demands].sum(axis=1).max(axis=0) for policy_df in policy_dfs)
+        policy_df = policy_dfs[cand_idx]
 
         # Preprocess our policy df making it cumulative
         demands = [demand for demand in self.demands if policy_df[demand].max() > 0]
@@ -52,6 +61,7 @@ class LinkComponent():
             ))
 
         fig.update_layout(
+            yaxis_range=[0, max_val],
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
@@ -69,26 +79,25 @@ class LinkComponent():
         )
         return fig
 
-    def create_button_group(self) -> html.Div:
+    def translate_context_actions_dict(self, context_actions_dict: dict[str, float]) -> html.Div:
         """
-        Creates button group to select candidate to link to.
+        Translates a context actions dict into a nice div to display
         """
-        button_options = [{"label": str(cand_idx), "value": cand_idx} for cand_idx in self.cand_idxs]
-        button_group = html.Div(
-            [
-                dbc.RadioItems(
-                    id="cand-link-select",
-                    className="btn-group",
-                    inputClassName="btn-check",
-                    labelClassName="btn btn-outline-primary",
-                    labelCheckedClassName="active",
-                    options=button_options,
-                    value=0,
-                ),
-            ],
-            className="radio-group d-flex justify-content-center",
-        )
-        return button_group
+        children = []
+        for category in self.categories:
+            children.append(html.H4(category))
+            for action in self.categories[category]:
+                if action in context_actions_dict:
+                    input_spec = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+                    val = context_actions_dict[action]
+                    if input_spec["kind"] == "slider":
+                        formatting = input_spec["format"]
+                        val_formatted = f"{val:{formatting}}"
+                    else:
+                        val_formatted = "on" if val else "off"
+                    children.append(html.P(f"{input_spec['varName']}: {val_formatted}"))
+
+        return html.Div(children)
 
     def create_link_div(self):
         """
@@ -107,6 +116,14 @@ class LinkComponent():
                         html.P("Select a policy to preview its resulting distribution of energy sources over time. \
                                Then click on the link to explore and fine-tune the policy in En-ROADS.",
                                className=DESC_TEXT),
+                        html.Div(
+                            dcc.Dropdown(
+                                id="cand-link-select",
+                                options=[],
+                                placeholder="Select a policy",
+                            ),
+                            className="w-25 flex-grow-1"
+                        ),
                         dcc.Loading(
                             type="circle",
                             target_components={"energy-policy-store": "*"},
@@ -115,31 +132,28 @@ class LinkComponent():
                                 dcc.Graph(id="energy-policy-graph", className="mb-2")
                             ]
                         ),
-                        dbc.Row(
-                            className="w-75 mx-auto",
-                            align="center",
+                        html.Div(
+                            className="d-flex flex-row justify-content-center",
                             children=[
-                                dbc.Col(
-                                    dcc.Dropdown(
-                                        id="cand-link-select",
-                                        options=[],
-                                        placeholder="Select a policy"
-                                    ),
-                                    width={"size": 3, "offset": 1}
-                                ),
-                                dbc.Col(
-                                    dbc.Button(
-                                        "Explore & Fine-Tune Policy in En-ROADS",
-                                        id="cand-link",
-                                        target="_blank",
-                                        rel="noopener noreferrer",
-                                        size="lg",
-                                        disabled=True
-                                    ),
-                                    width={"size": 4}
+                                dbc.Button("Show Actions", id="show-actions-button", className="me-1", n_clicks=0),
+                                dbc.Button(
+                                    "Explore Policy in En-ROADS",
+                                    id="cand-link",
+                                    target="_blank",
+                                    rel="noopener noreferrer",
+                                    disabled=True
                                 )
                             ]
                         ),
+                        dbc.Modal(
+                            id="actions-modal",
+                            scrollable=True,
+                            is_open=False,
+                            children=[
+                                dbc.ModalHeader(dbc.ModalTitle("Actions")),
+                                dbc.ModalBody("These are the actions taken", id="actions-body")
+                            ]
+                        )
                     ]
                 )
             ]
@@ -185,4 +199,32 @@ class LinkComponent():
                 cand_dict = context_actions_dicts[cand_idx]
                 link = actions_to_url(cand_dict)
                 return link, False
+            return "", True
+
+        @app.callback(
+            Output("actions-modal", "is_open"),
+            Input("show-actions-button", "n_clicks"),
+            State("actions-modal", "is_open")
+        )
+        def toggle_actions_modal(n_clicks, is_open):
+            """
+            Toggles the actions modal on and off.
+            """
+            if n_clicks:
+                return True
+            return is_open
+
+        @app.callback(
+            Output("actions-body", "children"),
+            Output("show-actions-button", "disabled"),
+            State("context-actions-store", "data"),
+            Input("cand-link-select", "value")
+        )
+        def update_actions_body(context_actions_dicts: list[dict[str, float]], cand_idx) -> tuple[str, bool]:
+            """
+            Updates the body of the modal when a candidate is selected.
+            """
+            if cand_idx is not None:
+                context_actions_dict = context_actions_dicts[cand_idx]
+                return self.translate_context_actions_dict(context_actions_dict), False
             return "", True
