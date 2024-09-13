@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.sbx import SBX
-from pymoo.operators.crossover.ux import UniformCrossover
 from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.operators.survival.rank_and_crowding import RankAndCrowding
