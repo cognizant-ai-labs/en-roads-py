@@ -121,8 +121,8 @@
     ],
     "outcomes": {
         "Emissions Above Paris Agreement": true,
-        "Cost Change Squared": true,
-        "Energy Change Squared": true
+        "Cost Change Exponential": true,
+        "Energy Change Exponential": true
     },
-    "save_path": "results/pymoo/ssd/ssds-longer"
+    "save_path": "results/pymoo/ssd/ssds-exp"
 }
