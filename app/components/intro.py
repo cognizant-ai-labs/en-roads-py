@@ -1,7 +1,7 @@
 """
 Component showing the little intro blurb and the arrow to get started.
 """
-from dash import html
+from dash import html, Input, Output
 import dash_bootstrap_components as dbc
 
 
@@ -31,15 +31,59 @@ class IntroComponent():
                     style={"height": "60vh"}
                 ),
                 dbc.Row(
-                    html.P("Get Started:", className="w-50 text-center mx-auto text-white h4")
+                    children=[
+                        dbc.Col(
+                            dbc.Button(
+                                "Explore the IPCC SSPs",
+                                id="ssp-button",
+                                color="light"
+                            ),
+                            width={"size": 2, "offset": 4}
+                        ),
+                        dbc.Col(
+                            dbc.Button(
+                                "Reach the Paris Agreement",
+                                id="paris-button",
+                                color="light"
+                            ),
+                            width={"size": 2}
+                        )
+                    ]
                 ),
                 dbc.Row(
-                    html.I(className="bi bi-arrow-up w-50 text-center mx-auto text-white h1")
-                ),
-                dbc.Row(
-                    style={"height": "5vh"}
+                    style={"height": "10vh"}
                 )
             ]
         )
 
         return div
+
+    def register_callbacks(self, app):
+        """
+        Registers intro components callbacks
+        """
+        app.clientside_callback(
+            """
+            function(n_clicks) {
+                if (n_clicks) {
+                    document.getElementById('context').scrollIntoView({behavior: 'smooth'});
+                }
+                return "";
+            }
+            """,
+            Output("ssp-button", "href"),
+            [Input("ssp-button", "n_clicks")]
+        )
+
+        app.clientside_callback(
+            """
+            function(n_clicks) {
+                if (n_clicks) {
+                    document.getElementById('paris').scrollIntoView({behavior: 'smooth'});
+                }
+                return "";
+            }
+            """,
+            Output("paris-button", "href"),
+            [Input("paris-button", "n_clicks")]
+        )

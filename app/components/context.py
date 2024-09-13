@@ -124,7 +124,8 @@ class ContextComponent():
         )
 
         div = html.Div(
-            className=JUMBOTRON,
+            id="context",
+            className=JUMBOTRON + " mt-3",
             children=[
                 dbc.Container(
                     fluid=True,

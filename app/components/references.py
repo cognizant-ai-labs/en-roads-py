@@ -16,6 +16,7 @@ class ReferencesComponent():
         Creates div displaying references
         """
         div = html.Div(
+            id="references",
             className=JUMBOTRON,
             children=[
                 dbc.Container(

@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import torch
 
+from enroadspy import load_input_specs
 from enroadspy.enroads_runner import EnroadsRunner
 from evolution.candidate import Candidate
 from evolution.outcomes.outcome_manager import OutcomeManager
@@ -38,8 +39,7 @@ class EvolutionHandler():
     """
     Handles evolution results and running of prescriptors for the app.
     """
-    def __init__(self):
-        save_path = "app/results"
+    def __init__(self, save_path: str):
         with open(save_path + "/config.json", 'r', encoding="utf-8") as f:
             config = json.load(f)
 
@@ -60,42 +60,16 @@ class EvolutionHandler():
         self.runner = EnroadsRunner()
         self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
 
-    def load_initial_metrics_df(self):
-        """
-        Takes the F results matrix and converts it into a DataFrame the way pandas parcoords wants it. We also attach
-        the average of the baseline over all the contexts to this DataFrame.
-        """
-        # Convert F to DataFrame
-        metrics_df = pd.DataFrame(self.F, columns=list(self.outcomes.keys()))
-        for outcome, ascending in self.outcomes.items():
-            if not ascending:
-                metrics_df[outcome] *= -1
-        metrics_df["cand_id"] = range(len(self.F))
-
-        # Run En-ROADS on baseline over all contexts
-        baseline_metrics_avg = {outcome: 0 for outcome in self.outcomes}
-        for _, row in self.context_df.iterrows():
-            context_dict = row.to_dict()
-            baseline_outcomes = self.runner.evaluate_actions(context_dict)
-            baseline_metrics = self.outcome_manager.process_outcomes(context_dict, baseline_outcomes)
-            for outcome, val in baseline_metrics.items():
-                baseline_metrics_avg[outcome] += val
-
-        # Finish preprocessing baseline metrics
-        for outcome in self.outcomes:
-            baseline_metrics_avg[outcome] /= len(self.context_df)
-        baseline_metrics_avg["cand_id"] = "baseline"
-
-        # Attach baseline to metrics_df
-        metrics_df = pd.concat([metrics_df, pd.DataFrame([baseline_metrics_avg])], axis=0, ignore_index=True)
-
-        # TODO: Eventually don't hard-code this. Flip the net revenue below 0 to be something we minimize
-        if "Government net revenue below zero" in metrics_df.columns:
-            metrics_df["Government net revenue below zero"] *= -1
-        if "Total energy below baseline" in metrics_df.columns:
-            metrics_df["Total energy below baseline"] *= -1
-
-        return metrics_df
+        input_specs = load_input_specs()
+        self.switch_idxs = []
+        self.switchl = []
+        self.switchu = []
+        for action in self.actions:
+            row = input_specs[input_specs["varId"] == action].iloc[0]
+            if row["kind"] == "switch":
+                self.switch_idxs.append(action)
+                self.switchl.append(row["offValue"])
+                self.switchu.append(row["onValue"])
 
     def prescribe_all(self, context_dict: dict[str, float]):
         """
@@ -114,6 +88,15 @@ class EvolutionHandler():
             context_actions_dicts.append(actions_dict)
 
         return context_actions_dicts
+
+    def prescribe_paris(self):
+        actions_dicts = []
+        for x in self.X:
+            parsed = x.copy()
+            parsed[self.switch_idxs] = np.where(parsed[self.switch_idxs] < 0.5, self.switchl, self.switchu)
+            actions_dict = dict(zip(self.actions, parsed))
+            actions_dicts.append(actions_dict)
+        return actions_dicts
 
     def context_actions_to_outcomes(self, context_actions_dicts: list[dict[str, float]]):
         """

@@ -13,7 +13,7 @@ from app.components.link import LinkComponent
 from app.components.references import ReferencesComponent
 from app.utils import EvolutionHandler
 
-evolution_handler = EvolutionHandler()
+evolution_handler = EvolutionHandler("app/results/ssps")
 metrics = evolution_handler.outcomes.keys()
 # The candidates are sorted by rank then distance so the 'best' ones are the first 10
 sample_idxs = list(range(10))
@@ -30,6 +30,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.
 server = app.server
 app.title = "Climate Change Decision Making"
 
+intro_component.register_callbacks(app)
 context_component.register_callbacks(app)
 filter_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
