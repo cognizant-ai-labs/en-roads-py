@@ -12,7 +12,9 @@ import numpy as np
 import pandas as pd
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.sbx import SBX
+from pymoo.operators.crossover.ux import UniformCrossover
 from pymoo.operators.mutation.pm import PM
+from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.operators.survival.rank_and_crowding import RankAndCrowding
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
@@ -41,16 +43,24 @@ def create_nn_problem(actions: list[str], outcomes: dict[str, bool]) -> NNProble
     return problem
 
 
-def seed_default(actions: list[str], pop_size: int) -> np.ndarray:
+def seed_default(problem: EnroadsProblem, actions: list[str], pop_size: int) -> np.ndarray:
     """
-    Creates an initial population with one candidate with the default behavior. The rest are randomly initialized.
+    Creates an initial population with one candidate with the default behavior, one with the minimum value, and one
+    with the maximum value.
     """
-    X = np.random.random((pop_size, len(actions)))
+    sampling = FloatRandomSampling()
+    X = sampling(problem, pop_size).get("X")
 
     input_specs = load_input_specs()
     for i, action in enumerate(actions):
         row = input_specs[input_specs["varId"] == action].iloc[0]
         X[0, i] = row["defaultValue"]
+        if row["kind"] == "slider":
+            X[1, i] = row["minValue"]
+            X[2, i] = row["maxValue"]
+        else:
+            X[1, i] = row["offValue"]
+            X[2, i] = row["onValue"]
 
     return X
 
@@ -61,7 +71,7 @@ def optimize(config: dict, nn: bool):
     """
     if not nn:
         problem = create_default_problem(config["actions"], config["outcomes"])
-        X0 = seed_default(config["actions"], config["pop_size"])
+        X0 = seed_default(problem, config["actions"], config["pop_size"])
         alg_params = {"sampling": X0}
     else:
         problem = create_nn_problem(config["actions"], config["outcomes"])
@@ -70,6 +80,7 @@ def optimize(config: dict, nn: bool):
     algorithm = NSGA2(
         pop_size=config["pop_size"],
         crossover=SBX(prob=0.9, eta=15),
+        # crossover=UniformCrossover(),
         mutation=PM(eta=20),
         survival=RankAndCrowding(crowding_func=config["crowding_func"]),
         eliminate_duplicates=True,
