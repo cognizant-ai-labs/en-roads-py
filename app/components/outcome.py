@@ -38,6 +38,11 @@ class OutcomeComponent():
         """
         best_cand_idxs = cand_idxs[:10]
         outcomes_dfs = [pd.DataFrame(outcomes_json) for outcomes_json in outcomes_jsonl]
+        # Used later to standardize the max and min of the y-axis so that the graphs are comparable when we start
+        # filtering the models.
+        y_min = min([outcomes_df[outcome].min() for outcomes_df in outcomes_dfs])
+        y_max = max([outcomes_df[outcome].max() for outcomes_df in outcomes_dfs])
+
         color_map = px.colors.qualitative.Plotly
 
         fig = go.Figure()
@@ -81,10 +86,34 @@ class OutcomeComponent():
             showlegend=True
         ))
 
-        # Standardize the max and min of the y-axis so that the graphs are comparable when we start filtering
-        # models.
-        y_min = min([outcomes_df[outcome].min() for outcomes_df in outcomes_dfs])
-        y_max = max([outcomes_df[outcome].max() for outcomes_df in outcomes_dfs])
+        # Plot the year we start changing (2024)
+        fig.add_shape(
+            type="line",
+            x0=2024,
+            y0=y_min,
+            x1=2024,
+            y1=y_max,
+            line=dict(color="black", width=1, dash="dash")
+        )
+
+        # If we're looking at temperature, put in some dashed lines for the 1.5 and 2.0 degree targets
+        if outcome == "Temperature change from 1850":
+            fig.add_shape(
+                type="line",
+                x0=1990,
+                y0=1.5,
+                x1=2100,
+                y1=1.5,
+                line=dict(color="black", width=1, dash="dash"),
+            )
+            fig.add_shape(
+                type="line",
+                x0=1990,
+                y0=2,
+                x1=2100,
+                y1=2,
+                line=dict(color="gray", width=1, dash="dash"),
+            )
 
         fig.update_layout(
             title={

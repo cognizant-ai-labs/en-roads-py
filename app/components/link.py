@@ -86,8 +86,10 @@ class LinkComponent():
         children = []
         for category in self.categories:
             children.append(html.H4(category))
+            remove = True  # If we don't have any actions in this category, remove it
             for action in self.categories[category]:
                 if action in context_actions_dict:
+                    remove = False
                     input_spec = self.input_specs[self.input_specs["varId"] == action].iloc[0]
                     val = context_actions_dict[action]
                     if input_spec["kind"] == "slider":
@@ -96,6 +98,8 @@ class LinkComponent():
                     else:
                         val_formatted = "on" if val else "off"
                     children.append(html.P(f"{input_spec['varName']}: {val_formatted}"))
+            if remove:
+                children.pop()
 
         return html.Div(children)
 
