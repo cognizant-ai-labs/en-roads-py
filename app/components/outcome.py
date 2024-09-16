@@ -189,11 +189,12 @@ class OutcomeComponent():
             Output("outcomes-store", "data"),
             Output("metrics-store", "data"),
             Output("energy-policy-store", "data"),
-            [Input(f"context-slider-{i}", "value") for i in range(4)]
+            Input("presc-button", "n_clicks"),
+            [State(f"context-slider-{i}", "value") for i in range(4)]
         )
-        def update_results_stores(*context_values):
+        def update_results_stores(_, *context_values):
             """
-            When the context sliders are changed, prescribe actions for the context for all candidates. Then run them
+            When the presc button is pressed, prescribe actions for the context for all candidates. Then run them
             through En-ROADS to get the outcomes. Finally process the outcomes into metrics. Store the context-actions
             dicts, outcomes dfs, and metrics df in stores.
             Also stores the energy policies in the energy-policy-store in link.py.

@@ -160,6 +160,12 @@ class ContextComponent():
                                     ]
                                 )
                             ]
+                        ),
+                        dbc.Button(
+                            "AI Generate Policies for Scenario",
+                            id="presc-button",
+                            className="me-1",
+                            n_clicks=0
                         )
                     ]
                 )
