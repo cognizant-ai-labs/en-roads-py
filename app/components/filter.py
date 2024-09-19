@@ -1,6 +1,8 @@
 """
 Component in charge of filtering out prescriptors by metric.
 """
+import json
+
 from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -22,9 +24,13 @@ class FilterComponent:
         self.metric_ids = [metric.replace(" ", "-").replace(".", "_") for metric in self.metrics]
         self.updated_params = ["min", "max", "value", "marks"]
 
+        with open("app/units.json", "r", encoding="utf-8") as f:
+            self.units = json.load(f)
+
     def create_metric_sliders(self):
         """
         Creates initial metric sliders and lines them up with their labels.
+        TODO: Add a tooltip to the sliders to show their units.
         """
         sliders = []
         for metric in self.metrics:
@@ -40,12 +46,13 @@ class FilterComponent:
             )
             sliders.append(slider)
 
+        # w-25 and flex-grow-1 ensures they line up
         div = html.Div(
             children=[
                 html.Div(
                     className="d-flex flex-row mb-2",
                     children=[
-                        html.Label(self.metrics[i], className="w-25"),  # w-25 and flex-grow-1 ensures they line up
+                        html.Label(f"{self.metrics[i]} ({self.units[self.metrics[i]]})", className="w-25"),
                         html.Div(sliders[i], className="flex-grow-1")
                     ]
                 )

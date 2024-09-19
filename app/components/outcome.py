@@ -1,6 +1,8 @@
 """
 OutcomeComponent class for the outcome section of the app.
 """
+import json
+
 from dash import Input, Output, State, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -29,6 +31,9 @@ class OutcomeComponent():
                               "Total Primary Energy Demand"]
 
         self.metric_ids = [metric.replace(" ", "-").replace(".", "_") for metric in self.evolution_handler.outcomes]
+
+        with open("app/units.json", "r", encoding="utf-8") as f:
+            self.units = json.load(f)
 
     def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]], cand_idxs: list[int]):
         """
@@ -120,7 +125,8 @@ class OutcomeComponent():
                 "text": f"{outcome} Over Time",
                 "x": 0.5,
                 "xanchor": "center"},
-            yaxis_range=[y_min, y_max]
+            yaxis_range=[y_min, y_max],
+            yaxis_title=outcome + f" ({self.units[outcome]})"
         )
         return fig
 
