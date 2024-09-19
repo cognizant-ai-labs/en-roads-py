@@ -38,6 +38,11 @@ class OutcomeComponent():
         """
         best_cand_idxs = cand_idxs[:10]
         outcomes_dfs = [pd.DataFrame(outcomes_json) for outcomes_json in outcomes_jsonl]
+        # Used later to standardize the max and min of the y-axis so that the graphs are comparable when we start
+        # filtering the models.
+        y_min = min([outcomes_df[outcome].min() for outcomes_df in outcomes_dfs])
+        y_max = max([outcomes_df[outcome].max() for outcomes_df in outcomes_dfs])
+
         color_map = px.colors.qualitative.Plotly
 
         fig = go.Figure()
@@ -81,10 +86,34 @@ class OutcomeComponent():
             showlegend=True
         ))
 
-        # Standardize the max and min of the y-axis so that the graphs are comparable when we start filtering
-        # models.
-        y_min = min([outcomes_df[outcome].min() for outcomes_df in outcomes_dfs])
-        y_max = max([outcomes_df[outcome].max() for outcomes_df in outcomes_dfs])
+        # Plot the year we start changing (2024)
+        fig.add_shape(
+            type="line",
+            x0=2024,
+            y0=y_min,
+            x1=2024,
+            y1=y_max,
+            line=dict(color="black", width=1, dash="dash")
+        )
+
+        # If we're looking at temperature, put in some dashed lines for the 1.5 and 2.0 degree targets
+        if outcome == "Temperature change from 1850":
+            fig.add_shape(
+                type="line",
+                x0=1990,
+                y0=1.5,
+                x1=2100,
+                y1=1.5,
+                line=dict(color="black", width=1, dash="dash"),
+            )
+            fig.add_shape(
+                type="line",
+                x0=1990,
+                y0=2,
+                x1=2100,
+                y1=2,
+                line=dict(color="gray", width=1, dash="dash"),
+            )
 
         fig.update_layout(
             title={
@@ -160,11 +189,12 @@ class OutcomeComponent():
             Output("outcomes-store", "data"),
             Output("metrics-store", "data"),
             Output("energy-policy-store", "data"),
-            [Input(f"context-slider-{i}", "value") for i in range(4)]
+            Input("presc-button", "n_clicks"),
+            [State(f"context-slider-{i}", "value") for i in range(4)]
         )
-        def update_results_stores(*context_values):
+        def update_results_stores(_, *context_values):
             """
-            When the context sliders are changed, prescribe actions for the context for all candidates. Then run them
+            When the presc button is pressed, prescribe actions for the context for all candidates. Then run them
             through En-ROADS to get the outcomes. Finally process the outcomes into metrics. Store the context-actions
             dicts, outcomes dfs, and metrics df in stores.
             Also stores the energy policies in the energy-policy-store in link.py.

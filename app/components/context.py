@@ -137,7 +137,7 @@ class ContextComponent():
                                             in the scatter plot below. If desired, manually modify the scenario \
                                             with the sliders.", className=DESC_TEXT),
                         dbc.Row(
-                            className="flex-grow-1",
+                            className="w-100",
                             children=[
                                 dbc.Col(
                                     className="h-100",
@@ -160,6 +160,12 @@ class ContextComponent():
                                     ]
                                 )
                             ]
+                        ),
+                        dbc.Button(
+                            "AI Generate Policies for Scenario",
+                            id="presc-button",
+                            className="me-1",
+                            n_clicks=0
                         )
                     ]
                 )
