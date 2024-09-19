@@ -1,7 +1,7 @@
 """
 OutcomeComponent class for the outcome section of the app.
 """
-from dash import Input, Output, State, html, dcc
+from dash import Input, Output, State, html, dcc, MATCH
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -142,7 +142,7 @@ class OutcomeComponent():
                             children=[
                                 html.Div(
                                     dcc.Dropdown(
-                                        id="outcome-dropdown-1",
+                                        id={"type": "outcome-dropdown", "index": 0},
                                         options=self.plot_outcomes,
                                         value=self.plot_outcomes[0]
                                     ),
@@ -150,7 +150,7 @@ class OutcomeComponent():
                                 ),
                                 html.Div(
                                     dcc.Dropdown(
-                                        id="outcome-dropdown-2",
+                                        id={"type": "outcome-dropdown", "index": 1},
                                         options=self.plot_outcomes,
                                         value=self.plot_outcomes[1]
                                     ),
@@ -159,16 +159,50 @@ class OutcomeComponent():
                             ]
                         ),
                         dcc.Loading(
-                            target_components={"context-actions-store": "*", "outcomes-store": "*"},
+                            target_components={"context-actions-store": "*"},
                             type="circle",
                             children=[
                                 dbc.Row(
                                     className="g-0",
                                     children=[
                                         dcc.Store(id="context-actions-store"),
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 0}), width=6),
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 1}), width=6)
+                                    ]
+                                )
+                            ]
+                        ),
+                        html.Div(
+                            className="d-flex flex-row w-100",
+                            children=[
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id={"type": "outcome-dropdown", "index": 2},
+                                        options=self.plot_outcomes,
+                                        value=self.plot_outcomes[2]
+                                    ),
+                                    className="flex-fill"
+                                ),
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id={"type": "outcome-dropdown", "index": 3},
+                                        options=self.plot_outcomes,
+                                        value=self.plot_outcomes[3]
+                                    ),
+                                    className="flex-fill"
+                                )
+                            ]
+                        ),
+                        dcc.Loading(
+                            target_components={"outcomes-store": "*"},
+                            type="circle",
+                            children=[
+                                dbc.Row(
+                                    className="g-0",
+                                    children=[
                                         dcc.Store(id="outcomes-store"),
-                                        dbc.Col(dcc.Graph(id="outcome-graph-1"), width=6),
-                                        dbc.Col(dcc.Graph(id="outcome-graph-2"), width=6)
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 2}), width=6),
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 3}), width=6)
                                     ]
                                 )
                             ]
@@ -223,24 +257,20 @@ class OutcomeComponent():
             return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
 
         @app.callback(
-            Output("outcome-graph-1", "figure"),
-            Output("outcome-graph-2", "figure"),
+            Output({"type": "outcome-graph", "index": MATCH}, "figure"),
             State("metrics-store", "data"),
-            Input("outcome-dropdown-1", "value"),
-            Input("outcome-dropdown-2", "value"),
+            Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
             Input("outcomes-store", "data"),
             [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
         )
-        def update_outcomes_plots(metrics_json, outcome1, outcome2, outcomes_jsonl, *metric_ranges):
+        def update_outcomes_plots(metrics_json, outcome, outcomes_jsonl, *metric_ranges):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             """
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
-
-            fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, cand_idxs)
-            fig2 = self.plot_outcome_over_time(outcome2, outcomes_jsonl, cand_idxs)
-            return fig1, fig2
+            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
+            return fig
 
         @app.callback(
             Output("cand-link-select", "options"),
