@@ -37,6 +37,8 @@ def filter_metrics_json(metrics_json: dict[str, list],
 class EvolutionHandler():
     """
     Handles evolution results and running of prescriptors for the app.
+    TODO: Currently we hard-code some metrics to make the app prettier. Later we should just create more app-friendly
+    metrics to optimize in pymoo.
     """
     def __init__(self):
         save_path = "app/results"
@@ -51,6 +53,11 @@ class EvolutionHandler():
 
         self.X = np.load(save_path + "/X.npy")
         self.F = np.load(save_path + "/F.npy")
+        
+        # TODO: Make this not hard-coded
+        self.F[:, 0] += 1.5
+        self.F[:, 2] *= -1
+        self.F[:, 3] *= -1
 
         context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
         self.context_df = context_df.drop(columns=["F", "scenario"])
@@ -59,43 +66,6 @@ class EvolutionHandler():
 
         self.runner = EnroadsRunner()
         self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
-
-    def load_initial_metrics_df(self):
-        """
-        Takes the F results matrix and converts it into a DataFrame the way pandas parcoords wants it. We also attach
-        the average of the baseline over all the contexts to this DataFrame.
-        """
-        # Convert F to DataFrame
-        metrics_df = pd.DataFrame(self.F, columns=list(self.outcomes.keys()))
-        for outcome, ascending in self.outcomes.items():
-            if not ascending:
-                metrics_df[outcome] *= -1
-        metrics_df["cand_id"] = range(len(self.F))
-
-        # Run En-ROADS on baseline over all contexts
-        baseline_metrics_avg = {outcome: 0 for outcome in self.outcomes}
-        for _, row in self.context_df.iterrows():
-            context_dict = row.to_dict()
-            baseline_outcomes = self.runner.evaluate_actions(context_dict)
-            baseline_metrics = self.outcome_manager.process_outcomes(context_dict, baseline_outcomes)
-            for outcome, val in baseline_metrics.items():
-                baseline_metrics_avg[outcome] += val
-
-        # Finish preprocessing baseline metrics
-        for outcome in self.outcomes:
-            baseline_metrics_avg[outcome] /= len(self.context_df)
-        baseline_metrics_avg["cand_id"] = "baseline"
-
-        # Attach baseline to metrics_df
-        metrics_df = pd.concat([metrics_df, pd.DataFrame([baseline_metrics_avg])], axis=0, ignore_index=True)
-
-        # TODO: Eventually don't hard-code this. Flip the net revenue below 0 to be something we minimize
-        if "Government net revenue below zero" in metrics_df.columns:
-            metrics_df["Government net revenue below zero"] *= -1
-        if "Total energy below baseline" in metrics_df.columns:
-            metrics_df["Total energy below baseline"] *= -1
-
-        return metrics_df
 
     def prescribe_all(self, context_dict: dict[str, float]):
         """
@@ -132,6 +102,7 @@ class EvolutionHandler():
         """
         Takes parallel lists of context_actions_dicts and outcomes_dfs and processes them into a metrics dict.
         All of these metrics dicts are then concatenated into a single DataFrame.
+        TODO: We hard-code some metrics to be more app-friendly
         """
         metrics_dicts = []
         for context_actions_dict, outcomes_df in zip(context_actions_dicts, outcomes_dfs):
@@ -139,6 +110,11 @@ class EvolutionHandler():
             metrics_dicts.append(metrics)
 
         metrics_df = pd.DataFrame(metrics_dicts)
+
+        metrics_df["Temperature above 1.5C"] += 1.5
+        metrics_df["Government net revenue below zero"] *= -1
+        metrics_df["Total energy below baseline"] *= -1
+
         return metrics_df
 
     def context_baseline_outcomes(self, context_dict: dict[str, float]):

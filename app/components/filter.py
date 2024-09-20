@@ -25,6 +25,7 @@ class FilterComponent:
     def create_metric_sliders(self):
         """
         Creates initial metric sliders and lines them up with their labels.
+        TODO: We need to stop hard-coding their names and adjustments.
         """
         sliders = []
         for metric in self.metrics:
@@ -40,12 +41,17 @@ class FilterComponent:
             )
             sliders.append(slider)
 
+        names_map = dict(zip(self.metrics, ["Temperature in 2100",
+                                            "Highest cost of energy",
+                                            "Government spending",
+                                            "Reduction in energy demand"]))
+
         div = html.Div(
             children=[
                 html.Div(
                     className="d-flex flex-row mb-2",
                     children=[
-                        html.Label(self.metrics[i], className="w-25"),  # w-25 and flex-grow-1 ensures they line up
+                        html.Label(names_map[self.metrics[i]], className="w-25"),  # w-25 and flex-grow-1 ensures they line up
                         html.Div(sliders[i], className="flex-grow-1")
                     ]
                 )
