@@ -1,7 +1,9 @@
 """
 OutcomeComponent class for the outcome section of the app.
 """
-from dash import Input, Output, State, html, dcc
+import json
+
+from dash import Input, Output, State, html, dcc, MATCH
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -29,6 +31,9 @@ class OutcomeComponent():
                               "Total Primary Energy Demand"]
 
         self.metric_ids = [metric.replace(" ", "-").replace(".", "_") for metric in self.evolution_handler.outcomes]
+
+        with open("app/units.json", "r", encoding="utf-8") as f:
+            self.units = json.load(f)
 
     def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]], cand_idxs: list[int]):
         """
@@ -120,7 +125,8 @@ class OutcomeComponent():
                 "text": f"{outcome} Over Time",
                 "x": 0.5,
                 "xanchor": "center"},
-            yaxis_range=[y_min, y_max]
+            yaxis_range=[y_min, y_max],
+            yaxis_title=outcome + f" ({self.units[outcome]})"
         )
         return fig
 
@@ -142,33 +148,71 @@ class OutcomeComponent():
                             children=[
                                 html.Div(
                                     dcc.Dropdown(
-                                        id="outcome-dropdown-1",
+                                        id={"type": "outcome-dropdown", "index": 0},
                                         options=self.plot_outcomes,
-                                        value=self.plot_outcomes[0]
+                                        value=self.plot_outcomes[0],
+                                        disabled=True
                                     ),
                                     className="flex-fill"
                                 ),
                                 html.Div(
                                     dcc.Dropdown(
-                                        id="outcome-dropdown-2",
+                                        id={"type": "outcome-dropdown", "index": 1},
                                         options=self.plot_outcomes,
-                                        value=self.plot_outcomes[1]
+                                        value=self.plot_outcomes[1],
+                                        disabled=True
                                     ),
                                     className="flex-fill"
                                 )
                             ]
                         ),
                         dcc.Loading(
-                            target_components={"context-actions-store": "*", "outcomes-store": "*"},
+                            target_components={"context-actions-store": "*"},
                             type="circle",
                             children=[
                                 dbc.Row(
                                     className="g-0",
                                     children=[
                                         dcc.Store(id="context-actions-store"),
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 0}), width=6),
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 1}), width=6)
+                                    ]
+                                )
+                            ]
+                        ),
+                        html.Div(
+                            className="d-flex flex-row w-100",
+                            children=[
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id={"type": "outcome-dropdown", "index": 2},
+                                        options=self.plot_outcomes,
+                                        value=self.plot_outcomes[2],
+                                        disabled=True
+                                    ),
+                                    className="flex-fill"
+                                ),
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id={"type": "outcome-dropdown", "index": 3},
+                                        options=self.plot_outcomes,
+                                        value=self.plot_outcomes[3],
+                                        disabled=True
+                                    ),
+                                    className="flex-fill"
+                                )
+                            ]
+                        ),
+                        dcc.Loading(
+                            target_components={"outcomes-store": "*"},
+                            type="circle",
+                            children=[
+                                dbc.Row(
+                                    className="g-0",
+                                    children=[
                                         dcc.Store(id="outcomes-store"),
-                                        dbc.Col(dcc.Graph(id="outcome-graph-1"), width=6),
-                                        dbc.Col(dcc.Graph(id="outcome-graph-2"), width=6)
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 2}), width=6),
+                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 3}), width=6)
                                     ]
                                 )
                             ]
@@ -190,7 +234,8 @@ class OutcomeComponent():
             Output("metrics-store", "data"),
             Output("energy-policy-store", "data"),
             Input("presc-button", "n_clicks"),
-            [State(f"context-slider-{i}", "value") for i in range(4)]
+            [State(f"context-slider-{i}", "value") for i in range(4)],
+            prevent_initial_call=True
         )
         def update_results_stores(_, *context_values):
             """
@@ -223,29 +268,29 @@ class OutcomeComponent():
             return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
 
         @app.callback(
-            Output("outcome-graph-1", "figure"),
-            Output("outcome-graph-2", "figure"),
+            Output({"type": "outcome-graph", "index": MATCH}, "figure"),
+            Output({"type": "outcome-dropdown", "index": MATCH}, "disabled"),
             State("metrics-store", "data"),
-            Input("outcome-dropdown-1", "value"),
-            Input("outcome-dropdown-2", "value"),
+            Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
             Input("outcomes-store", "data"),
             [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            prevent_initial_call=True
         )
-        def update_outcomes_plots(metrics_json, outcome1, outcome2, outcomes_jsonl, *metric_ranges):
+        def update_outcomes_plots(metrics_json, outcome, outcomes_jsonl, *metric_ranges):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
+            We also un-disable the dropdowns when the user selects a context.
             """
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
-
-            fig1 = self.plot_outcome_over_time(outcome1, outcomes_jsonl, cand_idxs)
-            fig2 = self.plot_outcome_over_time(outcome2, outcomes_jsonl, cand_idxs)
-            return fig1, fig2
+            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
+            return fig, False
 
         @app.callback(
             Output("cand-link-select", "options"),
             State("metrics-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids]
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            prevent_initial_call=True
         )
         def update_cand_link_select(metrics_json: dict[str, list],
                                     *metric_ranges: list[tuple[float, float]]) -> list[int]:

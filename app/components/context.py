@@ -153,7 +153,7 @@ class ContextComponent():
                                         # TODO: Make the box big enough to fit the text
                                         html.Div(
                                             id="ssp-desc",
-                                            children=[self.construct_ssp_desc(0)],
+                                            children=[html.H4("Select a Scenario")],
                                             className="flex-grow-1 overflow-auto border rounded-3 p-2",
                                             style={"height": "275px"}
                                         )
@@ -164,7 +164,7 @@ class ContextComponent():
                         dbc.Button(
                             "AI Generate Policies for Scenario",
                             id="presc-button",
-                            className="me-1",
+                            className="me-1 mb-2",
                             n_clicks=0
                         )
                     ]
@@ -194,19 +194,15 @@ class ContextComponent():
         """
         @app.callback(
             [Output(f"context-slider-{i}", "value") for i in range(4)],
-            Input("context-scatter", "clickData")
+            Input("context-scatter", "clickData"),
+            prevent_initial_call=True
         )
         def click_context(click_data):
             """
             Updates context sliders when a context point is clicked.
-            TODO: Sometimes this function lags, not sure why.
             """
-            if click_data:
-                # TODO: This assumes the SSPs in the ssps.csv file are in order which they are
-                scenario = int(click_data["points"][0]["pointNumber"])
-            else:
-                scenario = 0
-
+            # TODO: This assumes the SSPs in the ssps.csv file are in order which they are
+            scenario = int(click_data["points"][0]["pointNumber"])
             scenario = f"SSP{scenario+1}-Baseline"
             row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
             return [row[self.context_cols[i]] for i in range(4)]

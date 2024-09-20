@@ -30,6 +30,12 @@ class ReferencesComponent():
                                     aspx")
                         ]),
                         html.P([
+                            "Project Resilience is a collaboration between the United Nations and Cognizant Advanced \
+                                AI Labs. More info about the lab can be found here: ",
+                            html.A("https://www.cognizant.com/us/en/services/ai/ai-lab",
+                                   href="https://www.cognizant.com/us/en/services/ai/ai-lab")
+                        ]),
+                        html.P([
                             "The code for Project Resilience can be found on ",
                             html.A("Github", href="https://github.com/project-resilience")
                         ]),

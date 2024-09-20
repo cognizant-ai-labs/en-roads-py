@@ -121,12 +121,18 @@ class LinkComponent():
                                Then click on the link to explore and fine-tune the policy in En-ROADS.",
                                className=DESC_TEXT),
                         html.Div(
-                            dcc.Dropdown(
-                                id="cand-link-select",
-                                options=[],
-                                placeholder="Select a policy",
-                            ),
-                            className="w-25 flex-grow-1"
+                            className="d-flex flex-row w-25 justify-content-center",
+                            children=[
+                                html.Label("Policy: ", className="pt-1 me-1"),
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id="cand-link-select",
+                                        options=[],
+                                        placeholder="Select a policy",
+                                    ),
+                                    className="flex-grow-1"
+                                )
+                            ]
                         ),
                         dcc.Loading(
                             type="circle",
