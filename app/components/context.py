@@ -153,7 +153,7 @@ class ContextComponent():
                                         # TODO: Make the box big enough to fit the text
                                         html.Div(
                                             id="ssp-desc",
-                                            children=[html.H4("Default Scenario")],
+                                            children=[html.H4("Select a Scenario")],
                                             className="flex-grow-1 overflow-auto border rounded-3 p-2",
                                             style={"height": "275px"}
                                         )
