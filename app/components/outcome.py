@@ -144,7 +144,8 @@ class OutcomeComponent():
                                     dcc.Dropdown(
                                         id={"type": "outcome-dropdown", "index": 0},
                                         options=self.plot_outcomes,
-                                        value=self.plot_outcomes[0]
+                                        value=self.plot_outcomes[0],
+                                        disabled=True
                                     ),
                                     className="flex-fill"
                                 ),
@@ -152,7 +153,8 @@ class OutcomeComponent():
                                     dcc.Dropdown(
                                         id={"type": "outcome-dropdown", "index": 1},
                                         options=self.plot_outcomes,
-                                        value=self.plot_outcomes[1]
+                                        value=self.plot_outcomes[1],
+                                        disabled=True
                                     ),
                                     className="flex-fill"
                                 )
@@ -179,7 +181,8 @@ class OutcomeComponent():
                                     dcc.Dropdown(
                                         id={"type": "outcome-dropdown", "index": 2},
                                         options=self.plot_outcomes,
-                                        value=self.plot_outcomes[2]
+                                        value=self.plot_outcomes[2],
+                                        disabled=True
                                     ),
                                     className="flex-fill"
                                 ),
@@ -187,7 +190,8 @@ class OutcomeComponent():
                                     dcc.Dropdown(
                                         id={"type": "outcome-dropdown", "index": 3},
                                         options=self.plot_outcomes,
-                                        value=self.plot_outcomes[3]
+                                        value=self.plot_outcomes[3],
+                                        disabled=True
                                     ),
                                     className="flex-fill"
                                 )
@@ -224,7 +228,8 @@ class OutcomeComponent():
             Output("metrics-store", "data"),
             Output("energy-policy-store", "data"),
             Input("presc-button", "n_clicks"),
-            [State(f"context-slider-{i}", "value") for i in range(4)]
+            [State(f"context-slider-{i}", "value") for i in range(4)],
+            prevent_initial_call=True
         )
         def update_results_stores(_, *context_values):
             """
@@ -258,24 +263,28 @@ class OutcomeComponent():
 
         @app.callback(
             Output({"type": "outcome-graph", "index": MATCH}, "figure"),
+            Output({"type": "outcome-dropdown", "index": MATCH}, "disabled"),
             State("metrics-store", "data"),
             Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
             Input("outcomes-store", "data"),
             [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            prevent_initial_call=True
         )
         def update_outcomes_plots(metrics_json, outcome, outcomes_jsonl, *metric_ranges):
             """
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
+            We also un-disable the dropdowns when the user selects a context.
             """
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
             fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
-            return fig
+            return fig, False
 
         @app.callback(
             Output("cand-link-select", "options"),
             State("metrics-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids]
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            prevent_initial_call=True
         )
         def update_cand_link_select(metrics_json: dict[str, list],
                                     *metric_ranges: list[tuple[float, float]]) -> list[int]:

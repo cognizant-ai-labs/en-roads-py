@@ -37,7 +37,8 @@ class FilterComponent:
                 value=[0, 1],
                 marks={0: f"{0:.2f}", 1: f"{1:.2f}"},
                 tooltip={"placement": "bottom", "always_visible": True},
-                allowCross=False
+                allowCross=False,
+                disabled=True
             )
             sliders.append(slider)
 
@@ -167,7 +168,7 @@ class FilterComponent:
                                     className="me-1",
                                     style={"width": "200px"}  # TODO: We hard-code the width here because of text size
                                 ),
-                                dbc.Button("Reset Filters", id="reset-button")
+                                dbc.Button("Reset Filters", id="reset-button", disabled=True)
                             ]
                         ),
                         html.Div(
@@ -189,14 +190,18 @@ class FilterComponent:
         """
         @app.callback(
             [Output(f"{metric_id}-slider", param) for metric_id in self.metric_ids for param in self.updated_params],
+            [Output(f"{metric_id}-slider", "disabled") for metric_id in self.metric_ids],
+            Output("reset-button", "disabled"),
             Input("metrics-store", "data"),
-            Input("reset-button", "n_clicks")
+            Input("reset-button", "n_clicks"),
+            prevent_initial_call=True
         )
         def update_filter_sliders(metrics_jsonl: list[dict[str, list]], _) -> list:
             """
             Update the filter slider min/max/value/marks based on the incoming metrics data. The output of this function
             is a list of the updated parameters for each slider concatenated.
             This also happens whenever we click the reset button.
+            The reset button starts disabled but once the sliders are updated for the first time it becomes enabled.
             """
             metrics_df = pd.DataFrame(metrics_jsonl)
             total_output = []
@@ -214,13 +219,15 @@ class FilterComponent:
                     {min_val_rounded: f"{min_val_rounded:.2f}", max_val_rounded: f"{max_val_rounded:.2f}"}
                 ]
                 total_output.extend(metric_output)
-
+            total_output.extend([False] * len(self.metric_ids))  # Enable all sliders
+            total_output.append(False)  # Enable reset button
             return total_output
 
         @app.callback(
             Output("parcoords-figure", "figure"),
             State("metrics-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids]
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            prevent_initial_call=True
         )
         def filter_parcoords_figure(metrics_json: dict[str, list], *metric_ranges) -> go.Figure:
             """
@@ -231,7 +238,8 @@ class FilterComponent:
         @app.callback(
             Output("cand-counter", "children"),
             State("metrics-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids]
+            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            prevent_initial_call=True
         )
         def count_selected_cands(metrics_json: dict[str, list], *metric_ranges) -> str:
             """
