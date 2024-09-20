@@ -46,13 +46,13 @@ class FilterComponent:
                                             "Highest cost of energy",
                                             "Government spending",
                                             "Reduction in energy demand"]))
-
+        # w-25 and flex-grow-1 ensures they line up
         div = html.Div(
             children=[
                 html.Div(
                     className="d-flex flex-row mb-2",
                     children=[
-                        html.Label(names_map[self.metrics[i]], className="w-25"),  # w-25 and flex-grow-1 ensures they line up
+                        html.Label(names_map[self.metrics[i]], className="w-25"),
                         html.Div(sliders[i], className="flex-grow-1")
                     ]
                 )

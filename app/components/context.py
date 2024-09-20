@@ -164,7 +164,7 @@ class ContextComponent():
                         dbc.Button(
                             "AI Generate Policies for Scenario",
                             id="presc-button",
-                            className="me-1",
+                            className="me-1 mb-2",
                             n_clicks=0
                         )
                     ]
@@ -206,7 +206,6 @@ class ContextComponent():
             scenario = f"SSP{scenario+1}-Baseline"
             row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
             return [row[self.context_cols[i]] for i in range(4)]
-            
 
         @app.callback(
             Output("ssp-desc", "children"),

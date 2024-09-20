@@ -132,7 +132,6 @@ class LinkComponent():
                                     ),
                                     className="flex-grow-1"
                                 )
-                                
                             ]
                         ),
                         dcc.Loading(

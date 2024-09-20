@@ -53,7 +53,7 @@ class EvolutionHandler():
 
         self.X = np.load(save_path + "/X.npy")
         self.F = np.load(save_path + "/F.npy")
-        
+
         # TODO: Make this not hard-coded
         self.F[:, 0] += 1.5
         self.F[:, 2] *= -1
