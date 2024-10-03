@@ -242,7 +242,7 @@ class ContextComponent():
             Disables the button after it is clicked and displays a loading message.
             """
             return n_clicks > 0, "Please wait...", "warning"
-        
+
         @app.callback(
             Output("presc-button", "disabled", allow_duplicate=True),
             Output("presc-button", "children", allow_duplicate=True),
