@@ -164,7 +164,7 @@ class ContextComponent():
                         dbc.Button(
                             "AI Generate Policies for Scenario",
                             id="presc-button",
-                            className="me-1 mb-2",
+                            className="me-1 mb-2 w-25",
                             n_clicks=0
                         )
                     ]
@@ -229,3 +229,29 @@ class ContextComponent():
                         html.H4("Custom Scenario Selected")
                     ]
                 )
+
+        @app.callback(
+            Output("presc-button", "disabled", allow_duplicate=True),
+            Output("presc-button", "children", allow_duplicate=True),
+            Output("presc-button", "color", allow_duplicate=True),
+            Input("presc-button", "n_clicks"),
+            prevent_initial_call=True
+        )
+        def disable_button(n_clicks):
+            """
+            Disables the button after it is clicked and displays a loading message.
+            """
+            return n_clicks > 0, "Please wait...", "warning"
+        
+        @app.callback(
+            Output("presc-button", "disabled", allow_duplicate=True),
+            Output("presc-button", "children", allow_duplicate=True),
+            Output("presc-button", "color", allow_duplicate=True),
+            Input("reset-button", "disabled"),
+            prevent_initial_call=True
+        )
+        def enable_button(reset_disabled):
+            """
+            Enables the button when the filtering is done and resets it.
+            """
+            return False, "AI Generate Policies for Scenario", "primary"

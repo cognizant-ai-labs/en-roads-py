@@ -49,7 +49,7 @@ class IntroComponent():
                     )
                 ),
                 dbc.Row(
-                    style={"height": "60vh"}
+                    style={"height": "70vh"}
                 ),
                 dbc.Row(
                     html.P("Get Started:", className="w-50 text-center mx-auto text-white h4")
