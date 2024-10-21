@@ -56,7 +56,6 @@ class ContextComponent():
         context_chart_df["population"] = pop_df["2100"].values / 1000
         context_chart_df["gdp"] = gdp_df["2100"].values / 1000
         context_chart_df = context_chart_df.sort_values(by="scenario")
-        # pylint: disable=unsupported-assignment-operation
         context_chart_df["description"] = ["SSP1: Sustainable Development",
                                            "SSP2: Middle of the Road",
                                            "SSP3: Regional Rivalry",
@@ -65,7 +64,6 @@ class ContextComponent():
 
         fig = go.Figure()
 
-        # pylint: disable=unsubscriptable-object
         fig.add_trace(go.Scatter(
             x=context_chart_df["population"],
             y=context_chart_df["gdp"],
