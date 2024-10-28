@@ -32,7 +32,6 @@ class EnroadsRunner():
         """
         return f"{value:.{decimal}f}"
 
-    # pylint: disable=no-member
     def construct_enroads_input(self, inputs: dict[str, float]):
         """
         Constructs input file according to enroads.
@@ -65,7 +64,6 @@ class EnroadsRunner():
         input_str = " ".join(input_specs["input_col"])
 
         return input_str
-    # pylint: enable=no-member
 
     def check_input_string(self, input_str: str) -> bool:
         """
@@ -92,7 +90,7 @@ class EnroadsRunner():
         From the documentation:
             The input string is a space-delimited list of index-value pairs, where a colon separates the
             index number from the value number with no spaces. Index numbers are zero-based.
-        NOTE: The indices are the line numbers in inputSpecs.jsonl starting from 0, NOT the id column.
+        NOTE: The indices are the order the variables appear in input_specs starting from 0, NOT the id column.
         """
         if input_str and not self.check_input_string(input_str):
             raise ValueError("Invalid input string")
