@@ -8,10 +8,10 @@
         "_utilization_adjustment_factor_delivered_coal",
         "_utilization_policy_start_time_delivered_coal",
         "_utilization_policy_stop_time_delivered_coal",
-        "_target_accelerated_retirement_rate_electric_coal",
-        "_source_subsidy_delivered_oil_boe"
+        "_target_accelerated_retirement_rate_electric_coal"
     ],
     "Oil": [
+        "_source_subsidy_delivered_oil_boe",
         "_source_subsidy_start_time_delivered_oil",
         "_source_subsidy_stop_time_delivered_oil",
         "_no_new_oil",

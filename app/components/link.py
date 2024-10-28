@@ -1,10 +1,13 @@
 """
 Link Component.
 """
+from collections import defaultdict
 import json
+import yaml
 
 from dash import Input, Output, State, html, dcc
 import dash_bootstrap_components as dbc
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -27,6 +30,8 @@ class LinkComponent():
 
         with open("app/categories.json", "r", encoding="utf-8") as f:
             self.categories = json.load(f)
+        with open("app/timeline.yaml", "r", encoding="utf-8") as f:
+            self.timeline = yaml.load(f, Loader=yaml.FullLoader)
         self.input_specs = load_input_specs()
 
     def plot_energy_policy(self, energy_policy_jsonl: list[dict[str, list]], cand_idx: int) -> go.Figure:
@@ -100,6 +105,62 @@ class LinkComponent():
                     children.append(html.P(f"{input_spec['varName']}: {val_formatted}"))
             if remove:
                 children.pop()
+
+        return html.Div(children)
+
+    def _create_timeline_events(self, action, details, context_actions_dict):
+        """
+        Creates 0 or more timeline events for a given action.
+        We have to manually handle electric standard being active and if this is the final carbon tax as they rely on
+        other actions.
+        """
+        # Electric standard needs to be active
+        if action == "_electric_standard_target" and not context_actions_dict["_electric_standard_active"]:
+            return {}
+
+        events = {}
+        row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+        name = row["varName"]
+        decimal = np.ceil(-1 * np.log10(row["step"])).astype(int)
+        value = context_actions_dict[action]
+
+        start_year = context_actions_dict[details["start"]]
+
+        # Carbon price phasing start date needs to be after previous carbon price phase end date
+        if action == "_carbon_tax_final_target":
+            initial_end = context_actions_dict["_carbon_tax_phase_1_start"] + \
+                context_actions_dict["_carbon_tax_time_to_achieve_initial_target"]
+            if start_year < initial_end:
+                start_year = initial_end
+
+        # Compute the stop year from the length if necessary
+        if "stop" in details or "length" in details:
+            stop_year = context_actions_dict[details["stop"]] if "stop" in details else start_year + \
+                context_actions_dict[details["length"]]
+            if start_year < stop_year:
+                events[int(start_year)] = f"start {name}: {value:.{decimal}f}"
+                events[int(stop_year)] = f"end {name}"
+        else:
+            events[int(start_year)] = f"{name}: {value:.{decimal}f}"
+
+        return events
+
+    def create_timeline(self, context_actions_dict: dict[str, float]) -> html.Div:
+        """
+        Creates a nice timeline of actions taken.
+        TODO: Do we have to handle if an action is not in the context actions dict?
+        """
+        timeline = defaultdict(list)
+        for action, details in self.timeline.items():
+            events = self._create_timeline_events(action, details, context_actions_dict)
+            for year, event in events.items():
+                timeline[year].append(event)
+
+        children = []
+        for year in sorted(timeline.keys()):
+            children.append(html.H4(str(year)))
+            for event in timeline[year]:
+                children.append(html.P(event))
 
         return html.Div(children)
 
@@ -236,5 +297,5 @@ class LinkComponent():
             """
             if cand_idx is not None:
                 context_actions_dict = context_actions_dicts[cand_idx]
-                return self.translate_context_actions_dict(context_actions_dict), False
+                return self.create_timeline(context_actions_dict), False
             return "", True
