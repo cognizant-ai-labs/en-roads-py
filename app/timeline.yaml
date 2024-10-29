@@ -39,6 +39,18 @@ _source_subsidy_delivered_bio_boe:
   type: subsidy
   start: _source_subsidy_start_time_delivered_bio
   stop: _source_subsidy_stop_time_delivered_bio
+_wood_feedstock_subsidy_boe:
+  type: bio
+  start: _source_subsidy_start_time_delivered_bio
+  stop: _source_subsidy_stop_time_delivered_bio
+_crop_feedstock_subsidy_boe:
+  type: bio
+  start: _source_subsidy_start_time_delivered_bio
+  stop: _source_subsidy_stop_time_delivered_bio
+_other_feedstock_subsidy_boe:
+  type: bio
+  start: _source_subsidy_start_time_delivered_bio
+  stop: _source_subsidy_stop_time_delivered_bio
 _no_new_bio:
   type: no_new
   start: _year_of_no_new_capacity_bio
