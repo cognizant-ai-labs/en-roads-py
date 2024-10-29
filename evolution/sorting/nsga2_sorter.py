@@ -12,8 +12,9 @@ class NSGA2Sorter(Sorter):
     Performs non-dominated sort to get the ranks of each candidate then within each front calculates distance and sorts
     by them.
     """
-    def __init__(self, distance_calculator: DistanceCalculator):
+    def __init__(self, distance_calculator: DistanceCalculator, outcomes: dict[str, bool]):
         self.distance_calculator = distance_calculator
+        self.outcomes = outcomes
 
     def sort_candidates(self, candidates: list[Candidate]):
         """
@@ -85,10 +86,8 @@ class NSGA2Sorter(Sorter):
             If cand1 > cand2 for at least one objective and not the above we return True.
             If cand1 == cand2 for all objectives we return False
         """
-        assert candidate1.outcomes.keys() == candidate2.outcomes.keys(), \
-            "Candidates must have the same objectives to compare them."
         better = False
-        for obj, ascending in candidate1.outcomes.items():
+        for obj, ascending in self.outcomes.items():
             if ascending:
                 if candidate1.metrics[obj] > candidate2.metrics[obj]:
                     return False

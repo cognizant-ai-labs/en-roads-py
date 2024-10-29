@@ -13,10 +13,6 @@ class TestSorter(unittest.TestCase):
     """
     Class that tests the NSGA-II sorting implementation in our evolution.
     """
-    def setUp(self):
-        crowding_distance = CrowdingDistanceCalculator()
-        self.sorter = NSGA2Sorter(crowding_distance)
-
     def manual_dominates(self, a_asc, b_asc, cand1_a, cand1_b, cand2_a, cand2_b):
         """
         Manual domination of 2 objectives to compare our domination function with.
@@ -52,11 +48,12 @@ class TestSorter(unittest.TestCase):
         # Iterate over every possible combination of A ascending B descending, etc.
         ascending_combinations = list(itertools.product([True, False], repeat=2))
         for a_asc, b_asc in ascending_combinations:
+            crowding_distance = CrowdingDistanceCalculator()
+            sorter = NSGA2Sorter(crowding_distance, outcomes={"A": a_asc, "B": b_asc})
             cand_config = {
                 "parents": [],
                 "model_params": {"in_size": 1, "hidden_size": 1, "out_size": 1},
-                "actions": ["_source_subsidy_delivered_coal_tce"],
-                "outcomes": {"A": a_asc, "B": b_asc}
+                "actions": ["_source_subsidy_delivered_coal_tce"]
             }
 
             points = [(0, 0), (1, 1), (0, 1), (1, 0)]
@@ -68,7 +65,7 @@ class TestSorter(unittest.TestCase):
                 candidate2 = Candidate("0_1", **cand_config)
                 candidate2.metrics = {"A": cand2_a, "B": cand2_b}
 
-                dominates_pred = self.sorter.dominates(candidate1, candidate2)
+                dominates_pred = sorter.dominates(candidate1, candidate2)
                 dominates_true = self.manual_dominates(a_asc, b_asc, cand1_a, cand1_b, cand2_a, cand2_b)
                 self.assertEqual(dominates_pred,
                                  dominates_true,

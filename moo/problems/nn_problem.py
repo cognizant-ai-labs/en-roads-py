@@ -1,15 +1,20 @@
 """
 Custom problem for PyMoo to optimize En-ROADS.
 """
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 from pymoo.core.problem import ElementwiseProblem
-from sklearn.preprocessing import StandardScaler
+from pymoo.operators.sampling.rnd import FloatRandomSampling
 import torch
+from torch.utils.data import DataLoader
 
 from enroadspy.enroads_runner import EnroadsRunner
 from evolution.candidate import Candidate
+from evolution.evaluation.data import ContextDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
+from evolution.seeding.train_seeds import create_seeds
 
 
 class NNProblem(ElementwiseProblem):
@@ -39,8 +44,8 @@ class NNProblem(ElementwiseProblem):
         self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
 
         self.context_df = context_df
-        context_ds = ContextDataset(context_df)
-        self.context_dl = torch.utils.data.DataLoader(context_ds, batch_size=batch_size, shuffle=False)
+        self.context_ds = ContextDataset(context_df)
+        self.batch_size = batch_size
         self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
     def params_to_context_actions_dicts(self, x: np.ndarray) -> list[dict[str, float]]:
@@ -49,12 +54,14 @@ class NNProblem(ElementwiseProblem):
         returns the contexts and actions as a list of dicts.
         """
         # Create candidate from params and pass contexts through it to get actions dicts for each context
-        candidate = Candidate.from_pymoo_params(x, self.model_params, self.actions, self.outcomes)
+        candidate = Candidate.from_pymoo_params(x, self.model_params, self.actions)
         context_actions_dicts = []
-        for batch in self.context_dl:
-            context_tensor, _ = batch
-            context_actions_dicts.extend(candidate.prescribe(context_tensor.to(self.device)))
+        context_dl = DataLoader(self.context_ds, batch_size=self.batch_size, shuffle=False)
+        for batch, _ in context_dl:
+            context_actions_dicts.extend(candidate.prescribe(batch.to(self.device)))
 
+        # Attaches correct context to each action dict
+        assert len(context_actions_dicts) == len(self.context_df)
         for actions_dict, (_, row) in zip(context_actions_dicts, self.context_df.iterrows()):
             context_dict = row.to_dict()
             actions_dict.update(context_dict)
@@ -94,18 +101,31 @@ class NNProblem(ElementwiseProblem):
         out["G"] = []
 
 
-class ContextDataset(torch.utils.data.Dataset):
+def candidate_to_params(candidate: Candidate) -> np.ndarray:
     """
-    Simple PyTorch dataset that takes a pandas DataFrame, standardizes it, and converts it to a tensor.
+    Takes a candidate and flattens its parameters into a 1d numpy array
     """
-    def __init__(self, context_df: pd.DataFrame):
-        scaler = StandardScaler()
-        transformed = scaler.fit_transform(context_df)
-        self.context_tensor = torch.Tensor(transformed)
-        self.label_tensor = torch.zeros_like(self.context_tensor)
+    state_dict = candidate.model.state_dict()
+    params = []
+    params.append(state_dict["nn.0.weight"].flatten())
+    params.append(state_dict["nn.0.bias"].squeeze())
+    params.append(state_dict["nn.2.weight"].flatten())
+    params.append(state_dict["nn.2.bias"].squeeze())
+    params = torch.cat(params).cpu().numpy()
+    return params
 
-    def __len__(self):
-        return len(self.context_tensor)
 
-    def __getitem__(self, idx):
-        return self.context_tensor[idx], self.label_tensor[idx]
+def seed_nn(problem: NNProblem, pop_size: int, seed_urls: Optional[list[str]] = None, epochs=1000) -> np.ndarray:
+    """
+    Seeds the neural network problem by creating candidates from seed URLs as well as default seeding behavior, then 
+    converts PyTorch model parameters into a flattened numpy array.
+    """
+    print(f"Seeding problem for {epochs} epochs using {len(seed_urls) if seed_urls else 0} custom seeds...")
+    candidates = create_seeds(problem.model_params, problem.context_ds, problem.actions, seed_urls, epochs)
+    seed_params = np.array([candidate_to_params(candidate) for candidate in candidates])
+
+    sampling = FloatRandomSampling()
+    X = sampling(problem, pop_size).get("X")
+    X[:len(seed_params)] = seed_params
+    print(f"Created {len(seed_params)} seed candidates.")
+    return X

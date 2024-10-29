@@ -5,11 +5,12 @@ import unittest
 
 import numpy as np
 import pandas as pd
+import torch
 
 from enroadspy import load_input_specs
-from evolution.utils import modify_config
 from evolution.candidate import Candidate
 from evolution.evaluation.evaluator import Evaluator
+from evolution.utils import modify_config
 
 
 class TestEvaluator(unittest.TestCase):
@@ -18,6 +19,7 @@ class TestEvaluator(unittest.TestCase):
     en-roads model. We need to make sure all our inputs and outputs are correct.
     """
     def setUp(self):
+        device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
         # Dummy config to test with
         config = {
             "evolution_params": {
@@ -29,12 +31,18 @@ class TestEvaluator(unittest.TestCase):
             "mutation_factor": 0.1,
             "mutation_rate": 0.1,
             "model_params": {
-                "hidden_size": 64
+                "in_size": 4,
+                "hidden_size": 64,
+                "out_size": 114
             },
             "eval_params": {
+                "device": device
             },
             "context": [
-                "_new_tech_breakthrough_setting"
+                "_global_population_in_2100",
+                "_long_term_gdp_per_capita_rate",
+                "_near_term_gdp_per_capita_rate",
+                "_transition_time_to_reach_long_term_gdp_per_capita_rate"
             ],
             "actions": [
                 "_source_subsidy_delivered_coal_tce",
@@ -160,8 +168,8 @@ class TestEvaluator(unittest.TestCase):
             ],
             "save_path": "tests/blah"
         }
-        config = modify_config(config)
-        self.config = config
+
+        self.config = modify_config(config)
         self.evaluator = Evaluator(**self.config["eval_params"])
 
     def test_default_input(self):
@@ -223,7 +231,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Makes sure that the same candidate evaluated twice has the same metrics.
         """
-        candidate = Candidate("0_0", [], self.config["model_params"], self.config["actions"], self.config["outcomes"])
+        candidate = Candidate("0_0", [], self.config["model_params"], self.config["actions"])
         self.evaluator.evaluate_candidate(candidate)
         original = dict(candidate.metrics.items())
         self.evaluator.evaluate_candidate(candidate)
@@ -307,3 +315,26 @@ class TestEvaluator(unittest.TestCase):
                     bad_actions.append(action)
 
         self.assertEqual(len(bad_actions), 0, f"Sliders {bad_actions} changed the past")
+
+    def test_start_end_times(self):
+        """
+        Checks if the end time being before the start time breaks anything.
+        """
+        actions = ["_source_subsidy_delivered_coal_tce",
+                   "_source_subsidy_start_time_delivered_coal",
+                   "_source_subsidy_stop_time_delivered_coal",]
+        
+        input_specs = load_input_specs()
+        min_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["minValue"]
+        max_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["maxValue"]
+
+        both_start_dict = {actions[0]: -15, actions[1]: min_time, actions[2]: min_time}
+        both_end_dict = {actions[0]: -15, actions[1]: max_time, actions[2]: max_time}
+        crossed_dict = {actions[0]: -15, actions[1]: max_time, actions[2]: min_time}
+
+        both_start_outcomes = self.evaluator.enroads_runner.evaluate_actions(both_start_dict)
+        both_end_outcomes = self.evaluator.enroads_runner.evaluate_actions(both_end_dict)
+        crossed_outcomes = self.evaluator.enroads_runner.evaluate_actions(crossed_dict)
+
+        self.assertTrue(both_start_outcomes.equals(both_end_outcomes))
+        self.assertTrue(both_start_outcomes.equals(crossed_outcomes))

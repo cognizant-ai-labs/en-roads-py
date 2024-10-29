@@ -5,6 +5,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
 
 from enroadspy import load_input_specs
@@ -19,11 +20,9 @@ class Candidate():
                  cand_id: str,
                  parents: list[str],
                  model_params: dict,
-                 actions: list[str],
-                 outcomes: dict[str, bool]):
+                 actions: list[str]):
         self.cand_id = cand_id
         self.actions = actions
-        self.outcomes = outcomes
         self.metrics = {}
 
         self.parents = parents
@@ -36,16 +35,15 @@ class Candidate():
         self.model = NNPrescriptor(**model_params).to(self.device)
         self.model.eval()
 
-        self.input_specs = load_input_specs()
-        self.scaling_params = self.initialize_scaling_params(actions)
+        self.output_parser = OutputParser(actions, device=self.device)
 
     @classmethod
-    def from_pymoo_params(cls, x: np.ndarray, model_params: dict, actions: list[str], outcomes: dict[str, bool]):
+    def from_pymoo_params(cls, x: np.ndarray, model_params: dict, actions: list[str]):
         """
         Creates a candidate from a 1d numpy array of parameters that have to be reshaped into tensors and loaded
         as a state dict.
         """
-        candidate = cls("pymoo", [], model_params, actions, outcomes)
+        candidate = cls("pymoo", [], model_params, actions)
 
         flattened = torch.Tensor(x)
         state_dict = OrderedDict()
@@ -70,13 +68,13 @@ class Candidate():
         return candidate
 
     @classmethod
-    def from_seed(cls, path: Path, model_params: dict, actions: list[str], outcomes: dict[str, bool]):
+    def from_seed(cls, path: Path, model_params: dict, actions: list[str]):
         """
         Loads PyTorch seed from disk.
         """
         cand_id = path.stem
         parents = []
-        candidate = cls(cand_id, parents, model_params, actions, outcomes)
+        candidate = cls(cand_id, parents, model_params, actions)
         candidate.model.load_state_dict(torch.load(path))
         return candidate
 
@@ -87,122 +85,15 @@ class Candidate():
         path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(self.model.state_dict(), path)
 
-    def initialize_scaling_params(self, actions):
-        """
-        Records information from inputSpecs that we need to parse our outputs.
-        """
-        input_specs = load_input_specs()
-        bias = []
-        scaler = []
-        binary_mask = []
-        end_date_idxs = []
-        steps = []
-        for i, action in enumerate(actions):
-            row = input_specs[input_specs["varId"] == action].iloc[0]
-            if row["kind"] == "slider":
-                steps.append(row["step"])
-                binary_mask.append(False)
-                # TODO: This assumes the start time always comes immediately before stop time
-                if "stop_time" in action:
-                    end_date_idxs.append(i)
-                    bias.append(0)
-                    scaler.append(1)
-                else:
-                    bias.append(row["minValue"])
-                    scaler.append(row["maxValue"] - row["minValue"])
-            elif row["kind"] == "switch":
-                steps.append(1)
-                bias.append(0)
-                scaler.append(1)
-                binary_mask.append(True)
-            else:
-                raise ValueError(f"Unknown kind: {row['kind']}")
-
-        bias = torch.tensor(bias, dtype=torch.float32)
-        scaler = torch.tensor(scaler, dtype=torch.float32)
-        steps = torch.tensor(steps, dtype=torch.float32)
-        binary_mask = torch.tensor(binary_mask, dtype=torch.bool)
-        return bias, scaler, binary_mask, end_date_idxs, steps
-
-    def snap_to_zero_one(self, scaled: torch.Tensor, binary_mask: torch.Tensor) -> torch.Tensor:
-        """
-        Takes switches and makes them binary by sigmoiding then snapping to 0 or 1
-        :param scaled: Tensor of shape (batch_size, num_actions)
-        """
-        scaled[:, binary_mask] = (scaled[:, binary_mask] > 0.5).float()
-        return scaled
-
-    def scale_end_times(self, output: torch.Tensor, end_date_idxs: list[int], scaler: torch.Tensor, bias: torch.Tensor):
-        """
-        Scales end time based on start time's value.
-        We do: end = start + end_logit * (scaler + bias - start)
-        This has to be non in-place to not mess up the gradient calculations in seeding.
-        """
-        scaled = torch.zeros_like(output)
-        for i in range(scaled.shape[1]):
-            if i in end_date_idxs:
-                scaled[:, i] = output[:, i-1] + output[:, i] * (scaler[i-1] + bias[i-1] - output[:, i-1])
-            else:
-                scaled[:, i] = output[:, i]
-        return scaled
-
-    def decode_torch_output(self, nn_output: torch.Tensor) -> list[list[float]]:
-        """
-        Scales and snaps the output of the model to the correct format.
-        output is a tensor of shape (batch_size, num_actions).
-        """
-        bias, scaler, binary_mask, end_date_idxs, steps = self.scaling_params
-        bias = bias.to(nn_output.device)
-        scaler = scaler.to(nn_output.device)
-        binary_mask = binary_mask.to(nn_output.device)
-        steps = steps.to(nn_output.device)
-
-        scaled = nn_output * scaler + bias
-        snapped = self.snap_to_zero_one(scaled, binary_mask)
-        end = self.scale_end_times(snapped, end_date_idxs, scaler, bias)
-        end = end.detach().cpu().tolist()
-        return end
-
-    def fix_switch_values(self, actions_dict: dict[str, float]):
-        """
-        Sets the switch values from 0 to 1 to offValue and onValue
-        """
-        for action in actions_dict:
-            row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
-            if row["kind"] == "switch":
-                actions_dict[action] = int(actions_dict[action])
-                # Switch values are not necessarily 0/1
-                if actions_dict[action] == 1:
-                    actions_dict[action] = row["onValue"]
-                else:
-                    actions_dict[action] = row["offValue"]
-
-    def clip_min_max(self, actions_dict: dict[str, float]):
-        """
-        Clips the values of the actions to be within min and max.
-        """
-        for action in actions_dict:
-            row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
-            if row["kind"] == "slider":
-                if actions_dict[action] < row["minValue"]:
-                    actions_dict[action] = row["minValue"]
-                elif actions_dict[action] > row["maxValue"]:
-                    actions_dict[action] = row["maxValue"]
-
     def prescribe(self, x: torch.Tensor) -> list[dict[str, float]]:
         """
+        Runs the model on a batch of contexts and returns a list of actions dicts.
         Parses the output of our model so that we can use it in en-roads model.
-        NOTE: We actually can pass float values and are ok with it.
         """
         with torch.no_grad():
             nn_outputs = self.model.forward(x)
-        outputs = self.decode_torch_output(nn_outputs)
-        actions_dicts = []
-        for output in outputs:
-            actions_dict = dict(zip(self.actions, output))
-            self.fix_switch_values(actions_dict)
-            self.clip_min_max(actions_dict)
-            actions_dicts.append(actions_dict)
+            outputs = self.output_parser.parse_output(nn_outputs).cpu().numpy()
+        actions_dicts = [dict(zip(self.actions, output.tolist())) for output in outputs]
         return actions_dicts
 
     def record_state(self):
@@ -215,8 +106,8 @@ class Candidate():
             "rank": self.rank,
             "distance": self.distance,
         }
-        for outcome in self.outcomes:
-            state[outcome] = self.metrics[outcome]
+        for metric, value in self.metrics.items():
+            state[metric] = value
         return state
 
     def __str__(self):
@@ -253,3 +144,71 @@ class NNPrescriptor(torch.nn.Module):
         """
         nn_output = self.nn(x)
         return nn_output
+
+
+class OutputParser():
+    """
+    Parses the output of our NNPrescriptor. All the values are between 0 and 1 and it's our job to scale them to
+    match the input specs. It's ok to have an end date before a start date, the simulator just handles it interally.
+    """
+    def __init__(self, actions: list[str], device="cpu"):
+        input_specs = load_input_specs()
+        self.actions = actions
+
+        # Index into the dataframe with actions
+        filtered = input_specs[input_specs["varId"].isin(actions)].copy()
+        filtered["varId"] = pd.Categorical(filtered["varId"], categories=actions, ordered=True)
+        filtered = filtered.sort_values("varId")
+
+        # Non-sliders are left scaled between 0 and 1.
+        bias = filtered["minValue"].fillna(0).values
+        scale = filtered["maxValue"].fillna(1).values - filtered["minValue"].fillna(0).values
+
+        # Keep track of which actions are switches so we can snap them to their on or off values.
+        switches = (filtered["kind"] == "switch").values
+        on_values = filtered["onValue"].fillna(0).values
+        off_values = filtered["offValue"].fillna(0).values
+
+        self.bias = torch.FloatTensor(bias).to(device)
+        self.scale = torch.FloatTensor(scale).to(device)
+
+        self.switches = torch.BoolTensor(switches).to(device)
+        self.on_values = torch.FloatTensor(on_values).to(device)
+        self.off_values = torch.FloatTensor(off_values).to(device)
+
+        self.device = device
+
+    def parse_output(self, nn_outputs: torch.Tensor) -> torch.Tensor:
+        """
+        nn_outputs: (batch_size, num_actions)
+        Does the actual parsing of the outputs.
+        Scale the sliders by multiplying by scale then adding bias.
+        Snap switches to on or off based on the output.
+        """
+        nn_outputs = nn_outputs.to(self.device)
+        b = nn_outputs.shape[0]
+        # First we scale our sliders
+        scaled = nn_outputs * self.scale + self.bias
+
+        # Now we snap our switches to on or off
+        scaled[:, self.switches] = torch.where(scaled[:, self.switches] > 0.5,
+                                               self.on_values.repeat(b, 1)[:, self.switches],
+                                               self.off_values.repeat(b, 1)[:, self.switches])
+
+        return scaled
+
+    def unparse(self, parsed_outputs: torch.Tensor) -> torch.Tensor:
+        """
+        Undo the parsing performed in parse_output for seed training.
+        """
+        parsed_outputs = parsed_outputs.to(self.device)
+        b = parsed_outputs.shape[0]
+
+        # Unscale sliders
+        unscaled = (parsed_outputs - self.bias) / self.scale
+
+        # Undo switch snapping
+        on_values = self.on_values.repeat(b, 1)[:, self.switches]
+        unscaled[:, self.switches] = torch.where(unscaled[:, self.switches] == on_values, 1, 0).float()
+
+        return unscaled
