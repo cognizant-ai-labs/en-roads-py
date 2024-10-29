@@ -17,7 +17,7 @@ class LinkComponent():
     Component in charge of displaying the links to En-ROADS.
     """
 
-    def __init__(self, cand_idxs: list[int]):
+    def __init__(self, cand_idxs: list[int], actions: list[str]):
         self.cand_idxs = [i for i in cand_idxs]
 
         self.colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
@@ -26,7 +26,7 @@ class LinkComponent():
 
         self.input_specs = load_input_specs()
 
-        self.timeline_component = TimelineComponent()
+        self.timeline_component = TimelineComponent(actions)
 
     def plot_energy_policy(self, energy_policy_jsonl: list[dict[str, list]], cand_idx: int) -> go.Figure:
         """

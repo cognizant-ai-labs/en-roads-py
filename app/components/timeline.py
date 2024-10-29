@@ -14,7 +14,8 @@ class TimelineComponent():
     """
     Component handling generation of a timeline of actions taken.
     """
-    def __init__(self):
+    def __init__(self, actions: list[str]):
+        self.actions = [a for a in actions]
 
         # Pre-compute timeline actions for later when we show actions
         with open("app/timeline.yaml", "r", encoding="utf-8") as f:
@@ -83,7 +84,7 @@ class TimelineComponent():
         # Generate initial actions
         children = [html.H3("Initial Actions")]
         for action in context_actions_dict:
-            if action not in self.timeline_actions:
+            if action not in self.timeline_actions and action in self.actions:
                 input_spec = self.input_specs[self.input_specs["varId"] == action].iloc[0]
                 val = context_actions_dict[action]
                 if input_spec["kind"] == "slider":
