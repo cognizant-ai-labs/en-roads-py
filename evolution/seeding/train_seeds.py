@@ -1,10 +1,6 @@
 """
 Trains seeds for the first generation of evolution using desired behavior.
 """
-import argparse
-import json
-from pathlib import Path
-import shutil
 from typing import Optional
 
 import torch
@@ -12,8 +8,6 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
 from evolution.candidate import Candidate, NNPrescriptor, OutputParser
-from evolution.evaluation.evaluator import Evaluator
-from evolution.utils import modify_config
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
 
@@ -48,6 +42,7 @@ def train_seed(model_params: dict, dataset: Dataset, label: torch.Tensor, epochs
             pbar.set_description(f"Avg Loss: {(avg_loss / n):.5f}")
 
     return model
+
 
 def actions_to_label(actions: list[str], actions_dict: dict[str, float], output_parser: OutputParser) -> torch.Tensor:
     """
@@ -115,7 +110,7 @@ def create_seeds(model_params: dict,
                  epochs: Optional[int] = 1000) -> list[Candidate]:
     """
     Creates seed prescriptors for a given context dataset and actions. If seed_urls are provided, they are used to
-    create custom labels for the seeds. Otherwise, we simply seed the default actions, min/off actions, and 
+    create custom labels for the seeds. Otherwise, we simply seed the default actions, min/off actions, and
     max/on actions.
     """
     output_parser = OutputParser(actions, device=DEVICE)

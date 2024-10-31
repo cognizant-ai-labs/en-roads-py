@@ -117,7 +117,7 @@ def candidate_to_params(candidate: Candidate) -> np.ndarray:
 
 def seed_nn(problem: NNProblem, pop_size: int, seed_urls: Optional[list[str]] = None, epochs=1000) -> np.ndarray:
     """
-    Seeds the neural network problem by creating candidates from seed URLs as well as default seeding behavior, then 
+    Seeds the neural network problem by creating candidates from seed URLs as well as default seeding behavior, then
     converts PyTorch model parameters into a flattened numpy array.
     """
     print(f"Seeding problem for {epochs} epochs using {len(seed_urls) if seed_urls else 0} custom seeds...")
