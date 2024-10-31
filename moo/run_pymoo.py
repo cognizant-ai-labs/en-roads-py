@@ -13,12 +13,10 @@ import pandas as pd
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
-from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.operators.survival.rank_and_crowding import RankAndCrowding
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
 
-from enroadspy import load_input_specs
 from moo.problems.enroads_problem import EnroadsProblem, seed_default
 from moo.problems.nn_problem import NNProblem, seed_nn
 

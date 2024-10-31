@@ -323,7 +323,7 @@ class TestEvaluator(unittest.TestCase):
         actions = ["_source_subsidy_delivered_coal_tce",
                    "_source_subsidy_start_time_delivered_coal",
                    "_source_subsidy_stop_time_delivered_coal",]
-        
+
         input_specs = load_input_specs()
         min_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["minValue"]
         max_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["maxValue"]
