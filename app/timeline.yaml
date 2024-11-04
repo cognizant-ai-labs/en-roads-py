@@ -1,0 +1,76 @@
+_source_subsidy_delivered_coal_tce:
+  type: subsidy
+  start: _source_subsidy_start_time_delivered_coal
+  stop: _source_subsidy_stop_time_delivered_coal
+_no_new_coal:
+  type: no_new
+  start: _year_of_no_new_capacity_coal
+_utilization_adjustment_factor_delivered_coal:
+  type: adjustment
+  start: _utilization_policy_start_time_delivered_coal
+  stop: _utilization_policy_stop_time_delivered_coal
+_source_subsidy_delivered_oil_boe:
+  type: subsidy
+  start: _source_subsidy_start_time_delivered_oil
+  stop: _source_subsidy_stop_time_delivered_oil
+_no_new_oil:
+  type: no_new
+  start: _year_of_no_new_capacity_oil
+_utilization_adjustment_factor_delivered_oil:
+  type: adjustment
+  start: _utilization_policy_start_time_delivered_oil
+  stop: _utilization_policy_stop_time_delivered_oil
+_source_subsidy_delivered_gas_mcf:
+  type: subsidy
+  start: _source_subsidy_start_time_delivered_gas
+  stop: _source_subsidy_stop_time_delivered_gas
+_no_new_gas:
+  type: no_new
+  start: _year_of_no_new_capacity_gas
+_utilization_adjustment_factor_delivered_gas:
+  type: adjustment
+  start: _utilization_policy_start_time_delivered_gas
+  stop: _utilization_policy_stop_time_delivered_gas
+_source_subsidy_renewables_kwh:
+  type: subsidy
+  start: _source_subsidy_start_time_renewables
+  stop: _source_subsidy_stop_time_renewables
+_source_subsidy_delivered_bio_boe:
+  type: subsidy
+  start: _source_subsidy_start_time_delivered_bio
+  stop: _source_subsidy_stop_time_delivered_bio
+_wood_feedstock_subsidy_boe:
+  type: bio
+  start: _source_subsidy_start_time_delivered_bio
+  stop: _source_subsidy_stop_time_delivered_bio
+_crop_feedstock_subsidy_boe:
+  type: bio
+  start: _source_subsidy_start_time_delivered_bio
+  stop: _source_subsidy_stop_time_delivered_bio
+_other_feedstock_subsidy_boe:
+  type: bio
+  start: _source_subsidy_start_time_delivered_bio
+  stop: _source_subsidy_stop_time_delivered_bio
+_no_new_bio:
+  type: no_new
+  start: _year_of_no_new_capacity_bio
+_source_subsidy_nuclear_kwh:
+  type: subsidy
+  start: _source_subsidy_start_time_nuclear
+  stop: _source_subsidy_stop_time_nuclear
+_carbon_tax_initial_target:
+  type: carbon_tax
+  start: _carbon_tax_phase_1_start
+  length: _carbon_tax_time_to_achieve_initial_target
+_carbon_tax_final_target:
+  type: carbon_tax
+  start: _carbon_tax_phase_3_start
+  length: _carbon_tax_time_to_achieve_final_target
+# Note: we need to see if electric_standard_active is true for this
+_electric_standard_target:
+  start: _electric_standard_start_year
+  length: _electric_standard_target_time
+_emissions_performance_standard:
+  start: _performance_standard_time
+
+

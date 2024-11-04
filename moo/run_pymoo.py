@@ -13,14 +13,12 @@ import pandas as pd
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
-from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.operators.survival.rank_and_crowding import RankAndCrowding
 from pymoo.optimize import minimize
 from pymoo.termination import get_termination
 
-from enroadspy import load_input_specs
-from moo.problems.enroads_problem import EnroadsProblem
-from moo.problems.nn_problem import NNProblem
+from moo.problems.enroads_problem import EnroadsProblem, seed_default
+from moo.problems.nn_problem import NNProblem, seed_nn
 
 
 def create_default_problem(actions: list[str], outcomes: dict[str, bool]) -> EnroadsProblem:
@@ -42,28 +40,6 @@ def create_nn_problem(actions: list[str], outcomes: dict[str, bool]) -> NNProble
     return problem
 
 
-def seed_default(problem: EnroadsProblem, actions: list[str], pop_size: int) -> np.ndarray:
-    """
-    Creates an initial population with one candidate with the default behavior, one with the minimum value, and one
-    with the maximum value.
-    """
-    sampling = FloatRandomSampling()
-    X = sampling(problem, pop_size).get("X")
-
-    input_specs = load_input_specs()
-    for i, action in enumerate(actions):
-        row = input_specs[input_specs["varId"] == action].iloc[0]
-        X[0, i] = row["defaultValue"]
-        if row["kind"] == "slider":
-            X[1, i] = row["minValue"]
-            X[2, i] = row["maxValue"]
-        else:
-            X[1, i] = row["offValue"]
-            X[2, i] = row["onValue"]
-
-    return X
-
-
 def optimize(config: dict, nn: bool):
     """
     Running pymoo optimization according to our config file.
@@ -74,7 +50,8 @@ def optimize(config: dict, nn: bool):
         alg_params = {"sampling": X0}
     else:
         problem = create_nn_problem(config["actions"], config["outcomes"])
-        alg_params = {}
+        X0 = seed_nn(problem, config["pop_size"], config.get("seed_urls", None), epochs=config.get("seed_epochs", 1000))
+        alg_params = {"sampling": X0}
 
     algorithm = NSGA2(
         pop_size=config["pop_size"],
@@ -110,6 +87,8 @@ def main():
     args = parser.parse_args()
 
     nn = args.nn
+    if nn:
+        print("Running Neural Network Context Problem")
 
     with open(args.config, "r", encoding="utf-8") as f:
         config = json.load(f)

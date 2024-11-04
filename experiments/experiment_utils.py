@@ -19,7 +19,6 @@ class Experimenter:
             config = json.load(f)
         self.context = config["context"]
         self.actions = config["actions"]
-        self.outcomes = config["outcomes"]
 
         self.model_params = config["model_params"]
         self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
@@ -41,4 +40,4 @@ class Experimenter:
         Loads a candidate from an id.
         """
         cand_path = self.results_dir / cand_id.split("_")[0] / f"{cand_id}.pt"
-        return Candidate.from_seed(cand_path, self.model_params, self.actions, self.outcomes)
+        return Candidate.from_seed(cand_path, self.model_params, self.actions)

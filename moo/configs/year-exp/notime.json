@@ -1,0 +1,51 @@
+{
+    "n_generations": 100,
+    "pop_size": 200,
+    "crowding_func": "mnn",
+    "actions": [
+        "_source_subsidy_delivered_coal_tce",
+        "_no_new_coal",
+        "_utilization_adjustment_factor_delivered_coal",
+        "_target_accelerated_retirement_rate_electric_coal",
+        "_source_subsidy_delivered_oil_boe",
+        "_no_new_oil",
+        "_utilization_adjustment_factor_delivered_oil",
+        "_source_subsidy_delivered_gas_mcf",
+        "_no_new_gas",
+        "_utilization_adjustment_factor_delivered_gas",
+        "_source_subsidy_renewables_kwh",
+        "_use_subsidies_by_feedstock",
+        "_source_subsidy_delivered_bio_boe",
+        "_no_new_bio",
+        "_wood_feedstock_subsidy_boe",
+        "_crop_feedstock_subsidy_boe",
+        "_other_feedstock_subsidy_boe",
+        "_source_subsidy_nuclear_kwh",
+        "_carbon_tax_initial_target",
+        "_carbon_tax_final_target",
+        "_apply_carbon_tax_to_biofuels",
+        "_ccs_carbon_tax_qualifier",
+        "_qualifying_path_renewables",
+        "_qualifying_path_nuclear",
+        "_qualifying_path_new_zero_carbon",
+        "_qualifying_path_beccs",
+        "_qualifying_path_bioenergy",
+        "_qualifying_path_fossil_ccs",
+        "_qualifying_path_gas",
+        "_electric_standard_active",
+        "_electric_standard_target",
+        "_emissions_performance_standard"
+    ],
+    "outcomes": {
+        "Temperature above 1.5C": true,
+        "Max cost of energy": true,
+        "Government net revenue below zero": false,
+        "Total energy below baseline": false
+    },
+    "seed_urls": [
+        "https://en-roads.climateinteractive.org/scenario.html?v=24.10.0&p1=100&p211=100&p196=100&p4=10&p7=85&p212=100&p198=100&p10=5&p213=100&p200=100&p16=-0.05&p23=25&p313=100&p30=-0.07&p39=250&p42=1200&p312=1&p45=10",
+        "https://en-roads.climateinteractive.org/scenario.html?v=24.10.0&p1=-15&p7=-15&p10=-0.7&p16=0.02&p23=-25&p30=0.07&p39=0&p298=0&p267=1&p266=1&p268=1"
+    ],
+    "seed_epochs": 10000,
+    "save_path": "results/pymoo/year-exp/notime-seeded"
+}

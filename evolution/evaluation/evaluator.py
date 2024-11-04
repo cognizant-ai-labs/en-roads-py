@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from evolution.candidate import Candidate
-from evolution.evaluation.data import ContextDataset
+from evolution.evaluation.data import SSPDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
 from enroadspy import load_input_specs
 from enroadspy.enroads_runner import EnroadsRunner
@@ -19,7 +19,7 @@ class Evaluator:
     Evaluates candidates by generating the actions and running the enroads model on them.
     Generates and stores context data based on config using ContextDataset.
     """
-    def __init__(self, context: list[str], actions: list[str], outcomes: dict[str, bool]):
+    def __init__(self, context: str, actions: list[str], outcomes: dict[str, bool], batch_size=64, device="cpu"):
         self.actions = actions
         self.outcomes = outcomes
         self.outcome_manager = OutcomeManager(outcomes)
@@ -30,9 +30,16 @@ class Evaluator:
         self.context = context
         # Context Dataset outputs a scaled tensor and nonscaled tensor. The scaled tensor goes into PyTorch and
         # the nonscaled tensor is used to reconstruct the context that goes into enroads.
-        self.context_dataset = ContextDataset(context)
-        self.context_dataloader = DataLoader(self.context_dataset, batch_size=3, shuffle=False)
-        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        if set(context) == {"_global_population_in_2100",
+                            "_long_term_gdp_per_capita_rate",
+                            "_near_term_gdp_per_capita_rate",
+                            "_transition_time_to_reach_long_term_gdp_per_capita_rate"}:
+            self.context_dataset = SSPDataset()
+        else:
+            raise ValueError(f"Context {context} not recognized.")
+
+        self.batch_size = batch_size
+        self.device = device
 
         self.enroads_runner = EnroadsRunner()
 
@@ -61,10 +68,12 @@ class Evaluator:
         Evaluates a single candidate by running all the context through it and receiving all the batches of actions.
         Then evaluates all the actions and returns the average outcome.
         """
+        candidate.model.to(self.device)
         outcomes_dfs = []
         cand_results = []
+        dataloader = DataLoader(self.context_dataset, batch_size=self.batch_size, shuffle=False)
         # Iterate over batches of contexts
-        for batch_tensor, batch_context in self.context_dataloader:
+        for batch_tensor, batch_context in dataloader:
             context_dicts = self.reconstruct_context_dicts(batch_context)
             actions_dicts = candidate.prescribe(batch_tensor.to(self.device))
             for actions_dict, context_dict in zip(actions_dicts, context_dicts):

@@ -74,7 +74,7 @@ class EvolutionHandler():
         """
         context_actions_dicts = []
         for x in self.X:
-            candidate = Candidate.from_pymoo_params(x, self.model_params, self.actions, self.outcomes)
+            candidate = Candidate.from_pymoo_params(x, self.model_params, self.actions)
             # Process context_dict into tensor
             context_list = [context_dict[context] for context in self.context_df.columns]
             context_scaled = self.scaler.transform([context_list])

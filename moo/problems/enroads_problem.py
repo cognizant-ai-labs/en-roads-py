@@ -3,6 +3,8 @@ Custom problem for PyMoo to optimize En-ROADS.
 """
 import numpy as np
 from pymoo.core.problem import ElementwiseProblem
+from pymoo.operators.sampling.rnd import FloatRandomSampling
+
 
 from enroadspy import load_input_specs
 from enroadspy.enroads_runner import EnroadsRunner
@@ -76,3 +78,25 @@ class EnroadsProblem(ElementwiseProblem):
 
         out["F"] = f
         out["G"] = g
+
+
+def seed_default(problem: EnroadsProblem, actions: list[str], pop_size: int) -> np.ndarray:
+    """
+    Creates an initial population with one candidate with the default behavior, one with the minimum value, and one
+    with the maximum value.
+    """
+    sampling = FloatRandomSampling()
+    X = sampling(problem, pop_size).get("X")
+
+    input_specs = load_input_specs()
+    for i, action in enumerate(actions):
+        row = input_specs[input_specs["varId"] == action].iloc[0]
+        X[0, i] = row["defaultValue"]
+        if row["kind"] == "slider":
+            X[1, i] = row["minValue"]
+            X[2, i] = row["maxValue"]
+        else:
+            X[1, i] = row["offValue"]
+            X[2, i] = row["onValue"]
+
+    return X

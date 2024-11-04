@@ -23,7 +23,6 @@ class TestDistanceCalculation(unittest.TestCase):
             "parents": [],
             "model_params": {"in_size": 1, "hidden_size": 1, "out_size": 1},
             "actions": ["_source_subsidy_delivered_coal_tce"],
-            "outcomes": {"A": True, "B": True}
         }
         cand1 = Candidate("0_0", **cand_params)
         cand2 = Candidate("0_1", **cand_params)

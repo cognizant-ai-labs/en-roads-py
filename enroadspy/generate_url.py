@@ -40,8 +40,7 @@ def open_browser(results_dir, cand_id, input_idx):
     evaluator = Evaluator(config["context"], config["actions"], config["outcomes"])
     candidate = Candidate.from_seed(results_dir / cand_id.split("_")[0] / f"{cand_id}.pt",
                                     config["model_params"],
-                                    config["actions"],
-                                    config["outcomes"])
+                                    config["actions"])
     context_tensor, context_vals = evaluator.context_dataset[input_idx]
     device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
     actions_dicts = candidate.prescribe(context_tensor.to(device).unsqueeze(0))

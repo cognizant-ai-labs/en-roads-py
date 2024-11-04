@@ -11,6 +11,7 @@ from evolution.candidate import Candidate
 from evolution.crossover.uniform_crossover import UniformCrossover
 from evolution.mutation.uniform_mutation import UniformMutation
 from evolution.evaluation.evaluator import Evaluator
+from evolution.seeding.train_seeds import create_seeds
 from evolution.sorting.distance_calculation.crowding_distance import CrowdingDistanceCalculator
 from evolution.sorting.nsga2_sorter import NSGA2Sorter
 from evolution.parent_selection.tournament_selector import TournamentSelector
@@ -34,21 +35,24 @@ class Evolution():
         self.pop_size = self.evolution_params["pop_size"]
         self.n_generations = self.evolution_params["n_generations"]
         self.n_elites = self.evolution_params["n_elites"]
-        self.seed_path = None
-        if "seed_params" in config and "seed_path" in config["seed_params"]:
-            self.seed_path = Path(config["seed_params"]["seed_path"])
 
+        # NSGA-II components
         self.parent_selector = TournamentSelector(config["remove_population_pct"])
         self.mutator = UniformMutation(config["mutation_factor"], config["mutation_rate"])
         self.crossover = UniformCrossover(mutator=self.mutator)
         distance_calculator = CrowdingDistanceCalculator()
-        self.sorter = NSGA2Sorter(distance_calculator)
+        self.sorter = NSGA2Sorter(distance_calculator, outcomes=config["outcomes"])
 
+        # Candidate parameters
         self.model_params = config["model_params"]
         self.actions = config["actions"]
         self.outcomes = config["outcomes"]
 
+        # Evaluator
         self.evaluator = Evaluator(**config["eval_params"])
+
+        # Seeding
+        self.seed_params = config.get("seed_params")
 
     def make_new_pop(self, candidates: list[Candidate], n: int, gen: int) -> list[Candidate]:
         """
@@ -67,19 +71,29 @@ class Evolution():
 
     def seed_first_gen(self):
         """
-        Creates the first generation by taking seeds and creating an average of them.
+        Creates the first generation by taking seeds and then filling in the rest with random candidates.
         """
         candidates = []
-        if self.seed_path:
-            print("Seeding from ", self.seed_path)
-            for seed in self.seed_path.iterdir():
-                candidate = Candidate.from_seed(seed, self.model_params, self.actions, self.outcomes)
-                candidates.append(candidate)
+        if self.seed_params:
+            seed_path = self.seed_params.get("seed_path")
+            if seed_path:
+                print("Seeding from ", seed_path)
+                seed_path = Path(seed_path)
+                for seed in seed_path.iterdir():
+                    candidate = Candidate.from_seed(seed, self.model_params, self.actions)
+                    candidates.append(candidate)
+            else:
+                print("Creating seeds...")
+                seed_urls = self.seed_params.get("seed_urls")
+                candidates.extend(create_seeds(self.model_params,
+                                               self.evaluator.context_dataset,
+                                               self.actions,
+                                               seed_urls))
 
         print("Generating random seed generation")
         i = len(candidates)
         while i < self.pop_size:
-            candidate = Candidate(f"0_{i}", [], self.model_params, self.actions, self.outcomes)
+            candidate = Candidate(f"0_{i}", [], self.model_params, self.actions)
             candidates.append(candidate)
             i += 1
 

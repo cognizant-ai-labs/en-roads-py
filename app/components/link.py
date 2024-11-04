@@ -1,14 +1,13 @@
 """
 Link Component.
 """
-import json
-
 from dash import Input, Output, State, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 
 from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
+from app.components.timeline import TimelineComponent
 from enroadspy import load_input_specs
 from enroadspy.generate_url import actions_to_url
 
@@ -18,16 +17,16 @@ class LinkComponent():
     Component in charge of displaying the links to En-ROADS.
     """
 
-    def __init__(self, cand_idxs: list[int]):
-        self.cand_idxs = cand_idxs
+    def __init__(self, cand_idxs: list[int], actions: list[str]):
+        self.cand_idxs = [i for i in cand_idxs]
 
         self.colors = ["brown", "red", "blue", "green", "pink", "lightblue", "orange"]
         self.energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
         self.demands = [f"Primary energy demand of {energy}" for energy in self.energies]
 
-        with open("app/categories.json", "r", encoding="utf-8") as f:
-            self.categories = json.load(f)
         self.input_specs = load_input_specs()
+
+        self.timeline_component = TimelineComponent(actions)
 
     def plot_energy_policy(self, energy_policy_jsonl: list[dict[str, list]], cand_idx: int) -> go.Figure:
         """
@@ -78,30 +77,6 @@ class LinkComponent():
             )
         )
         return fig
-
-    def translate_context_actions_dict(self, context_actions_dict: dict[str, float]) -> html.Div:
-        """
-        Translates a context actions dict into a nice div to display
-        """
-        children = []
-        for category in self.categories:
-            children.append(html.H4(category))
-            remove = True  # If we don't have any actions in this category, remove it
-            for action in self.categories[category]:
-                if action in context_actions_dict:
-                    remove = False
-                    input_spec = self.input_specs[self.input_specs["varId"] == action].iloc[0]
-                    val = context_actions_dict[action]
-                    if input_spec["kind"] == "slider":
-                        formatting = input_spec["format"]
-                        val_formatted = f"{val:{formatting}}"
-                    else:
-                        val_formatted = "on" if val else "off"
-                    children.append(html.P(f"{input_spec['varName']}: {val_formatted}"))
-            if remove:
-                children.pop()
-
-        return html.Div(children)
 
     def create_link_div(self):
         """
@@ -236,5 +211,5 @@ class LinkComponent():
             """
             if cand_idx is not None:
                 context_actions_dict = context_actions_dicts[cand_idx]
-                return self.translate_context_actions_dict(context_actions_dict), False
+                return self.timeline_component.create_timeline_div(context_actions_dict), False
             return "", True
