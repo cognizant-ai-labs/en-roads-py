@@ -27,11 +27,6 @@ class FilterComponent:
         with open("app/units.json", "r", encoding="utf-8") as f:
             self.units = json.load(f)
 
-        self.names_map = dict(zip(self.metrics, ["Temperature change from 1850",
-                                                 "Highest cost of energy",
-                                                 "Government spending",
-                                                 "Reduction in energy demand"]))
-
     def create_metric_sliders(self):
         """
         Creates initial metric sliders and lines them up with their labels.
@@ -53,16 +48,17 @@ class FilterComponent:
             )
             sliders.append(slider)
 
+        names_map = dict(zip(self.metrics, ["Temperature change from 1850",
+                                            "Highest cost of energy",
+                                            "Government spending",
+                                            "Reduction in energy demand"]))
         # w-25 and flex-grow-1 ensures they line up
         div = html.Div(
             children=[
                 html.Div(
                     className="d-flex flex-row mb-2",
                     children=[
-                        html.Label(
-                            f"{self.names_map[self.metrics[i]]} ({self.units[self.metrics[i]]})",
-                            className="w-25"
-                        ),
+                        html.Label(f"{names_map[self.metrics[i]]} ({self.units[self.metrics[i]]})", className="w-25"),
                         html.Div(sliders[i], className="flex-grow-1")
                     ]
                 )
@@ -83,7 +79,6 @@ class FilterComponent:
         fig = go.Figure()
 
         normalized_df = filter_metrics_json(metrics_json, metric_ranges, normalize=True)
-        normalized_df.rename(self.names_map, axis=1, inplace=True)
 
         cand_idxs = list(normalized_df.index)[:-1]  # Leave out the baseline
         n_special_cands = min(10, len(cand_idxs))
