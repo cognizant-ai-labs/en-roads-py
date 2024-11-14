@@ -24,8 +24,7 @@ def main():
         return
 
     if not os.path.exists(zip_path):
-        session = boto3.Session(profile_name="LeafDev")
-        s3 = session.client('s3')
+        s3 = boto3.client('s3')
         s3.download_file("ai-for-good", sdk_name + ".zip", zip_path)
 
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
