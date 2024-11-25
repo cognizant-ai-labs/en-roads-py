@@ -1,7 +1,8 @@
 """
 Setup script to load the En-ROADS SDK from the S3 bucket. This is used for app deployment and testing.
-Note: This script requires access to the private S3 bucket where the SDK is stored. If you would like access to the
-SDK to run the full project, see the README in order to contact a member of Project Resilience.
+Note: This script requires access to the private S3 bucket where the SDK is stored. The SDK is not currently available
+for general use. If you would like to run the full project, see the README in order to contact a member of Project
+Resilience.
 """
 import os
 import zipfile
