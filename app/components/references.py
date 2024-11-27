@@ -41,7 +41,7 @@ class ReferencesComponent():
                         ]),
                         html.P([
                             "The code for this project can be found ",
-                            html.A("here", href="https://github.com/danyoungday/en-roads-py")
+                            html.A("here", href="https://github.com/cognizant-ai-labs/en-roads-py")
                         ]),
                         html.P(["Then En-ROADS model is developed by Climate Interactive. More information can be\
                                found here: ",
