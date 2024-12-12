@@ -46,7 +46,7 @@ def optimize(config: dict, nn: bool):
     """
     if not nn:
         problem = create_default_problem(config["actions"], config["outcomes"])
-        X0 = seed_default(problem, config["actions"], config["pop_size"])
+        X0 = seed_default(problem, config["actions"], config["pop_size"], config["seed_urls"])
         alg_params = {"sampling": X0}
     else:
         problem = create_nn_problem(config["actions"], config["outcomes"])
@@ -56,7 +56,6 @@ def optimize(config: dict, nn: bool):
     algorithm = NSGA2(
         pop_size=config["pop_size"],
         crossover=SBX(prob=0.9, eta=15),
-        # crossover=UniformCrossover(),
         mutation=PM(eta=20),
         survival=RankAndCrowding(crowding_func=config["crowding_func"]),
         eliminate_duplicates=True,
@@ -82,7 +81,7 @@ def main():
     Main logic loading our config and running optimization.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, help="Path to config file.")
+    parser.add_argument("--config", type=str, nargs="+", help="Path(s) to config file.")
     parser.add_argument("--nn", action="store_true", help="Use neural network with context")
     args = parser.parse_args()
 
@@ -90,22 +89,23 @@ def main():
     if nn:
         print("Running Neural Network Context Problem")
 
-    with open(args.config, "r", encoding="utf-8") as f:
-        config = json.load(f)
+    for config_path in args.config:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
 
-    if Path(config["save_path"]).exists():
-        inp = input("Save path already exists, do you want to overwrite? (y/n):")
-        if inp.lower() == "y":
-            shutil.rmtree(config["save_path"])
-        else:
-            print("Exiting")
-            sys.exit()
+        if Path(config["save_path"]).exists():
+            inp = input("Save path already exists, do you want to overwrite? (y/n):")
+            if inp.lower() == "y":
+                shutil.rmtree(config["save_path"])
+            else:
+                print("Exiting")
+                sys.exit()
 
-    Path(config["save_path"]).mkdir(parents=True)
-    with open(Path(config["save_path"]) / "config.json", "w", encoding="utf-8") as f:
-        json.dump(config, f)
+        Path(config["save_path"]).mkdir(parents=True)
+        with open(Path(config["save_path"]) / "config.json", "w", encoding="utf-8") as f:
+            json.dump(config, f)
 
-    optimize(config, nn)
+        optimize(config, nn)
 
 
 if __name__ == "__main__":

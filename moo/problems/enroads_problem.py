@@ -7,6 +7,7 @@ from pymoo.operators.sampling.rnd import FloatRandomSampling
 
 
 from enroadspy import load_input_specs
+from enroadspy.generate_url import generate_actions_dict
 from enroadspy.enroads_runner import EnroadsRunner
 from evolution.outcomes.outcome_manager import OutcomeManager
 
@@ -80,10 +81,10 @@ class EnroadsProblem(ElementwiseProblem):
         out["G"] = g
 
 
-def seed_default(problem: EnroadsProblem, actions: list[str], pop_size: int) -> np.ndarray:
+def seed_default(problem: EnroadsProblem, actions: list[str], pop_size: int, seed_urls: list[str]) -> np.ndarray:
     """
     Creates an initial population with one candidate with the default behavior, one with the minimum value, and one
-    with the maximum value.
+    with the maximum value, then adds the seed urls.
     """
     sampling = FloatRandomSampling()
     X = sampling(problem, pop_size).get("X")
@@ -98,5 +99,17 @@ def seed_default(problem: EnroadsProblem, actions: list[str], pop_size: int) -> 
         else:
             X[1, i] = row["offValue"]
             X[2, i] = row["onValue"]
+
+    seed_X = np.zeros((len(seed_urls), len(actions)))
+    for i, seed_url in enumerate(seed_urls):
+        seed = generate_actions_dict(seed_url)
+        for j, action in enumerate(actions):
+            if action in seed:
+                seed_X[i, j] = seed[action]
+            else:
+                seed_X[i, j] = input_specs[input_specs["varId"] == action].iloc[0]["defaultValue"]
+    X[3:3+len(seed_urls)] = seed_X
+
+    print(f"Seeded with {3+len(seed_urls)} candidates")
 
     return X
