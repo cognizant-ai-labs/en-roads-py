@@ -7,4 +7,9 @@ temp/
 .vscode
 results/
 
+esp/seeds/
+!esp/seeds/seeding.py
+
+input_specs.jsonl
+
 !app/results

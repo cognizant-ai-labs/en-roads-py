@@ -178,7 +178,7 @@ class OutputParser():
 
         self.device = device
 
-    def parse_output(self, nn_outputs: torch.Tensor) -> torch.Tensor:
+    def parse_output(self, nn_outputs: torch.Tensor) -> list[dict[str, float]]:
         """
         nn_outputs: (batch_size, num_actions)
         Does the actual parsing of the outputs.
@@ -196,6 +196,14 @@ class OutputParser():
                                                self.off_values.repeat(b, 1)[:, self.switches])
 
         return scaled
+    
+    def parse_actions_dicts(self, nn_outputs: torch.Tensor) -> list[dict[str, float]]:
+        """
+        Calls parse_output and then converts the output to a list of actions dicts.
+        """
+        parsed_outputs = self.parse_output(nn_outputs)
+        actions_dicts = [dict(zip(self.actions, output.tolist())) for output in parsed_outputs.cpu()]
+        return actions_dicts
 
     def unparse(self, parsed_outputs: torch.Tensor) -> torch.Tensor:
         """
