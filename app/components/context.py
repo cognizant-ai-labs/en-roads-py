@@ -1,7 +1,7 @@
 """
 Component displaying the context and handling its related functions.
 """
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, ALL, MATCH, ctx
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
@@ -85,9 +85,9 @@ class ContextComponent():
         )
         return fig
 
-    def create_context_div(self):
+    def create_context_sliders(self):
         """
-        Creates div showing context scatter plot next to context sliders.
+        Creates labels aligned with sliders for the context variables.
         """
         input_specs = load_input_specs()
         sliders = []
@@ -103,7 +103,7 @@ class ContextComponent():
                     width=6,
                     children=[
                         dcc.Slider(
-                            id=f"context-slider-{i}",
+                            id={"type": "context-slider", "index": i},
                             min=row["minValue"],
                             max=row["maxValue"],
                             step=row["step"],
@@ -120,7 +120,28 @@ class ContextComponent():
         sliders_div = html.Div(
             children=sliders
         )
+        return sliders_div
 
+    def create_ssp_buttons(self):
+        """
+        Creates buttons for each SSP
+        """
+        buttons = []
+        colors = ["primary", "secondary", "success", "danger", "warning"]
+        for i, color in enumerate(colors):
+            button = dbc.Button(
+                f"SSP{i+1}",
+                id={"type": "ssp-button", "index": i},
+                className="me-1 mb-2",
+                color=color
+            )
+            buttons.append(button)
+        return buttons
+
+    def create_context_div(self):
+        """
+        Creates div showing context scatter plot next to context sliders.
+        """
         div = html.Div(
             className=JUMBOTRON,
             children=[
@@ -147,7 +168,7 @@ class ContextComponent():
                                 dbc.Col(
                                     className="d-flex flex-column h-100",
                                     children=[
-                                        sliders_div,
+                                        self.create_context_sliders(),
                                         # TODO: Make the box big enough to fit the text
                                         html.Div(
                                             id="ssp-desc",
@@ -159,17 +180,42 @@ class ContextComponent():
                                 )
                             ]
                         ),
-                        dbc.Button(
-                            "AI Generate Policies for Scenario",
-                            id="presc-button",
-                            className="me-1 mb-2 w-25",
-                            n_clicks=0
+                        dbc.Row(
+                            children=[
+                                dbc.Button(
+                                    "AI Generate Policies for Scenario",
+                                    id="presc-button",
+                                    className="me-1 mb-2 w-25",
+                                    n_clicks=0
+                                ),
+
+                            ]
                         )
                     ]
                 )
             ]
         )
 
+        return div
+
+    def create_context_div_big(self):
+        """
+        Creates big context div for larger demos.
+        """
+        sliders_div = self.create_context_sliders()
+        ssp_buttons = self.create_ssp_buttons()
+        div = html.Div(
+            children=[
+                sliders_div,
+                dbc.Button(
+                    "AI Generate Policies for Scenario",
+                    id="presc-button",
+                    className="me-1 mb-2 w-25",
+                    n_clicks=0
+                ),
+                html.Div(children=ssp_buttons)
+            ]
+        )
         return div
 
     def construct_ssp_desc(self, ssp_idx):
@@ -190,24 +236,24 @@ class ContextComponent():
         """
         Registers app's callbacks.
         """
-        @app.callback(
-            [Output(f"context-slider-{i}", "value") for i in range(4)],
-            Input("context-scatter", "clickData"),
-            prevent_initial_call=True
-        )
-        def click_context(click_data):
-            """
-            Updates context sliders when a context point is clicked.
-            """
-            # TODO: This assumes the SSPs in the ssps.csv file are in order which they are
-            scenario = int(click_data["points"][0]["pointNumber"])
-            scenario = f"SSP{scenario+1}-Baseline"
-            row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
-            return [row[self.context_cols[i]] for i in range(4)]
+        # @app.callback(
+        #     Output({"type": "context-slider", "index": ALL}, "value"),
+        #     Input("context-scatter", "clickData"),
+        #     prevent_initial_call=True
+        # )
+        # def click_context(click_data):
+        #     """
+        #     Updates context sliders when a context point is clicked.
+        #     """
+        #     # TODO: This assumes the SSPs in the ssps.csv file are in order which they are
+        #     scenario = int(click_data["points"][0]["pointNumber"])
+        #     scenario = f"SSP{scenario+1}-Baseline"
+        #     row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
+        #     return [row[self.context_cols[i]] for i in range(4)]
 
         @app.callback(
             Output("ssp-desc", "children"),
-            [Input(f"context-slider-{i}", "value") for i in range(4)],
+            Input({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
         def update_ssp_desc(*context_values):
@@ -253,3 +299,19 @@ class ContextComponent():
             Enables the button when the filtering is done and resets it.
             """
             return False, "AI Generate Policies for Scenario", "primary"
+
+    def register_callbacks_big(self, app):
+        """
+        Registers callbacks for the big demo app.
+        """
+        @app.callback(
+            Output({"type": "context-slider", "index": ALL}, "value"),
+            Input({"type": "ssp-button", "index": ALL}, "n_clicks"),
+            prevent_initial_call=True,
+            allow_duplicates=True
+        )
+        def click_ssp_button(_):
+            idx = ctx.triggered_id["index"]
+            scenario = f"SSP{idx+1}-Baseline"
+            row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
+            return [row[self.context_cols[i]] for i in range(4)]

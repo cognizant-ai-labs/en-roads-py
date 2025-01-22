@@ -145,6 +145,75 @@ class LinkComponent():
         )
         return div
 
+    def create_link_div_big(self):
+        div = html.Div(
+            children=[
+                html.Div(
+                    className="d-flex flex-row justify-content-center",
+                    children=[
+                        dbc.Button("Show Actions", id="show-actions-button", className="me-1", n_clicks=0),
+                    ]
+                ),
+                dbc.Modal(
+                    id="actions-modal",
+                    size="xl",
+                    scrollable=False,
+                    is_open=False,
+                    children=[
+                        dbc.ModalHeader(dbc.ModalTitle("Actions")),
+                        dbc.ModalBody(
+                            children=[
+                                dbc.Row(
+                                    children=[
+                                        dbc.Col(
+                                            width=6,
+                                            children=[
+                                                html.Label("Policy: ", className="pt-1 me-1"),
+                                                html.Div(
+                                                    dcc.Dropdown(
+                                                        id="cand-link-select",
+                                                        options=[],
+                                                        placeholder="Select a policy",
+                                                    ),
+                                                    className="flex-grow-1"
+                                                ),
+                                                dcc.Loading(
+                                                    type="circle",
+                                                    target_components={"energy-policy-store": "*"},
+                                                    children=[
+                                                        dcc.Store(id="energy-policy-store"),
+                                                        dcc.Graph(id="energy-policy-graph", className="mb-2")
+                                                    ]
+                                                ),
+                                                dbc.Button(
+                                                    "Explore Policy in En-ROADS",
+                                                    id="cand-link",
+                                                    target="_blank",
+                                                    rel="noopener noreferrer",
+                                                    disabled=True
+                                                ),
+                                            ]
+                                        ),
+                                        dbc.Col(
+                                            width=6,
+                                            children=html.Div(
+                                                id="actions-body",
+                                                className="overflow-auto",
+                                                style={"height": "500px"}
+                                            )
+                                        ),
+                                        html.Iframe(id="iframe", src="https://www.w3schools.com")
+                                    ]
+                                ),
+                                
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+        return div
+
     def register_callbacks(self, app):
         """
         Registers callbacks for the links component.
@@ -172,6 +241,7 @@ class LinkComponent():
         @app.callback(
             Output("cand-link", "href"),
             Output("cand-link", "disabled"),
+            Output("iframe", "src"),
             Input("context-actions-store", "data"),
             Input("cand-link-select", "value")
         )
@@ -183,7 +253,7 @@ class LinkComponent():
             if cand_idx is not None:
                 cand_dict = context_actions_dicts[cand_idx]
                 link = actions_to_url(cand_dict)
-                return link, False
+                return link, False, link
             return "", True
 
         @app.callback(
@@ -212,4 +282,4 @@ class LinkComponent():
             if cand_idx is not None:
                 context_actions_dict = context_actions_dicts[cand_idx]
                 return self.timeline_component.create_timeline_div(context_actions_dict), False
-            return "", True
+            return "", False

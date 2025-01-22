@@ -32,19 +32,39 @@ server = app.server
 app.title = "Climate Change Decision Making"
 
 context_component.register_callbacks(app)
+context_component.register_callbacks_big(app)
 filter_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
 
 # Layout of the app
+# app.layout = html.Div(
+#     children=[
+#         intro_component.create_intro_div(),
+#         context_component.create_context_div(),
+#         filter_component.create_filter_div(),
+#         outcome_component.create_outcomes_div(),
+#         link_component.create_link_div(),
+#         references_component.create_references_div()
+#     ]
+# )
+
 app.layout = html.Div(
     children=[
-        intro_component.create_intro_div(),
-        context_component.create_context_div(),
-        filter_component.create_filter_div(),
-        outcome_component.create_outcomes_div(),
-        link_component.create_link_div(),
-        references_component.create_references_div()
+        dbc.Row([
+            outcome_component.create_outcomes_div_big()
+        ]),
+        dbc.Row([
+            dbc.Col(
+                context_component.create_context_div_big()
+            ),
+            dbc.Col(
+                filter_component.create_filter_div_big()
+            )
+        ]),
+        dbc.Row([
+            link_component.create_link_div_big()
+        ])
     ]
 )
 

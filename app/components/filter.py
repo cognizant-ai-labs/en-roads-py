@@ -195,6 +195,48 @@ class FilterComponent:
         )
         return div
 
+    def create_filter_div_big(self):
+        """
+        Create div for big demo app.
+        """
+        div = html.Div(
+            children=[
+                html.Div(
+                    dcc.Loading(
+                        type="circle",
+                        target_components={"metrics-store": "*"},
+                        children=[
+                            self.create_metric_sliders(),
+                            dcc.Store(id="metrics-store")
+                        ],
+                    ),
+                    className="w-100"
+                ),
+                html.Div(
+                    className="d-flex flex-row mb-2",
+                    children=[
+                        dbc.Button(
+                            "0 Policies Selected",
+                            id="cand-counter",
+                            disabled=True,
+                            outline=True,
+                            className="me-1",
+                            style={"width": "200px"}  # TODO: We hard-code the width here because of text size
+                        ),
+                        dbc.Button("Reset Filters", id="reset-button", disabled=True)
+                    ]
+                ),
+                html.Div(
+                    dbc.Accordion(
+                        dbc.AccordionItem(dcc.Graph(id="parcoords-figure"), title="View Parallel Coordinates"),
+                        start_collapsed=True,
+                    ),
+                    className="w-100"
+                )
+            ]
+        )
+        return div
+
     def register_callbacks(self, app):
         """
         Registers callbacks related to the filter sliders.
@@ -214,6 +256,7 @@ class FilterComponent:
             This also happens whenever we click the reset button.
             The reset button starts disabled but once the sliders are updated for the first time it becomes enabled.
             """
+            print("Updating filter sliders")
             metrics_df = pd.DataFrame(metrics_jsonl)
             total_output = []
             for metric in self.metrics:

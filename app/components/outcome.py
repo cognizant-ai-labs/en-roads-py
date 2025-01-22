@@ -3,7 +3,7 @@ OutcomeComponent class for the outcome section of the app.
 """
 import json
 
-from dash import Input, Output, State, html, dcc, MATCH
+from dash import Input, Output, State, html, dcc, MATCH, ALL
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -223,6 +223,45 @@ class OutcomeComponent():
         )
 
         return div
+    
+    def create_outcome_graph_label(self, idx: int) -> html.Div:
+        pair = html.Div(
+            children=[
+                html.Div(
+                    dcc.Dropdown(
+                        id={"type": "outcome-dropdown", "index": idx},
+                        options=self.plot_outcomes,
+                        value=self.plot_outcomes[idx],
+                        disabled=True
+                    ),
+                    className="flex-fill"
+                ),
+                dcc.Graph(id={"type": "outcome-graph", "index": idx})
+            ]
+        )
+        return pair
+
+    def create_outcomes_div_big(self):
+        """
+        Creates the outcomes div for the big demo. We want all the graphs to be lined up in a row.
+        """
+
+        outcome_labels = [self.create_outcome_graph_label(i) for i in range(4)]
+
+        div = html.Div(
+            className="w-100",
+            children=[
+                dcc.Store(id="context-actions-store"),
+                dcc.Store(id="outcomes-store"),
+                dbc.Row(
+                    className="g-0",
+                    children=[
+                        dbc.Col(outcome_label, width=3) for outcome_label in outcome_labels
+                    ]
+                )
+            ]
+        )
+        return div
 
     def register_callbacks(self, app):
         """
@@ -234,10 +273,10 @@ class OutcomeComponent():
             Output("metrics-store", "data"),
             Output("energy-policy-store", "data"),
             Input("presc-button", "n_clicks"),
-            [State(f"context-slider-{i}", "value") for i in range(4)],
+            State({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def update_results_stores(_, *context_values):
+        def update_results_stores(_, context_values):
             """
             When the presc button is pressed, prescribe actions for the context for all candidates. Then run them
             through En-ROADS to get the outcomes. Finally process the outcomes into metrics. Store the context-actions
@@ -245,6 +284,7 @@ class OutcomeComponent():
             Also stores the energy policies in the energy-policy-store in link.py.
             TODO: Make this only load selected candidates.
             """
+            print("Prescribing actions")
             # Prescribe actions for all candidates via. torch
             context_dict = dict(zip(self.context_cols, context_values))
             context_actions_dicts = self.evolution_handler.prescribe_all(context_dict)
@@ -281,6 +321,7 @@ class OutcomeComponent():
             Updates outcome plot when specific outcome is selected or context scatter point is clicked.
             We also un-disable the dropdowns when the user selects a context.
             """
+            print("Updating outcomes plots")
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
             fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
