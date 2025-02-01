@@ -2,6 +2,7 @@
 OutcomeComponent class for the outcome section of the app.
 """
 import json
+import random
 
 from dash import Input, Output, State, html, dcc, MATCH, ALL
 import dash_bootstrap_components as dbc
@@ -122,7 +123,7 @@ class OutcomeComponent():
 
         fig.update_layout(
             title={
-                "text": f"{outcome} Over Time",
+                "text": f"{outcome}",
                 "x": 0.5,
                 "xanchor": "center"},
             yaxis_range=[y_min, y_max],
@@ -234,12 +235,36 @@ class OutcomeComponent():
                         value=self.plot_outcomes[idx],
                         disabled=True
                     ),
-                    className="flex-fill"
                 ),
                 dcc.Graph(id={"type": "outcome-graph", "index": idx})
             ]
         )
         return pair
+
+    def create_custom_spinner(self):
+        """
+        Creates a custom spinner with some fun pre-set text.
+        """
+        phrases = [
+            "Saving the planet...",
+            "Planting some trees...",
+            "Saving the polar bears...",
+            "Performing nuclear fission...",
+            "Taxing carbon...",
+            "Building wind turbines...",
+            "De-acidifying the ocean...",
+            "Preventing famine...",
+            "Stopping hurricanes...",
+            "Fostering international cooperation...",
+            "Funding climate research...",
+            "Impeaching climate deniers...",
+            "Asking Taylor to stop flying so much...",
+            "Inspiring the youth...",
+            "Cleaning up rivers...",
+            "Preserving biodiversity..."
+        ]
+        phrase = random.choice(phrases)
+        return html.H2([phrase, dbc.Spinner(color="primary")])
 
     def create_outcomes_div_big(self):
         """
@@ -251,12 +276,20 @@ class OutcomeComponent():
         div = html.Div(
             className="w-100",
             children=[
-                dcc.Store(id="context-actions-store"),
-                dcc.Store(id="outcomes-store"),
-                dbc.Row(
-                    className="g-0",
+                dcc.Loading(
+                    id="outcomes-loading",
+                    target_components={"context-actions-store": "*", "outcomes-store": "*"},
+                    overlay_style={"visibility": "visible", "opacity": 0.2},
+                    custom_spinner=html.Div(id="outcomes-spinner", children=self.create_custom_spinner()),
                     children=[
-                        dbc.Col(outcome_label, width=3) for outcome_label in outcome_labels
+                        dcc.Store(id="context-actions-store"),
+                        dcc.Store(id="outcomes-store"),
+                        dbc.Row(
+                            className="g-0",
+                            children=[
+                                dbc.Col(outcome_label, width=3) for outcome_label in outcome_labels
+                            ]
+                        )
                     ]
                 )
             ]
@@ -271,7 +304,7 @@ class OutcomeComponent():
             Output("context-actions-store", "data"),
             Output("outcomes-store", "data"),
             Output("metrics-store", "data"),
-            Output("energy-policy-store", "data"),
+            # Output("energy-policy-store", "data"),
             Input("presc-button", "n_clicks"),
             State({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
@@ -301,11 +334,12 @@ class OutcomeComponent():
             metrics_json = metrics_df.to_dict("records")
 
             # Parse energy demand policy from outcomes for use in link.py
-            energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
-            demands = [f"Primary energy demand of {energy}" for energy in energies]
-            energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in outcomes_dfs]
+            # energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
+            # demands = [f"Primary energy demand of {energy}" for energy in energies]
+            # energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in outcomes_dfs]
 
-            return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
+            # return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
+            return context_actions_dicts, outcomes_jsonl, metrics_json
 
         @app.callback(
             Output({"type": "outcome-graph", "index": MATCH}, "figure"),
@@ -341,3 +375,16 @@ class OutcomeComponent():
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
             return cand_idxs
+        
+        @app.callback(
+            Output("outcomes-spinner", "children"),
+            Input("presc-button", "n_clicks"),
+            prevent_initial_call=True,
+            allow_duplicates=True
+        )
+        def update_outcomes_loading_spinner(n_clicks):
+            """
+            Updates the spinner with a fun new phrase every time the presc button is clicked.
+            """
+            return self.create_custom_spinner()
+

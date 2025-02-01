@@ -1,9 +1,11 @@
-/* body {
-    background-image: url("https://upload.wikimedia.org/wikipedia/commons/5/54/Power_County_Wind_Farm_002.jpg");
+body {
+    height: 100%;
+    overflow: hidden;
+    /* background-image: url("https://upload.wikimedia.org/wikipedia/commons/5/54/Power_County_Wind_Farm_002.jpg");
     background-size: cover;
     background-position: center;
-    background-attachment: fixed;
-} */
+    background-attachment: fixed; */
+}
 
 /* restyle radio items */
 .radio-group .form-check {

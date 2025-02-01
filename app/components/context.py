@@ -127,7 +127,7 @@ class ContextComponent():
         Creates buttons for each SSP
         """
         buttons = []
-        colors = ["primary", "secondary", "success", "danger", "warning"]
+        colors = ["success", "primary", "warning", "secondary", "danger"]
         for i, color in enumerate(colors):
             button = dbc.Button(
                 f"SSP{i+1}",
@@ -206,14 +206,35 @@ class ContextComponent():
         ssp_buttons = self.create_ssp_buttons()
         div = html.Div(
             children=[
-                sliders_div,
-                dbc.Button(
-                    "AI Generate Policies for Scenario",
-                    id="presc-button",
-                    className="me-1 mb-2 w-25",
-                    n_clicks=0
+                html.H3("1. Select Context Scenario", className="text-center"),
+                dbc.Row(
+                    className="g-0",
+                    justify="center",
+                    children=[dbc.Col(ssp_button, width=1) for ssp_button in ssp_buttons],
                 ),
-                html.Div(children=ssp_buttons)
+                dbc.Row(
+                    children=[
+                        dbc.Col(sliders_div, width=9),
+                        dbc.Col(
+                            width=3,
+                            children=html.Div(
+                                id="ssp-desc",
+                                children=[html.H4("Select a Scenario")],
+                                className="flex-grow-1 overflow-auto border rounded-3 p-2",
+                                style={"height": "175px"}
+                            )
+                        )
+                    ]
+                ),
+                dbc.Row(
+                    justify="center",
+                    children=dbc.Button(
+                        "2. Generate AI Policies for Scenario",
+                        id="presc-button",
+                        className="me-1 mb-2 w-50",
+                        n_clicks=0
+                    )
+                )
             ]
         )
         return div
@@ -256,11 +277,12 @@ class ContextComponent():
             Input({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def update_ssp_desc(*context_values):
+        def update_ssp_desc(context_values):
             """
             If we click on a point, show the description of the SSP.
             If there is no click data, that means we updated the sliders, so remove the description.
             """
+            print(context_values)
             match = self.context_df[self.context_cols].eq(context_values).all(axis=1)
 
             # If a match is found, retrieve the row, otherwise handle the case where it isn't found
@@ -298,7 +320,7 @@ class ContextComponent():
             """
             Enables the button when the filtering is done and resets it.
             """
-            return False, "AI Generate Policies for Scenario", "primary"
+            return False, "2. Generate AI Policies for Scenario", "primary"
 
     def register_callbacks_big(self, app):
         """

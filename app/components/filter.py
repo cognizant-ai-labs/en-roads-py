@@ -200,38 +200,35 @@ class FilterComponent:
         Create div for big demo app.
         """
         div = html.Div(
+            className="justify-content-center align-items-center",
             children=[
-                html.Div(
+                dbc.Row(html.H3("3. Filter Policies"), align="center", className="text-center"),
+                dbc.Row(
                     dcc.Loading(
-                        type="circle",
+                        custom_spinner=html.H2(dbc.Spinner(color="primary")),
                         target_components={"metrics-store": "*"},
                         children=[
                             self.create_metric_sliders(),
                             dcc.Store(id="metrics-store")
                         ],
-                    ),
-                    className="w-100"
+                    )
                 ),
-                html.Div(
-                    className="d-flex flex-row mb-2",
+                dbc.Row(
                     children=[
-                        dbc.Button(
-                            "0 Policies Selected",
-                            id="cand-counter",
-                            disabled=True,
-                            outline=True,
-                            className="me-1",
-                            style={"width": "200px"}  # TODO: We hard-code the width here because of text size
+                        dbc.Col(
+                            width={"size": 2, "offset": 3},
+                            children=dbc.Button("Reset Filters", id="reset-button", disabled=True)
                         ),
-                        dbc.Button("Reset Filters", id="reset-button", disabled=True)
+                        dbc.Col(
+                            width="auto",
+                            children=dbc.Button(
+                                "0 Policies Selected",
+                                id="cand-counter",
+                                disabled=True,
+                                outline=True
+                            ),
+                        )
                     ]
-                ),
-                html.Div(
-                    dbc.Accordion(
-                        dbc.AccordionItem(dcc.Graph(id="parcoords-figure"), title="View Parallel Coordinates"),
-                        start_collapsed=True,
-                    ),
-                    className="w-100"
                 )
             ]
         )

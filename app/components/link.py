@@ -148,66 +148,42 @@ class LinkComponent():
     def create_link_div_big(self):
         div = html.Div(
             children=[
-                html.Div(
-                    className="d-flex flex-row justify-content-center",
+                dbc.Row(
+                    style={"height": "80vh"},
                     children=[
-                        dbc.Button("Show Actions", id="show-actions-button", className="me-1", n_clicks=0),
+                        html.Iframe(src="google.com", id="enroads-iframe")
+                    ]
+                ),
+                dbc.Row(
+                    children=[
+                        dbc.Col(
+                            width=6,
+                            children=[
+                                html.Label("Policy: ", className="pt-1 me-1"),
+                                html.Div(
+                                    dcc.Dropdown(
+                                        id="cand-link-select",
+                                        options=[],
+                                        placeholder="Select a policy",
+                                        maxHeight=100
+                                    ),
+                                    className="flex-grow-1"
+                                ),
+                                html.A(dbc.Button("Back"), href="#main-page", id="back-button")
+                            ]
+                        ),
+                        dbc.Col(
+                            dbc.Button("Show Actions", id="show-actions-button")
+                        )
                     ]
                 ),
                 dbc.Modal(
                     id="actions-modal",
-                    size="xl",
-                    scrollable=False,
+                    scrollable=True,
                     is_open=False,
                     children=[
                         dbc.ModalHeader(dbc.ModalTitle("Actions")),
-                        dbc.ModalBody(
-                            children=[
-                                dbc.Row(
-                                    children=[
-                                        dbc.Col(
-                                            width=6,
-                                            children=[
-                                                html.Label("Policy: ", className="pt-1 me-1"),
-                                                html.Div(
-                                                    dcc.Dropdown(
-                                                        id="cand-link-select",
-                                                        options=[],
-                                                        placeholder="Select a policy",
-                                                    ),
-                                                    className="flex-grow-1"
-                                                ),
-                                                dcc.Loading(
-                                                    type="circle",
-                                                    target_components={"energy-policy-store": "*"},
-                                                    children=[
-                                                        dcc.Store(id="energy-policy-store"),
-                                                        dcc.Graph(id="energy-policy-graph", className="mb-2")
-                                                    ]
-                                                ),
-                                                dbc.Button(
-                                                    "Explore Policy in En-ROADS",
-                                                    id="cand-link",
-                                                    target="_blank",
-                                                    rel="noopener noreferrer",
-                                                    disabled=True
-                                                ),
-                                            ]
-                                        ),
-                                        dbc.Col(
-                                            width=6,
-                                            children=html.Div(
-                                                id="actions-body",
-                                                className="overflow-auto",
-                                                style={"height": "500px"}
-                                            )
-                                        ),
-                                        html.Iframe(id="iframe", src="https://www.w3schools.com")
-                                    ]
-                                ),
-                                
-                            ]
-                        )
+                        dbc.ModalBody("These are the actions taken", id="actions-body")
                     ]
                 )
             ]
@@ -218,30 +194,30 @@ class LinkComponent():
         """
         Registers callbacks for the links component.
         """
-        @app.callback(
-            Output("energy-policy-graph", "figure"),
-            Input("energy-policy-store", "data"),
-            Input("cand-link-select", "value")
-        )
-        def update_energy_policy_graph(energy_policy_jsonl: list[dict[str, list]], cand_idx) -> go.Figure:
-            if cand_idx is not None:
-                return self.plot_energy_policy(energy_policy_jsonl, cand_idx)
+        # @app.callback(
+        #     Output("energy-policy-graph", "figure"),
+        #     Input("energy-policy-store", "data"),
+        #     Input("cand-link-select", "value")
+        # )
+        # def update_energy_policy_graph(energy_policy_jsonl: list[dict[str, list]], cand_idx) -> go.Figure:
+        #     if cand_idx is not None:
+        #         return self.plot_energy_policy(energy_policy_jsonl, cand_idx)
 
-            # If we have no cand id just return a blank figure asking the user to select a candidate.
-            fig = go.Figure()
-            fig.update_layout(
-                title=dict(
-                    text="Select a policy to view its energy source distribution",
-                    x=0.5,
-                    xanchor="center"
-                )
-            )
-            return fig
+        #     # If we have no cand id just return a blank figure asking the user to select a candidate.
+        #     fig = go.Figure()
+        #     fig.update_layout(
+        #         title=dict(
+        #             text="Select a policy to view its energy source distribution",
+        #             x=0.5,
+        #             xanchor="center"
+        #         )
+        #     )
+        #     return fig
 
         @app.callback(
-            Output("cand-link", "href"),
-            Output("cand-link", "disabled"),
-            Output("iframe", "src"),
+            # Output("cand-link", "href"),
+            # Output("cand-link", "disabled"),
+            Output("enroads-iframe", "src"),
             Input("context-actions-store", "data"),
             Input("cand-link-select", "value")
         )
@@ -250,11 +226,12 @@ class LinkComponent():
             Updates the candidate link when a specific candidate is selected.
             Additionally un-disables the button if this is the first time we're selecting a candidate.
             """
+            print("Updating cand link")
             if cand_idx is not None:
                 cand_dict = context_actions_dicts[cand_idx]
                 link = actions_to_url(cand_dict)
-                return link, False, link
-            return "", True
+                return link
+            return ""
 
         @app.callback(
             Output("actions-modal", "is_open"),
@@ -281,5 +258,18 @@ class LinkComponent():
             """
             if cand_idx is not None:
                 context_actions_dict = context_actions_dicts[cand_idx]
+                # return self.timeline_component.create_timeline_div(context_actions_dict)
                 return self.timeline_component.create_timeline_div(context_actions_dict), False
-            return "", False
+            return "Timeline goes here", False
+
+    def register_callbacks_big(self, app):
+        @app.callback(
+            Output("cand-link-select", "value"),
+            Input("back-button", "n_clicks"),
+            prevent_initial_call=True
+        )
+        def clear_iframe(n_clicks):
+            """
+            Clears the iframe by deselecting the cand link selector.
+            """
+            return None
