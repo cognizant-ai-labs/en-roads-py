@@ -61,7 +61,7 @@ app.layout = html.Div(
             fluid=True,
             children=[
                 dbc.Row(
-                    className="mt-5 mb-5",
+                    className="my-5",
                     children=[
                         dbc.Col(
                             width={"size": 6, "offset": 3},
@@ -99,9 +99,10 @@ app.layout = html.Div(
                 )
             ]
         ),
-        html.Div(
+        dbc.Container(
             id="link-page",
             style={"height": "100vh"},
+            fluid=True,
             children=[
                 dbc.Row([
                     link_component.create_link_div_big()

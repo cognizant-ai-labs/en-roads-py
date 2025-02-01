@@ -1,7 +1,7 @@
 """
 Component displaying the context and handling its related functions.
 """
-from dash import dcc, html, Input, Output, ALL, MATCH, ctx
+from dash import dcc, html, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
@@ -122,21 +122,35 @@ class ContextComponent():
         )
         return sliders_div
 
-    def create_ssp_buttons(self):
+    def create_ssp_dropdown(self):
         """
-        Creates buttons for each SSP
+        Creates dropdown to select an SSP
         """
-        buttons = []
-        colors = ["success", "primary", "warning", "secondary", "danger"]
-        for i, color in enumerate(colors):
-            button = dbc.Button(
-                f"SSP{i+1}",
-                id={"type": "ssp-button", "index": i},
-                className="me-1 mb-2",
-                color=color
-            )
-            buttons.append(button)
-        return buttons
+        values = [f"SSP{i+1}" for i in range(5)]
+        labels = [
+            "SSP1: Sustainable Development",
+            "SSP2: Middle of the Road",
+            "SSP3: Regional Rivalry",
+            "SSP4: Inequality",
+            "SSP5: Fossil-Fueled"
+        ]
+        colors = [
+            "#1a8955",
+            "#688114",
+            "#dc3848",
+            "#aa6900",
+            "#aa6900"
+        ]
+        options = []
+        for value, label, color in zip(values, labels, colors):
+            options.append({"label": html.Span([label], style={"color": color}), "value": value})
+
+        dropdown = dcc.Dropdown(
+            id="ssp-dropdown",
+            options=options,
+            placeholder="Select a Scenario"
+        )
+        return dropdown
 
     def create_context_div(self):
         """
@@ -203,14 +217,13 @@ class ContextComponent():
         Creates big context div for larger demos.
         """
         sliders_div = self.create_context_sliders()
-        ssp_buttons = self.create_ssp_buttons()
         div = html.Div(
             children=[
                 html.H3("1. Select Context Scenario", className="text-center"),
                 dbc.Row(
                     className="g-0",
                     justify="center",
-                    children=[dbc.Col(ssp_button, width=1) for ssp_button in ssp_buttons],
+                    children=self.create_ssp_dropdown(),
                 ),
                 dbc.Row(
                     children=[
@@ -282,7 +295,6 @@ class ContextComponent():
             If we click on a point, show the description of the SSP.
             If there is no click data, that means we updated the sliders, so remove the description.
             """
-            print(context_values)
             match = self.context_df[self.context_cols].eq(context_values).all(axis=1)
 
             # If a match is found, retrieve the row, otherwise handle the case where it isn't found
@@ -328,12 +340,36 @@ class ContextComponent():
         """
         @app.callback(
             Output({"type": "context-slider", "index": ALL}, "value"),
-            Input({"type": "ssp-button", "index": ALL}, "n_clicks"),
+            Input("ssp-dropdown", "value"),
             prevent_initial_call=True,
             allow_duplicates=True
         )
-        def click_ssp_button(_):
-            idx = ctx.triggered_id["index"]
-            scenario = f"SSP{idx+1}-Baseline"
+        def select_ssp_dropdown(value):
+            """
+            When we select a dropdown value, update the sliders.
+            TODO: How can we make it go the other way, where moving a slider updates the dropdown?
+            Currently it may create an infinite loop...
+            """
+            scenario = f"{value}-Baseline"
             row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
             return [row[self.context_cols[i]] for i in range(4)]
+        
+        # @app.callback(
+        #     Output("ssp-dropdown", "value"),
+        #     Input({"type": "context-slider", "index": ALL}, "value"),
+        #     State("ssp-dropdown", "value"),
+        #     prevent_initial_call=True,
+        #     allow_duplicates=True
+        # )
+        # def adjust_slider_reset_dropdown(context_values, ssp_value):
+        #     """
+        #     If we move a slider and we have a selected SSP, reset the SSP to None.
+        #     """
+        #     match = self.context_df[self.context_cols].eq(context_values).all(axis=1)
+
+        #     # If a match is found, retrieve the row, otherwise handle the case where it isn't found
+        #     if match.any():
+        #         ssp_idx = match.idxmax()
+        #         return f"SSP{ssp_idx+1}"
+        #     else:
+        #         return ssp_value
