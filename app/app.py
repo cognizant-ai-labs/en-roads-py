@@ -33,6 +33,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.
 server = app.server
 app.title = "Climate Change Decision Making"
 
+intro_component.register_callbacks_big(app)
 context_component.register_callbacks(app)
 context_component.register_callbacks_big(app)
 filter_component.register_callbacks(app)
@@ -61,20 +62,41 @@ app.layout = html.Div(
             fluid=True,
             children=[
                 dbc.Row(
-                    className="my-5",
+                    className="mb-5",
+                    justify="between",
+                    align="center",
                     children=[
                         dbc.Col(
-                            width={"size": 6, "offset": 3},
+                            width=1,
+                            style={"display": "flex"},
+                            children=[
+                                html.Img(
+                                    src="https://companieslogo.com/img/orig/CTSH-82a8444b.png?t=1720244491",
+                                    className="img-thumbnail",
+                                    style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
+                                ),
+                                html.Img(
+                                    src="https://www.itu.int/en/ITU-T/extcoop/ai-data-commons/PublishingImages/Pages/default/Project%20Resilience%20Pink-Mauve.png",
+                                    className="img-thumbnail",
+                                    style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
+                                )
+                            ]
+                        ),
+                        dbc.Col(
+                            width=6,
                             children=html.H1("Decision Making for Climate Change", className="text-center")
                         ),
                         dbc.Col(
-                            width={"size": 1, "offset": 2},
-                            children=video_component.create_video_div()
+                            width="auto",
+                            style={"display": "flex"},
+                            children=[
+                                intro_component.create_intro_div_big(),
+                                video_component.create_video_div()
+                            ]
                         )
                     ]
                 ),
                 dbc.Row(
-                    className="mb-5",
                     children=[
                         outcome_component.create_outcomes_div_big()
                     ]
@@ -93,7 +115,7 @@ app.layout = html.Div(
                 dbc.Row(
                     justify="center",
                     children=dbc.Col(
-                        html.A(dbc.Button("4. Examine Individual Policy"), href="#link-page"),
+                        html.A(dbc.Button("3. Examine Individual Policy"), href="#link-page"),
                         width={"size": 3, "offset": 1}
                     )
                 )

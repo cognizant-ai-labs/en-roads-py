@@ -1,7 +1,7 @@
 """
 Component showing the little intro blurb and the arrow to get started.
 """
-from dash import html
+from dash import html, Input, Output, State
 import dash_bootstrap_components as dbc
 
 
@@ -9,10 +9,8 @@ class IntroComponent():
     """
     Title card component
     """
-    def create_intro_div(self):
-        """
-        Creates the intro title card describing the project.
-        """
+
+    def create_intro_paragraph(self):
         div = html.Div(
             children=[
                 dbc.Row(
@@ -47,7 +45,19 @@ class IntroComponent():
                         ],
                         className="lead w-50 mx-auto text-center"
                     )
-                ),
+                )
+            ]
+        )
+        return div
+
+    def create_intro_div(self):
+        """
+        Creates the intro title card describing the project.
+        """
+        intro = self.create_intro_paragraph()
+        div = html.Div(
+            children=[
+                intro,
                 dbc.Row(
                     style={"height": "70vh"}
                 ),
@@ -64,3 +74,63 @@ class IntroComponent():
         )
 
         return div
+    
+    def create_intro_div_big(self):
+        intro = self.create_intro_paragraph()
+        div = html.Div(
+            children=[
+                dbc.Button(id="intro-button", className="bi bi-wind", color="secondary"),
+                dbc.Modal(
+                    id="intro-modal",
+                    is_open=True,
+                    fullscreen=True,
+                    children=[
+                        dbc.ModalBody(
+                            dbc.Card(
+                                children=[
+                                    dbc.CardImg(
+                                        src="https://upload.wikimedia.org/wikipedia/commons/5/54/Power_County_Wind_Farm_002.jpg",
+                                    ),
+                                    dbc.CardImgOverlay(
+                                        dbc.CardBody(
+                                            children=[
+                                                intro,
+                                                dbc.Row(
+                                                    style={"height": "5vh"}
+                                                ),
+                                                dbc.Row(
+                                                    justify="center",
+                                                    children=[
+                                                        dbc.Col(
+                                                            dbc.Button(
+                                                                "Get Started",
+                                                                id="close-intro-button",
+                                                                color="secondary"
+                                                            ),
+                                                            width="auto"
+                                                        )
+                                                    ]
+                                                )
+                                            ]
+                                        )
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+
+        return div
+    
+    def register_callbacks_big(self, app):
+        @app.callback(
+            Output("intro-modal", "is_open"),
+            [Input("intro-button", "n_clicks"), Input("close-intro-button", "n_clicks")],
+            State("intro-modal", "is_open"),
+            prevent_initial_call=True,
+        )
+        def toggle_intro_modal(n_open, n_close, is_open):
+            return not is_open
+

@@ -264,7 +264,10 @@ class OutcomeComponent():
             "Preserving biodiversity..."
         ]
         phrase = random.choice(phrases)
-        return html.H2([phrase, dbc.Spinner(color="primary")])
+        return html.Div(
+            className="d-flex flex-column align-items-center",
+            children=[html.H2(phrase), html.H2(dbc.Spinner(color="primary"))]
+        )
 
     def create_outcomes_div_big(self):
         """

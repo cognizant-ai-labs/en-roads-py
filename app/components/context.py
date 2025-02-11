@@ -11,6 +11,29 @@ import plotly.graph_objects as go
 from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
 from enroadspy import load_input_specs
 
+# Constants used for SSPs
+SSP_VALUES = [
+    "SSP1",
+    "SSP2",
+    "SSP3",
+    "SSP4",
+    "SSP5"
+]
+SSP_LABELS = [
+    "SSP1: Sustainable Development",
+    "SSP2: Middle of the Road",
+    "SSP3: Regional Rivalry",
+    "SSP4: Inequality",
+    "SSP5: Fossil-Fueled"
+]
+SSP_COLORS = [
+    "#1a8955",
+    "#688114",
+    "#dc3848",
+    "#aa6900",
+    "#aa6900"
+]
+
 
 class ContextComponent():
     """
@@ -56,11 +79,7 @@ class ContextComponent():
         context_chart_df["population"] = pop_df["2100"].values / 1000
         context_chart_df["gdp"] = gdp_df["2100"].values / 1000
         context_chart_df = context_chart_df.sort_values(by="scenario")
-        context_chart_df["description"] = ["SSP1: Sustainable Development",
-                                           "SSP2: Middle of the Road",
-                                           "SSP3: Regional Rivalry",
-                                           "SSP4: Inequality",
-                                           "SSP5: Fossil-Fueled"]
+        context_chart_df["description"] = SSP_LABELS
 
         fig = go.Figure()
 
@@ -126,23 +145,8 @@ class ContextComponent():
         """
         Creates dropdown to select an SSP
         """
-        values = [f"SSP{i+1}" for i in range(5)]
-        labels = [
-            "SSP1: Sustainable Development",
-            "SSP2: Middle of the Road",
-            "SSP3: Regional Rivalry",
-            "SSP4: Inequality",
-            "SSP5: Fossil-Fueled"
-        ]
-        colors = [
-            "#1a8955",
-            "#688114",
-            "#dc3848",
-            "#aa6900",
-            "#aa6900"
-        ]
         options = []
-        for value, label, color in zip(values, labels, colors):
+        for value, label, color in zip(SSP_VALUES, SSP_LABELS, SSP_COLORS):
             options.append({"label": html.Span([label], style={"color": color}), "value": value})
 
         dropdown = dcc.Dropdown(
@@ -217,36 +221,44 @@ class ContextComponent():
         Creates big context div for larger demos.
         """
         sliders_div = self.create_context_sliders()
-        div = html.Div(
+        dropdown_div = self.create_ssp_dropdown()
+        div = dbc.Card(
+            color="secondary",
+            outline=True,
             children=[
-                html.H3("1. Select Context Scenario", className="text-center"),
-                dbc.Row(
-                    className="g-0",
-                    justify="center",
-                    children=self.create_ssp_dropdown(),
-                ),
-                dbc.Row(
+                dbc.CardHeader(
                     children=[
-                        dbc.Col(sliders_div, width=9),
-                        dbc.Col(
-                            width=3,
-                            children=html.Div(
-                                id="ssp-desc",
-                                children=[html.H4("Select a Scenario")],
-                                className="flex-grow-1 overflow-auto border rounded-3 p-2",
-                                style={"height": "175px"}
+                        html.H3("1. Select Context Scenario", className="text-center"),
+                        dropdown_div
+                    ]
+                ),
+                dbc.CardBody(
+                    children=[
+                        dbc.Row(
+                            children=[
+                                dbc.Col([sliders_div]),
+                                dbc.Col(
+                                    children=[
+                                        html.Div(
+                                            id="ssp-desc",
+                                            children=[html.H4("Select a Scenario")],
+                                            # className="flex-grow-1 overflow-auto border rounded-3 p-2",
+                                            # style={"height": "150px"}
+                                        )
+                                    ]
+                                )
+                            ]
+                        ),
+                        dbc.Row(
+                            justify="center",
+                            children=dbc.Button(
+                                "Generate AI Policies for Scenario",
+                                id="presc-button",
+                                className="me-1 mb-2 w-50",
+                                n_clicks=0
                             )
                         )
                     ]
-                ),
-                dbc.Row(
-                    justify="center",
-                    children=dbc.Button(
-                        "2. Generate AI Policies for Scenario",
-                        id="presc-button",
-                        className="me-1 mb-2 w-50",
-                        n_clicks=0
-                    )
                 )
             ]
         )
@@ -255,14 +267,16 @@ class ContextComponent():
     def construct_ssp_desc(self, ssp_idx):
         """
         Constructs the description text for the SSP.
+        We use a shortened description then add a link to the SSPs website.
         """
         ssp_row = self.ssp_df.iloc[ssp_idx]
+        text = ssp_row["text"].split(".")[0] + "... "
         div = html.Div([
             html.H4([
                 ssp_row["ssp"] + ": " + ssp_row["description"] + " ",
                 html.I(className=f"bi bi-{ssp_row['icon']}")
             ]),
-            html.P(ssp_row["text"])
+            html.P(text)
         ])
         return div
 
@@ -332,7 +346,7 @@ class ContextComponent():
             """
             Enables the button when the filtering is done and resets it.
             """
-            return False, "2. Generate AI Policies for Scenario", "primary"
+            return False, "Generate AI Policies for Scenario", "primary"
 
     def register_callbacks_big(self, app):
         """
@@ -353,7 +367,25 @@ class ContextComponent():
             scenario = f"{value}-Baseline"
             row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
             return [row[self.context_cols[i]] for i in range(4)]
-        
+
+        @app.callback(
+            Output("ssp-dropdown", "value"),
+            Input({"type": "context-slider", "index": ALL}, "value"),
+            prevent_initial_call=True,
+            allow_duplicates=True
+        )
+        def clear_dropdown(context_values):
+            """
+            If the context sliders don't match any of the SSPs, reset the dropdown.
+            """
+            match = self.context_df[self.context_cols].eq(context_values).all(axis=1)
+
+            # If a match is found, retrieve the row, otherwise handle the case where it isn't found
+            if match.any():
+                ssp_idx = match.idxmax()
+                return SSP_VALUES[ssp_idx]
+
+
         # @app.callback(
         #     Output("ssp-dropdown", "value"),
         #     Input({"type": "context-slider", "index": ALL}, "value"),

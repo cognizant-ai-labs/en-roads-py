@@ -53,17 +53,20 @@ class FilterComponent:
             )
             sliders.append(slider)
 
-        # w-25 and flex-grow-1 ensures they line up
         div = html.Div(
             children=[
-                html.Div(
-                    className="d-flex flex-row mb-2",
+                dbc.Row(
+                    className="pb-2",
                     children=[
-                        html.Label(
-                            f"{self.names_map[self.metrics[i]]} ({self.units[self.metrics[i]]})",
-                            className="w-25"
+                        dbc.Col(
+                            width=5,
+                            children=html.Label(
+                                f"{self.names_map[self.metrics[i]]} ({self.units[self.metrics[i]]})",
+                            ),
                         ),
-                        html.Div(sliders[i], className="flex-grow-1")
+                        dbc.Col(
+                            children=sliders[i]
+                        )
                     ]
                 )
                 for i in range(len(self.metrics))
@@ -199,34 +202,50 @@ class FilterComponent:
         """
         Create div for big demo app.
         """
-        div = html.Div(
-            className="justify-content-center align-items-center",
+        div = dbc.Card(
+            className="h-100",
+            color="secondary",
+            outline=True,
             children=[
-                dbc.Row(html.H3("3. Filter Policies"), align="center", className="text-center"),
-                dbc.Row(
-                    dcc.Loading(
-                        custom_spinner=html.H2(dbc.Spinner(color="primary")),
-                        target_components={"metrics-store": "*"},
-                        children=[
-                            self.create_metric_sliders(),
-                            dcc.Store(id="metrics-store")
-                        ],
-                    )
-                ),
-                dbc.Row(
+                dbc.CardHeader(html.H3("2. Filter Policies"), className="text-center"),
+                dbc.CardBody(
                     children=[
-                        dbc.Col(
-                            width={"size": 2, "offset": 3},
-                            children=dbc.Button("Reset Filters", id="reset-button", disabled=True)
+                        dbc.Row(
+                            dcc.Loading(
+                                custom_spinner=html.H2(dbc.Spinner(color="primary")),
+                                target_components={"metrics-store": "*"},
+                                children=[
+                                    self.create_metric_sliders(),
+                                    dcc.Store(id="metrics-store")
+                                ],
+                            )
                         ),
-                        dbc.Col(
-                            width="auto",
-                            children=dbc.Button(
-                                "0 Policies Selected",
-                                id="cand-counter",
-                                disabled=True,
-                                outline=True
-                            ),
+                        dbc.Row(
+                            justify="center",
+                            children=[
+                                dbc.Col(
+                                    width="auto",
+                                    children=[
+                                        dbc.Button(
+                                            "0 Policies Selected",
+                                            id="cand-counter",
+                                            disabled=True,
+                                            outline=True
+                                        )
+                                    ]
+                                ),
+                                dbc.Col(
+                                    width=1,
+                                    children=[
+                                        dbc.Button(
+                                            className="bi bi-arrow-counterclockwise",
+                                            id="reset-button",
+                                            color="secondary",
+                                            disabled=True
+                                        )
+                                    ]
+                                )
+                            ]
                         )
                     ]
                 )
@@ -253,7 +272,6 @@ class FilterComponent:
             This also happens whenever we click the reset button.
             The reset button starts disabled but once the sliders are updated for the first time it becomes enabled.
             """
-            print("Updating filter sliders")
             metrics_df = pd.DataFrame(metrics_jsonl)
             total_output = []
             for metric in self.metrics:

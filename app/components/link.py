@@ -155,27 +155,30 @@ class LinkComponent():
                     ]
                 ),
                 dbc.Row(
+                    justify="start",
+                    align="center",
                     children=[
+                        dbc.Col(html.Label("Policy:"), width="auto"),
                         dbc.Col(
-                            width=6,
-                            children=[
-                                html.Label("Policy: ", className="pt-1 me-1"),
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id="cand-link-select",
-                                        options=[],
-                                        placeholder="Select a policy",
-                                        maxHeight=100
-                                    ),
-                                    className="flex-grow-1"
-                                ),
-                                html.A(dbc.Button("Back"), href="#main-page", id="back-button")
-                            ]
+                            html.Div(
+                                dcc.Dropdown(
+                                    id="cand-link-select",
+                                    options=[],
+                                    placeholder="Select a policy",
+                                    maxHeight=100
+                                )
+                            ),
+                            width=2
                         ),
-                        dbc.Col(
-                            dbc.Button("Show Actions", id="show-actions-button")
-                        )
+                        dbc.Col(dbc.Button("Show Actions", id="show-actions-button"))
                     ]
+                ),
+                dbc.Row(
+                    html.A(
+                        dbc.Button(className="bi bi-arrow-left", color="secondary"),
+                        href="#main-page",
+                        id="back-button"
+                    )
                 ),
                 dbc.Modal(
                     id="actions-modal",

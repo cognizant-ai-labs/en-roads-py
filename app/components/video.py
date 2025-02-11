@@ -1,5 +1,5 @@
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, html
+from dash import Input, Output, html
 
 class VideoComponent:
     """
@@ -11,10 +11,10 @@ class VideoComponent:
         """
         div = html.Div(
             children=[
-                dbc.Button(id="video-button", className="bi bi-film"),
+                dbc.Button(id="video-button", className="bi bi-film", color="secondary"),
                 dbc.Modal(
                     id="video-modal",
-                    is_open=True,
+                    is_open=False,
                     fullscreen=True,
                     children=[
                         dbc.ModalHeader(),
