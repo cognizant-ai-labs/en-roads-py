@@ -11,10 +11,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from app.classes import JUMBOTRON, CONTAINER, HEADER
+from app.components.component import Component
 from app.utils import EvolutionHandler, filter_metrics_json
 
 
-class OutcomeComponent():
+class OutcomeComponent(Component):
     """
     Component in charge of showing the outcomes of the prescribed actions for the selected prescriptors.
     Has drop downs to allow the user to select which outcomes they want to see.
@@ -131,100 +132,6 @@ class OutcomeComponent():
         )
         return fig
 
-    def create_outcomes_div(self):
-        """
-        Note: We have nested loads here. The outer load is for both graphs and triggers when the outcomes store
-        is updated. Otherwise, we have individual loads for each graph.
-        """
-        div = html.Div(
-            className=JUMBOTRON,
-            children=[
-                dbc.Container(
-                    fluid=True,
-                    className=CONTAINER,
-                    children=[
-                        html.H2("Outcomes for Selected Policies", className=HEADER),
-                        html.Div(
-                            className="d-flex flex-row w-100",
-                            children=[
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 0},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[0],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                ),
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 1},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[1],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                )
-                            ]
-                        ),
-                        dcc.Loading(
-                            target_components={"context-actions-store": "*"},
-                            type="circle",
-                            children=[
-                                dbc.Row(
-                                    className="g-0",
-                                    children=[
-                                        dcc.Store(id="context-actions-store"),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 0}), width=6),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 1}), width=6)
-                                    ]
-                                )
-                            ]
-                        ),
-                        html.Div(
-                            className="d-flex flex-row w-100",
-                            children=[
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 2},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[2],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                ),
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 3},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[3],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                )
-                            ]
-                        ),
-                        dcc.Loading(
-                            target_components={"outcomes-store": "*"},
-                            type="circle",
-                            children=[
-                                dbc.Row(
-                                    className="g-0",
-                                    children=[
-                                        dcc.Store(id="outcomes-store"),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 2}), width=6),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 3}), width=6)
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-
-        return div
-    
     def create_outcome_graph_label(self, idx: int) -> html.Div:
         pair = html.Div(
             children=[
@@ -269,7 +176,7 @@ class OutcomeComponent():
             children=[html.H2(phrase), html.H2(dbc.Spinner(color="primary"))]
         )
 
-    def create_outcomes_div_big(self):
+    def create_div(self):
         """
         Creates the outcomes div for the big demo. We want all the graphs to be lined up in a row.
         """
@@ -307,7 +214,6 @@ class OutcomeComponent():
             Output("context-actions-store", "data"),
             Output("outcomes-store", "data"),
             Output("metrics-store", "data"),
-            # Output("energy-policy-store", "data"),
             Input("presc-button", "n_clicks"),
             State({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
@@ -390,4 +296,3 @@ class OutcomeComponent():
             Updates the spinner with a fun new phrase every time the presc button is clicked.
             """
             return self.create_custom_spinner()
-

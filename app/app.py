@@ -33,26 +33,12 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.
 server = app.server
 app.title = "Climate Change Decision Making"
 
-intro_component.register_callbacks_big(app)
+intro_component.register_callbacks(app)
 context_component.register_callbacks(app)
-context_component.register_callbacks_big(app)
 filter_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
-link_component.register_callbacks_big(app)
 video_component.register_callbacks(app)
-
-# Layout of the app
-# app.layout = html.Div(
-#     children=[
-#         intro_component.create_intro_div(),
-#         context_component.create_context_div(),
-#         filter_component.create_filter_div(),
-#         outcome_component.create_outcomes_div(),
-#         link_component.create_link_div(),
-#         references_component.create_references_div()
-#     ]
-# )
 
 app.layout = html.Div(
     children=[
@@ -90,25 +76,25 @@ app.layout = html.Div(
                             width="auto",
                             style={"display": "flex"},
                             children=[
-                                intro_component.create_intro_div_big(),
-                                video_component.create_video_div()
+                                intro_component.create_div(),
+                                video_component.create_div()
                             ]
                         )
                     ]
                 ),
                 dbc.Row(
                     children=[
-                        outcome_component.create_outcomes_div_big()
+                        outcome_component.create_div()
                     ]
                 ),
                 dbc.Row(
                     className="mb-5",
                     children=[
                         dbc.Col(
-                            context_component.create_context_div_big()
+                            context_component.create_div()
                         ),
                         dbc.Col(
-                            filter_component.create_filter_div_big()
+                            filter_component.create_div()
                         )
                     ]
                 ),
@@ -127,7 +113,7 @@ app.layout = html.Div(
             fluid=True,
             children=[
                 dbc.Row([
-                    link_component.create_link_div_big()
+                    link_component.create_div()
                 ])
             ]
         )

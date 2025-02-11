@@ -4,13 +4,17 @@ Component showing the little intro blurb and the arrow to get started.
 from dash import html, Input, Output, State
 import dash_bootstrap_components as dbc
 
+from app.components.component import Component
 
-class IntroComponent():
+
+class IntroComponent(Component):
     """
     Title card component
     """
-
     def create_intro_paragraph(self):
+        """
+        Creates the intro paragraph describing the project.
+        """
         div = html.Div(
             children=[
                 dbc.Row(
@@ -49,33 +53,8 @@ class IntroComponent():
             ]
         )
         return div
-
-    def create_intro_div(self):
-        """
-        Creates the intro title card describing the project.
-        """
-        intro = self.create_intro_paragraph()
-        div = html.Div(
-            children=[
-                intro,
-                dbc.Row(
-                    style={"height": "70vh"}
-                ),
-                dbc.Row(
-                    html.P("Get Started:", className="w-50 text-center mx-auto text-white h4")
-                ),
-                dbc.Row(
-                    html.I(className="bi bi-arrow-up w-50 text-center mx-auto text-white h1")
-                ),
-                dbc.Row(
-                    style={"height": "5vh"}
-                )
-            ]
-        )
-
-        return div
     
-    def create_intro_div_big(self):
+    def create_div(self):
         intro = self.create_intro_paragraph()
         div = html.Div(
             children=[
@@ -121,10 +100,12 @@ class IntroComponent():
                 )
             ]
         )
-
         return div
-    
-    def register_callbacks_big(self, app):
+
+    def register_callbacks(self, app):
+        """
+        Registers callback responsible for toggling the intro modal.
+        """
         @app.callback(
             Output("intro-modal", "is_open"),
             [Input("intro-button", "n_clicks"), Input("close-intro-button", "n_clicks")],
@@ -132,5 +113,8 @@ class IntroComponent():
             prevent_initial_call=True,
         )
         def toggle_intro_modal(n_open, n_close, is_open):
+            """
+            When a button is clicked, toggle the modal. We don't need to worry about tracking if it's open or not
+            because if you can see the open button it's closed and vice versa.
+            """
             return not is_open
-

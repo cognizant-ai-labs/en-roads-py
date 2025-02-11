@@ -1,14 +1,12 @@
 """
 Component displaying the context and handling its related functions.
 """
-from dash import dcc, html, Input, Output, State, ALL
+from dash import dcc, html, Input, Output, ALL
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 
-from app.classes import JUMBOTRON, CONTAINER, DESC_TEXT, HEADER
+from app.components.component import Component
 from enroadspy import load_input_specs
 
 # Constants used for SSPs
@@ -35,7 +33,7 @@ SSP_COLORS = [
 ]
 
 
-class ContextComponent():
+class ContextComponent(Component):
     """
     Component in charge of displaying the preset contexts in a scatter and the corresponding context sliders.
     Adjusts context sliders to match selected preset and displays a blurb about the selected SSP.
@@ -61,48 +59,6 @@ class ContextComponent():
             self.context_df[col] = self.context_df[col].round(decimals)
 
         self.ssp_df = pd.read_csv("app/ssps.csv")
-
-    def create_context_scatter(self):
-        """
-        Creates scatter plot of context scenarios.
-        """
-        ar6_df = pd.read_csv("experiments/scenarios/ar6_snapshot_1723566520.csv/ar6_snapshot_1723566520.csv")
-        ar6_df = ar6_df.dropna(subset=["Scenario"])
-        ar6_df = ar6_df.dropna(axis=1)
-        ar6_df = ar6_df[ar6_df["Scenario"].str.contains("Baseline")]
-        pop_df = ar6_df[ar6_df["Variable"] == "Population"]
-        gdp_df = ar6_df[ar6_df["Variable"] == "GDP|PPP"]
-
-        context_chart_df = pd.DataFrame()
-        context_chart_df["scenario"] = ar6_df["Scenario"].unique()
-        context_chart_df["scenario"] = context_chart_df["scenario"].str.split("-", expand=True)[0]
-        context_chart_df["population"] = pop_df["2100"].values / 1000
-        context_chart_df["gdp"] = gdp_df["2100"].values / 1000
-        context_chart_df = context_chart_df.sort_values(by="scenario")
-        context_chart_df["description"] = SSP_LABELS
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            x=context_chart_df["population"],
-            y=context_chart_df["gdp"],
-            mode="markers+text",
-            text=context_chart_df["scenario"],
-            textposition="top center",
-            marker=dict(color=px.colors.qualitative.Safe)
-        ))
-
-        fig.update_layout(
-            title={
-                "text": "Select a Pre-Set Context Scenario",
-                "x": 0.5,
-                "xanchor": "center"
-            },
-            xaxis_title="Population in 2100 (B)",
-            yaxis_title="GDP in 2100 (T$)",
-            showlegend=False,
-        )
-        return fig
 
     def create_context_sliders(self):
         """
@@ -156,67 +112,7 @@ class ContextComponent():
         )
         return dropdown
 
-    def create_context_div(self):
-        """
-        Creates div showing context scatter plot next to context sliders.
-        """
-        div = html.Div(
-            className=JUMBOTRON,
-            children=[
-                dbc.Container(
-                    fluid=True,
-                    className=CONTAINER,
-                    children=[
-                        html.H2("Select a Context Scenario to Optimize For", className=HEADER),
-                        html.P("According to the AR6 climate report: 'The five Shared Socioeconomic \
-                                            Pathways were designed to span a range of challenges to climate change \
-                                            mitigation and adaptation'. Select one of these scenarios by clicking it \
-                                            in the scatter plot below. If desired, manually modify the scenario \
-                                            with the sliders.", className=DESC_TEXT),
-                        dbc.Row(
-                            className="w-100",
-                            children=[
-                                dbc.Col(
-                                    className="h-100",
-                                    children=[dcc.Graph(
-                                        id="context-scatter",
-                                        figure=self.create_context_scatter()
-                                    )],
-                                ),
-                                dbc.Col(
-                                    className="d-flex flex-column h-100",
-                                    children=[
-                                        self.create_context_sliders(),
-                                        # TODO: Make the box big enough to fit the text
-                                        html.Div(
-                                            id="ssp-desc",
-                                            children=[html.H4("Select a Scenario")],
-                                            className="flex-grow-1 overflow-auto border rounded-3 p-2",
-                                            style={"height": "275px"}
-                                        )
-                                    ]
-                                )
-                            ]
-                        ),
-                        dbc.Row(
-                            children=[
-                                dbc.Button(
-                                    "AI Generate Policies for Scenario",
-                                    id="presc-button",
-                                    className="me-1 mb-2 w-25",
-                                    n_clicks=0
-                                ),
-
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-
-        return div
-
-    def create_context_div_big(self):
+    def create_div(self):
         """
         Creates big context div for larger demos.
         """
@@ -284,21 +180,6 @@ class ContextComponent():
         """
         Registers app's callbacks.
         """
-        # @app.callback(
-        #     Output({"type": "context-slider", "index": ALL}, "value"),
-        #     Input("context-scatter", "clickData"),
-        #     prevent_initial_call=True
-        # )
-        # def click_context(click_data):
-        #     """
-        #     Updates context sliders when a context point is clicked.
-        #     """
-        #     # TODO: This assumes the SSPs in the ssps.csv file are in order which they are
-        #     scenario = int(click_data["points"][0]["pointNumber"])
-        #     scenario = f"SSP{scenario+1}-Baseline"
-        #     row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
-        #     return [row[self.context_cols[i]] for i in range(4)]
-
         @app.callback(
             Output("ssp-desc", "children"),
             Input({"type": "context-slider", "index": ALL}, "value"),
@@ -348,10 +229,6 @@ class ContextComponent():
             """
             return False, "Generate AI Policies for Scenario", "primary"
 
-    def register_callbacks_big(self, app):
-        """
-        Registers callbacks for the big demo app.
-        """
         @app.callback(
             Output({"type": "context-slider", "index": ALL}, "value"),
             Input("ssp-dropdown", "value"),
@@ -384,24 +261,3 @@ class ContextComponent():
             if match.any():
                 ssp_idx = match.idxmax()
                 return SSP_VALUES[ssp_idx]
-
-
-        # @app.callback(
-        #     Output("ssp-dropdown", "value"),
-        #     Input({"type": "context-slider", "index": ALL}, "value"),
-        #     State("ssp-dropdown", "value"),
-        #     prevent_initial_call=True,
-        #     allow_duplicates=True
-        # )
-        # def adjust_slider_reset_dropdown(context_values, ssp_value):
-        #     """
-        #     If we move a slider and we have a selected SSP, reset the SSP to None.
-        #     """
-        #     match = self.context_df[self.context_cols].eq(context_values).all(axis=1)
-
-        #     # If a match is found, retrieve the row, otherwise handle the case where it isn't found
-        #     if match.any():
-        #         ssp_idx = match.idxmax()
-        #         return f"SSP{ssp_idx+1}"
-        #     else:
-        #         return ssp_value

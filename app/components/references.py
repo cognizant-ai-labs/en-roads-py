@@ -5,13 +5,14 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 from app.classes import JUMBOTRON, CONTAINER, HEADER
+from app.components.component import Component
 
 
-class ReferencesComponent():
+class ReferencesComponent(Component):
     """
     Component to handle references
     """
-    def create_references_div(self):
+    def create_div(self):
         """
         Creates div displaying references
         """
@@ -61,3 +62,8 @@ class ReferencesComponent():
             ]
         )
         return div
+
+    def register_callbacks(self, app):
+        """
+        Implement this even though it's empty to avoid errors.
+        """

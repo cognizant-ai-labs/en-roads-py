@@ -1,11 +1,17 @@
+"""
+Video popup component.
+"""
 import dash_bootstrap_components as dbc
 from dash import Input, Output, html
 
-class VideoComponent:
+from app.components.component import Component
+
+
+class VideoComponent(Component):
     """
     Component storing the initial video to be played demonstrating the demo
     """
-    def create_video_div(self):
+    def create_div(self):
         """
         Creates the div housing the modal that shows the video.
         """
@@ -29,7 +35,7 @@ class VideoComponent:
             ]
         )
         return div
-    
+
     def register_callbacks(self, app):
         """
         Registers video callbacks.
@@ -39,5 +45,5 @@ class VideoComponent:
             Input("video-button", "n_clicks"),
             prevent_initial_call=True
         )
-        def toggle_video_modal(n_clicks):
+        def toggle_video_modal(_):
             return True
