@@ -3,7 +3,7 @@ Component in charge of filtering out prescriptors by metric.
 """
 import json
 
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 import pandas as pd
 
@@ -19,8 +19,6 @@ class FilterComponent(Component):
     """
     def __init__(self, metrics: list[str]):
         self.metrics = list(metrics)
-        self.metric_ids = [metric.replace(" ", "-").replace(".", "_") for metric in self.metrics]
-        self.updated_params = ["min", "max", "value", "marks"]
 
         with open("app/units.json", "r", encoding="utf-8") as f:
             self.units = json.load(f)
@@ -37,10 +35,9 @@ class FilterComponent(Component):
         TODO: Add a tooltip to the sliders to show their units.
         """
         sliders = []
-        for metric in self.metrics:
-            col_id = metric.replace(" ", "-").replace(".", "_")
+        for i in range(len(self.metrics)):
             slider = dcc.RangeSlider(
-                id=f"{col_id}-slider",
+                id={"type": "metric-slider", "index": i},
                 min=0,
                 max=1,
                 value=[0, 1],
@@ -132,8 +129,11 @@ class FilterComponent(Component):
         Registers callbacks related to the filter sliders.
         """
         @app.callback(
-            [Output(f"{metric_id}-slider", param) for metric_id in self.metric_ids for param in self.updated_params],
-            [Output(f"{metric_id}-slider", "disabled") for metric_id in self.metric_ids],
+            Output({"type": "metric-slider", "index": ALL}, "min"),
+            Output({"type": "metric-slider", "index": ALL}, "max"),
+            Output({"type": "metric-slider", "index": ALL}, "value"),
+            Output({"type": "metric-slider", "index": ALL}, "marks"),
+            Output({"type": "metric-slider", "index": ALL}, "disabled"),
             Output("reset-button", "disabled"),
             Input("metrics-store", "data"),
             Input("reset-button", "n_clicks"),
@@ -142,37 +142,37 @@ class FilterComponent(Component):
         def update_filter_sliders(metrics_jsonl: list[dict[str, list]], _) -> list:
             """
             Update the filter slider min/max/value/marks based on the incoming metrics data. The output of this function
-            is a list of the updated parameters for each slider concatenated.
+            is a list for each parameter for each slider.
             This also happens whenever we click the reset button.
             The reset button starts disabled but once the sliders are updated for the first time it becomes enabled.
             """
             metrics_df = pd.DataFrame(metrics_jsonl)
-            total_output = []
+            total_output = [[], [], [], [], [], False]
             for metric in self.metrics:
-                metric_output = []
                 min_val = metrics_df[metric].min()
                 max_val = metrics_df[metric].max()
                 # We need to round down for the min value and round up for the max value
                 min_val_rounded = min_val // 0.01 / 100
                 max_val_rounded = max_val + 0.01
-                metric_output = [
-                    min_val_rounded,
-                    max_val_rounded,
-                    [min_val_rounded, max_val_rounded],
-                    {min_val_rounded: f"{min_val_rounded:.2f}", max_val_rounded: f"{max_val_rounded:.2f}"}
-                ]
-                total_output.extend(metric_output)
-            total_output.extend([False] * len(self.metric_ids))  # Enable all sliders
-            total_output.append(False)  # Enable reset button
+                value = [min_val_rounded, max_val_rounded]
+                marks = {min_val_rounded: f"{min_val_rounded:.2f}", max_val_rounded: f"{max_val_rounded:.2f}"}
+
+                # Append each output to corresponding output
+                total_output[0].append(min_val_rounded)
+                total_output[1].append(max_val_rounded)
+                total_output[2].append(value)
+                total_output[3].append(marks)
+                total_output[4].append(False)
+
             return total_output
 
         @app.callback(
             Output("cand-counter", "children"),
             State("metrics-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            Input({"type": "metric-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def count_selected_cands(metrics_json: dict[str, list], *metric_ranges) -> str:
+        def count_selected_cands(metrics_json: dict[str, list], metric_ranges) -> str:
             """
             Counts the number of selected candidates based on the metric ranges from the sliders.
             """

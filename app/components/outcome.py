@@ -10,7 +10,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from app.classes import JUMBOTRON, CONTAINER, HEADER
 from app.components.component import Component
 from app.utils import EvolutionHandler, filter_metrics_json
 
@@ -31,8 +30,6 @@ class OutcomeComponent(Component):
                               "Adjusted cost of energy per GJ",
                               "Government net revenue from adjustments",
                               "Total Primary Energy Demand"]
-
-        self.metric_ids = [metric.replace(" ", "-").replace(".", "_") for metric in self.evolution_handler.outcomes]
 
         with open("app/units.json", "r", encoding="utf-8") as f:
             self.units = json.load(f)
@@ -133,6 +130,9 @@ class OutcomeComponent(Component):
         return fig
 
     def create_outcome_graph_label(self, idx: int) -> html.Div:
+        """
+        Creates pairs of outcome dropdown and outcome graph so they're lined up.
+        """
         pair = html.Div(
             children=[
                 html.Div(
@@ -155,7 +155,7 @@ class OutcomeComponent(Component):
         phrases = [
             "Saving the planet...",
             "Planting some trees...",
-            "Saving the polar bears...",
+            "Protecting polar bears' habitats...",
             "Performing nuclear fission...",
             "Taxing carbon...",
             "Building wind turbines...",
@@ -180,7 +180,6 @@ class OutcomeComponent(Component):
         """
         Creates the outcomes div for the big demo. We want all the graphs to be lined up in a row.
         """
-
         outcome_labels = [self.create_outcome_graph_label(i) for i in range(4)]
 
         div = html.Div(
@@ -206,6 +205,19 @@ class OutcomeComponent(Component):
         )
         return div
 
+    def create_filtered_outcome_plot(self,
+                                     metrics_json: dict,
+                                     outcome: str,
+                                     outcomes_jsonl: list[dict],
+                                     metric_ranges: list[tuple[float, float]]):
+        """
+        Creates a filtered outcome plot based on the the filtered metrics and the given outcome and outcomes data.
+        """
+        metrics_df = filter_metrics_json(metrics_json, metric_ranges)
+        cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
+        fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
+        return fig
+
     def register_callbacks(self, app):
         """
         Registers callbacks relating to the outcomes section of the app.
@@ -218,7 +230,7 @@ class OutcomeComponent(Component):
             State({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def update_results_stores(_, context_values):
+        def update_results_stores(_, context_values: list[float]):
             """
             When the presc button is pressed, prescribe actions for the context for all candidates. Then run them
             through En-ROADS to get the outcomes. Finally process the outcomes into metrics. Store the context-actions
@@ -226,7 +238,6 @@ class OutcomeComponent(Component):
             Also stores the energy policies in the energy-policy-store in link.py.
             TODO: Make this only load selected candidates.
             """
-            print("Prescribing actions")
             # Prescribe actions for all candidates via. torch
             context_dict = dict(zip(self.context_cols, context_values))
             context_actions_dicts = self.evolution_handler.prescribe_all(context_dict)
@@ -251,33 +262,52 @@ class OutcomeComponent(Component):
             return context_actions_dicts, outcomes_jsonl, metrics_json
 
         @app.callback(
-            Output({"type": "outcome-graph", "index": MATCH}, "figure"),
-            Output({"type": "outcome-dropdown", "index": MATCH}, "disabled"),
+            Output({"type": "outcome-graph", "index": ALL}, "figure"),
+            Output({"type": "outcome-dropdown", "index": ALL}, "disabled"),
             State("metrics-store", "data"),
-            Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
-            Input("outcomes-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
-            prevent_initial_call=True
+            State({"type": "outcome-dropdown", "index": ALL}, "value"),
+            State("outcomes-store", "data"),
+            Input({"type": "metric-slider", "index": ALL}, "value"),
+            prevent_initial_call=True,
+            allow_duplicates=True
         )
-        def update_outcomes_plots(metrics_json, outcome, outcomes_jsonl, *metric_ranges):
+        def filter_outcomes_plots(metrics_json: dict,
+                                  outcomes: list[str],
+                                  outcomes_jsonl: list[dict],
+                                  metric_ranges: list[tuple[float, float]]):
             """
-            Updates outcome plot when specific outcome is selected or context scatter point is clicked.
-            We also un-disable the dropdowns when the user selects a context.
+            Filters outcome when sliders are changed. Also un-disables them after loading.
             """
-            print("Updating outcomes plots")
-            metrics_df = filter_metrics_json(metrics_json, metric_ranges)
-            cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
-            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
-            return fig, False
+            figs = [self.create_filtered_outcome_plot(metrics_json, o, outcomes_jsonl, metric_ranges) for o in outcomes]
+            return figs, [False] * len(outcomes)
+
+        # TODO: Get this callback to work. It breaks the callbacks currently.
+        # @app.callback(
+        #     Output({"type": "outcome-graph", "index": MATCH}, "figure"),
+        #     State("metrics-store", "data"),
+        #     Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
+        #     State("outcomes-store", "data"),
+        #     State({"type": "metric-slider", "index": ALL}, "value"),
+        #     prevent_inital_call=True,
+        #     allow_duplicates=True
+        # )
+        # def change_outcome_type(metrics_json: dict,
+        #                         outcome: str,
+        #                         outcomes_jsonl: list[dict],
+        #                         metric_ranges: list[tuple[float, float]]):
+        #     """
+        #     Changes the type of outcome being displayed when the dropdown is selected.
+        #     """
+        #     return self.create_filtered_outcome_plot(metrics_json, outcome, outcomes_jsonl, metric_ranges)
 
         @app.callback(
             Output("cand-link-select", "options"),
             State("metrics-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            Input({"type": "metric-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
         def update_cand_link_select(metrics_json: dict[str, list],
-                                    *metric_ranges: list[tuple[float, float]]) -> list[int]:
+                                    metric_ranges: list[tuple[float, float]]) -> list[int]:
             """
             Updates the available candidates in the link dropdown based on metric ranges.
             """
@@ -291,7 +321,7 @@ class OutcomeComponent(Component):
             prevent_initial_call=True,
             allow_duplicates=True
         )
-        def update_outcomes_loading_spinner(n_clicks):
+        def update_outcomes_loading_spinner(_):
             """
             Updates the spinner with a fun new phrase every time the presc button is clicked.
             """
