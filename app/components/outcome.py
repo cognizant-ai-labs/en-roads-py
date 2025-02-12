@@ -262,14 +262,13 @@ class OutcomeComponent(Component):
             return context_actions_dicts, outcomes_jsonl, metrics_json
 
         @app.callback(
-            Output({"type": "outcome-graph", "index": ALL}, "figure"),
-            Output({"type": "outcome-dropdown", "index": ALL}, "disabled"),
+            Output({"type": "outcome-graph", "index": ALL}, "figure", allow_duplicate=True),
+            Output({"type": "outcome-dropdown", "index": ALL}, "disabled", allow_duplicate=True),
             State("metrics-store", "data"),
             State({"type": "outcome-dropdown", "index": ALL}, "value"),
             State("outcomes-store", "data"),
             Input({"type": "metric-slider", "index": ALL}, "value"),
-            prevent_initial_call=True,
-            allow_duplicates=True
+            prevent_initial_call=True
         )
         def filter_outcomes_plots(metrics_json: dict,
                                   outcomes: list[str],
@@ -281,24 +280,22 @@ class OutcomeComponent(Component):
             figs = [self.create_filtered_outcome_plot(metrics_json, o, outcomes_jsonl, metric_ranges) for o in outcomes]
             return figs, [False] * len(outcomes)
 
-        # TODO: Get this callback to work. It breaks the callbacks currently.
-        # @app.callback(
-        #     Output({"type": "outcome-graph", "index": MATCH}, "figure"),
-        #     State("metrics-store", "data"),
-        #     Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
-        #     State("outcomes-store", "data"),
-        #     State({"type": "metric-slider", "index": ALL}, "value"),
-        #     prevent_inital_call=True,
-        #     allow_duplicates=True
-        # )
-        # def change_outcome_type(metrics_json: dict,
-        #                         outcome: str,
-        #                         outcomes_jsonl: list[dict],
-        #                         metric_ranges: list[tuple[float, float]]):
-        #     """
-        #     Changes the type of outcome being displayed when the dropdown is selected.
-        #     """
-        #     return self.create_filtered_outcome_plot(metrics_json, outcome, outcomes_jsonl, metric_ranges)
+        @app.callback(
+            Output({"type": "outcome-graph", "index": MATCH}, "figure", allow_duplicate=True),
+            State("metrics-store", "data"),
+            Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
+            State("outcomes-store", "data"),
+            State({"type": "metric-slider", "index": ALL}, "value"),
+            prevent_initial_call=True
+        )
+        def change_outcome_type(metrics_json: dict,
+                                outcome: str,
+                                outcomes_jsonl: list[dict],
+                                metric_ranges: list[tuple[float, float]]):
+            """
+            Changes the type of outcome being displayed when the dropdown is selected.
+            """
+            return self.create_filtered_outcome_plot(metrics_json, outcome, outcomes_jsonl, metric_ranges)
 
         @app.callback(
             Output("cand-link-select", "options"),
@@ -316,10 +313,9 @@ class OutcomeComponent(Component):
             return cand_idxs
         
         @app.callback(
-            Output("outcomes-spinner", "children"),
+            Output("outcomes-spinner", "children", allow_duplicate=True),
             Input("presc-button", "n_clicks"),
-            prevent_initial_call=True,
-            allow_duplicates=True
+            prevent_initial_call=True
         )
         def update_outcomes_loading_spinner(_):
             """

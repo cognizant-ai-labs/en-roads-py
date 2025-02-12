@@ -230,10 +230,9 @@ class ContextComponent(Component):
             return False, "Generate AI Policies for Scenario", "primary"
 
         @app.callback(
-            Output({"type": "context-slider", "index": ALL}, "value"),
+            Output({"type": "context-slider", "index": ALL}, "value", allow_duplicate=True),
             Input("ssp-dropdown", "value"),
-            prevent_initial_call=True,
-            allow_duplicates=True
+            prevent_initial_call=True
         )
         def select_ssp_dropdown(value):
             """
@@ -246,10 +245,9 @@ class ContextComponent(Component):
             return [row[self.context_cols[i]] for i in range(4)]
 
         @app.callback(
-            Output("ssp-dropdown", "value"),
+            Output("ssp-dropdown", "value", allow_duplicate=True),
             Input({"type": "context-slider", "index": ALL}, "value"),
-            prevent_initial_call=True,
-            allow_duplicates=True
+            prevent_initial_call=True
         )
         def clear_dropdown(context_values):
             """
