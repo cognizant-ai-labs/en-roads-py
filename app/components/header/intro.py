@@ -58,7 +58,7 @@ class IntroComponent(Component):
         intro = self.create_intro_paragraph()
         div = html.Div(
             children=[
-                dbc.Button(id="intro-button", className="bi bi-wind", color="secondary"),
+                dbc.Button(id="intro-button", className="bi bi-info-circle", color="secondary"),
                 dbc.Modal(
                     id="intro-modal",
                     is_open=True,

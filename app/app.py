@@ -5,13 +5,12 @@ import dash
 from dash import html
 import dash_bootstrap_components as dbc
 
-from app.components.intro import IntroComponent
 from app.components.context import ContextComponent
 from app.components.filter import FilterComponent
+from app.components.header.header import HeaderComponent
 from app.components.outcome import OutcomeComponent
 from app.components.link import LinkComponent
-from app.components.references import ReferencesComponent
-from app.components.video import VideoComponent
+
 from app.utils import EvolutionHandler
 
 evolution_handler = EvolutionHandler()
@@ -20,25 +19,22 @@ metrics = evolution_handler.outcomes.keys()
 # The candidates are sorted by rank then distance so the 'best' ones are the first 10
 sample_idxs = list(range(10))
 
-intro_component = IntroComponent()
 context_component = ContextComponent()
 filter_component = FilterComponent(metrics)
+header_component = HeaderComponent()
 outcome_component = OutcomeComponent(evolution_handler)
 link_component = LinkComponent(sample_idxs, actions)
-references_component = ReferencesComponent()
-video_component = VideoComponent()
 
 # Initialize the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP, "assets/styles.css"])
 server = app.server
 app.title = "Climate Change Decision Making"
 
-intro_component.register_callbacks(app)
 context_component.register_callbacks(app)
 filter_component.register_callbacks(app)
+header_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
-video_component.register_callbacks(app)
 
 app.layout = html.Div(
     children=[
@@ -47,46 +43,8 @@ app.layout = html.Div(
             style={"height": "100vh"},
             fluid=True,
             children=[
-                dbc.Row(
-                    className="mb-5",
-                    justify="between",
-                    align="center",
-                    children=[
-                        dbc.Col(
-                            width=1,
-                            style={"display": "flex"},
-                            children=[
-                                html.Img(
-                                    src="https://companieslogo.com/img/orig/CTSH-82a8444b.png?t=1720244491",
-                                    className="img-thumbnail",
-                                    style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
-                                ),
-                                html.Img(
-                                    src="https://www.itu.int/en/ITU-T/extcoop/ai-data-commons/PublishingImages/Pages/default/Project%20Resilience%20Pink-Mauve.png", # noqa
-                                    className="img-thumbnail",
-                                    style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
-                                )
-                            ]
-                        ),
-                        dbc.Col(
-                            width=6,
-                            children=html.H1("Decision Making for Climate Change", className="text-center")
-                        ),
-                        dbc.Col(
-                            width="auto",
-                            style={"display": "flex"},
-                            children=[
-                                intro_component.create_div(),
-                                video_component.create_div()
-                            ]
-                        )
-                    ]
-                ),
-                dbc.Row(
-                    children=[
-                        outcome_component.create_div()
-                    ]
-                ),
+                dbc.Row(header_component.create_div()),
+                dbc.Row(outcome_component.create_div()),
                 dbc.Row(
                     className="mb-5",
                     children=[
