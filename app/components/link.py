@@ -43,6 +43,7 @@ class LinkComponent(Component):
                 dbc.Row(
                     justify="center",
                     align="center",
+                    className="mt-2",
                     children=[
                         dbc.Col(
                             html.A(
