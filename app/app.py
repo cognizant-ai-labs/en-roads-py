@@ -62,7 +62,7 @@ app.layout = html.Div(
                                     style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
                                 ),
                                 html.Img(
-                                    src="https://www.itu.int/en/ITU-T/extcoop/ai-data-commons/PublishingImages/Pages/default/Project%20Resilience%20Pink-Mauve.png",
+                                    src="https://www.itu.int/en/ITU-T/extcoop/ai-data-commons/PublishingImages/Pages/default/Project%20Resilience%20Pink-Mauve.png", # noqa
                                     className="img-thumbnail",
                                     style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
                                 )

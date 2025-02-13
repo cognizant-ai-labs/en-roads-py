@@ -18,7 +18,7 @@ class IntroComponent(Component):
         div = html.Div(
             children=[
                 dbc.Row(
-                    html.H2("Decision Making for Climate Change", className="display-4 w-50 mx-auto text-center mb-3")
+                    html.H2("Decision Making for Climate Change", className="display-2 w-50 mx-auto text-center mb-3")
                 ),
                 dbc.Row(
                     html.P(
@@ -31,11 +31,11 @@ class IntroComponent(Component):
                             ),
                             " brings automatic decision-making to the ",
                             html.A(
-                                "En-ROADS platform",
+                                "En-ROADS Climate Solutions Simulator",
                                 href="https://www.climateinteractive.org/en-roads/",
                                 style={"color": "black"}
                             ),
-                            ", a powerful climate change simulator. A decision-maker can be ready for any \
+                            ". A decision-maker can be ready for any \
                             scenario: choosing an automatically generated policy that suits their needs best, with the \
                             ability to manually modify the policy and see its results. This tool is brought together \
                             under ",
@@ -53,7 +53,7 @@ class IntroComponent(Component):
             ]
         )
         return div
-    
+
     def create_div(self):
         intro = self.create_intro_paragraph()
         div = html.Div(
@@ -66,9 +66,10 @@ class IntroComponent(Component):
                     children=[
                         dbc.ModalBody(
                             dbc.Card(
+                                style={"height": "100%", "overflow": "hidden"},
                                 children=[
                                     dbc.CardImg(
-                                        src="https://upload.wikimedia.org/wikipedia/commons/5/54/Power_County_Wind_Farm_002.jpg",
+                                        src="https://upload.wikimedia.org/wikipedia/commons/5/54/Power_County_Wind_Farm_002.jpg", # noqa
                                     ),
                                     dbc.CardImgOverlay(
                                         dbc.CardBody(
@@ -112,7 +113,7 @@ class IntroComponent(Component):
             State("intro-modal", "is_open"),
             prevent_initial_call=True,
         )
-        def toggle_intro_modal(n_open, n_close, is_open):
+        def toggle_intro_modal(_, __, is_open):
             """
             When a button is clicked, toggle the modal. We don't need to worry about tracking if it's open or not
             because if you can see the open button it's closed and vice versa.

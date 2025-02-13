@@ -138,8 +138,6 @@ class ContextComponent(Component):
                                         html.Div(
                                             id="ssp-desc",
                                             children=[html.H4("Select a Scenario")],
-                                            # className="flex-grow-1 overflow-auto border rounded-3 p-2",
-                                            # style={"height": "150px"}
                                         )
                                     ]
                                 )
@@ -223,7 +221,7 @@ class ContextComponent(Component):
             Input("reset-button", "disabled"),
             prevent_initial_call=True
         )
-        def enable_button(reset_disabled):
+        def enable_button(_):
             """
             Enables the button when the filtering is done and resets it.
             """

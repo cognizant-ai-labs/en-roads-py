@@ -311,7 +311,7 @@ class OutcomeComponent(Component):
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
             return cand_idxs
-        
+
         @app.callback(
             Output("outcomes-spinner", "children", allow_duplicate=True),
             Input("presc-button", "n_clicks"),

@@ -95,10 +95,11 @@ class FilterComponent(Component):
                             justify="center",
                             children=[
                                 dbc.Col(
-                                    width="auto",
+                                    width=4,
                                     children=[
                                         dbc.Button(
                                             "0 Policies Selected",
+                                            className="w-100",
                                             id="cand-counter",
                                             disabled=True,
                                             outline=True

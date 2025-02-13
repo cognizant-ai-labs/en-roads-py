@@ -41,9 +41,20 @@ class LinkComponent(Component):
                     ]
                 ),
                 dbc.Row(
-                    justify="start",
+                    justify="center",
                     align="center",
                     children=[
+                        dbc.Col(
+                            html.A(
+                                dbc.Button(
+                                    className="bi bi-arrow-up",
+                                    color="secondary"
+                                ),
+                                href="#main-page",
+                                id="back-button"
+                            ),
+                            width=1
+                        ),
                         dbc.Col(html.Label("Policy:"), width="auto"),
                         dbc.Col(
                             html.Div(
@@ -56,15 +67,8 @@ class LinkComponent(Component):
                             ),
                             width=2
                         ),
-                        dbc.Col(timeline_div)
+                        dbc.Col(timeline_div, width=2)
                     ]
-                ),
-                dbc.Row(
-                    html.A(
-                        dbc.Button(className="bi bi-arrow-left", color="secondary"),
-                        href="#main-page",
-                        id="back-button"
-                    )
                 )
             ]
         )

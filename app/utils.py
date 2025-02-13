@@ -55,6 +55,8 @@ class EvolutionHandler():
         self.F = np.load(save_path + "/F.npy")
 
         # TODO: Make this not hard-coded
+        # Here we rescale the outcomes: temperature vs. temperature difference, government spending becomes positive,
+        # and energy difference becomes positive.
         self.F[:, 0] += 1.5
         self.F[:, 2] *= -1
         self.F[:, 3] *= -1
