@@ -1,5 +1,5 @@
 """
-Component showing the little intro blurb and the arrow to get started.
+Component showing the little intro blurb and the button to get started.
 """
 from dash import html, Input, Output, State
 import dash_bootstrap_components as dbc

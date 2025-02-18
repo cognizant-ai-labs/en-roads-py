@@ -19,6 +19,16 @@ class HeaderComponent(Component):
         self.references_component = ReferencesComponent()
         self.video_component = VideoComponent()
 
+    def create_thumbnail(self, src):
+        """
+        Creates a uniform format image thumbnail for the header.
+        """
+        return html.Img(
+            src=src,
+            className="img-thumbnail",
+            style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
+        )
+
     def create_div(self):
         div = html.Div(
             className="mb-5",
@@ -30,16 +40,8 @@ class HeaderComponent(Component):
                         width=1,
                         style={"display": "flex"},
                         children=[
-                            html.Img(
-                                src="https://companieslogo.com/img/orig/CTSH-82a8444b.png?t=1720244491",
-                                className="img-thumbnail",
-                                style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
-                            ),
-                            html.Img(
-                                src="https://www.itu.int/en/ITU-T/extcoop/ai-data-commons/PublishingImages/Pages/default/Project%20Resilience%20Pink-Mauve.png", # noqa
-                                className="img-thumbnail",
-                                style={"height": "5rem", "width": "5rem", "border": "none", "outline": "none"}
-                            )
+                            self.create_thumbnail("https://companieslogo.com/img/orig/CTSH-82a8444b.png?t=1720244491"),
+                            self.create_thumbnail("https://www.itu.int/en/ITU-T/extcoop/ai-data-commons/PublishingImages/Pages/default/Project%20Resilience%20Pink-Mauve.png") # noqa
                         ]
                     ),
                     dbc.Col(
