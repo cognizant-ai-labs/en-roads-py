@@ -17,6 +17,7 @@ class ReferencesComponent(Component):
         """
         div = html.Div([
             dbc.Button(id="references-button", className="bi bi-book", color="secondary"),
+            dbc.Tooltip(target="references-button", placement="bottom", children="References"),
             dbc.Modal(
                 id="references-modal",
                 is_open=False,

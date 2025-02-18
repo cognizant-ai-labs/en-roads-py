@@ -59,6 +59,7 @@ class IntroComponent(Component):
         div = html.Div(
             children=[
                 dbc.Button(id="intro-button", className="bi bi-info-circle", color="secondary"),
+                dbc.Tooltip(target="intro-button", placement="bottom", children="Intro Slide"),
                 dbc.Modal(
                     id="intro-modal",
                     is_open=True,

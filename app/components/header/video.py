@@ -17,7 +17,8 @@ class VideoComponent(Component):
         """
         div = html.Div(
             children=[
-                dbc.Button(id="video-button", className="bi bi-film", color="secondary"),
+                dbc.Button(id="video-button", className="bi bi-question-circle", color="secondary"),
+                dbc.Tooltip(target="video-button", placement="bottom", children="Tutorial Video"),
                 dbc.Modal(
                     id="video-modal",
                     is_open=False,
