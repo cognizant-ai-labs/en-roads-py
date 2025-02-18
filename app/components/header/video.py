@@ -27,7 +27,7 @@ class VideoComponent(Component):
                         dbc.ModalBody(
                             html.Iframe(
                                 style={"height": "90vh", "width": "100%"},
-                                src="https://www.youtube.com/embed/h4emhArlQ0s?autoplay=1&mute=1&controls=0"
+                                src="https://www.youtube.com/embed/MXirPQwPfsw?autoplay=1&mute=1&controls=0"
                             )
                         )
                     ]
