@@ -43,7 +43,7 @@ app.layout = html.Div(
             style={"height": "100vh"},
             fluid=True,
             children=[
-                dbc.Row(header_component.create_div()),
+                header_component.create_div(),
                 dbc.Row(outcome_component.create_div()),
                 dbc.Row(
                     className="mb-5",
@@ -57,10 +57,12 @@ app.layout = html.Div(
                     ]
                 ),
                 dbc.Row(
+                    className="width-100",
                     justify="center",
+                    align="center",
                     children=dbc.Col(
-                        html.A(dbc.Button("3. Examine Individual Policy"), href="#link-page"),
-                        width={"size": 3, "offset": 1}
+                        width="auto",
+                        children=html.A(dbc.Button("3. Examine Individual Policy"), href="#link-page")
                     )
                 )
             ]

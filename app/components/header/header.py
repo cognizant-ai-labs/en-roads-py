@@ -33,11 +33,12 @@ class HeaderComponent(Component):
         div = html.Div(
             className="mb-5",
             children=dbc.Row(
+                className="width-100",
                 justify="between",
                 align="center",
                 children=[
                     dbc.Col(
-                        width=1,
+                        width="auto",
                         style={"display": "flex"},
                         children=[
                             self.create_thumbnail("https://companieslogo.com/img/orig/CTSH-82a8444b.png?t=1720244491"),
@@ -45,7 +46,7 @@ class HeaderComponent(Component):
                         ]
                     ),
                     dbc.Col(
-                        width=6,
+                        width="auto",
                         children=html.H1("Decision Making for Climate Change", className="text-center")
                     ),
                     dbc.Col(
