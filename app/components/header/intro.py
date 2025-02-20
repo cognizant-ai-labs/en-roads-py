@@ -45,7 +45,13 @@ class IntroComponent(Component):
                                     Pages/project-resilience.aspx",
                                 style={"color": "black"}
                             ),
-                            ", a United Nations initiative to use AI for good."
+                            ", a collaboration between ",
+                            html.A(
+                                "Cognizant AI Labs",
+                                href="https://www.cognizant.com/us/en/services/ai/ai-lab",
+                                style={"color": "black"}
+                            ),
+                            " and the United Nations to use AI for good."
                         ],
                         className="lead w-50 mx-auto text-center"
                     )
