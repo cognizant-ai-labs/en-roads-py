@@ -36,50 +36,55 @@ header_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
 
-app.layout = html.Div(
+# TODO: Maybe move these into their own components?
+main_page = dbc.Container(
+    id="main-page",
+    style={"height": "100vh"},
+    fluid=True,
     children=[
-        dbc.Container(
-            id="main-page",
-            style={"height": "100vh"},
-            fluid=True,
+        header_component.create_div(),
+        dbc.Row(outcome_component.create_div()),
+        dbc.Row(
+            className="mb-5",
             children=[
-                header_component.create_div(),
-                dbc.Row(outcome_component.create_div()),
-                dbc.Row(
-                    className="mb-5",
-                    children=[
-                        dbc.Col(
-                            context_component.create_div()
-                        ),
-                        dbc.Col(
-                            filter_component.create_div()
-                        )
-                    ]
+                dbc.Col(
+                    context_component.create_div()
                 ),
-                dbc.Row(
-                    className="width-100",
-                    justify="center",
-                    align="center",
-                    children=dbc.Col(
-                        width="auto",
-                        children=html.A(
-                            dbc.Button("3. Examine Individual Policy", id="scroll-button"),
-                            href="#link-page"
-                        )
-                    )
+                dbc.Col(
+                    filter_component.create_div()
                 )
             ]
         ),
-        dbc.Container(
-            id="link-page",
-            style={"height": "100vh"},
-            fluid=True,
-            children=[
-                dbc.Row([
-                    link_component.create_div()
-                ])
-            ]
+        dbc.Row(
+            className="width-100",
+            justify="center",
+            align="center",
+            children=dbc.Col(
+                width="auto",
+                children=html.A(
+                    dbc.Button("3. Examine Individual Policy", id="scroll-button"),
+                    href="#link-page"
+                )
+            )
         )
+    ]
+)
+
+link_page = dbc.Container(
+    id="link-page",
+    style={"height": "100vh"},
+    fluid=True,
+    children=[
+        dbc.Row([
+            link_component.create_div()
+        ])
+    ]
+)
+
+app.layout = html.Div(
+    children=[
+        main_page,
+        link_page
     ]
 )
 

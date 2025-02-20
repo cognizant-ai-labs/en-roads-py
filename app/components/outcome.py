@@ -34,11 +34,13 @@ class OutcomeComponent(Component):
         with open("app/units.json", "r", encoding="utf-8") as f:
             self.units = json.load(f)
 
-    def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]], cand_idxs: list[int]):
+    def plot_outcome_over_time(self,
+                               outcome: str,
+                               outcomes_jsonl: list[list[dict[str, float]]],
+                               cand_idxs: list[int]) -> go.Figure:
         """
         Plots all the candidates' prescribed actions' outcomes for a given context.
         Also plots the baseline given the context.
-        TODO: Fix colors to match parcoords
         """
         best_cand_idxs = cand_idxs[:10]
         outcomes_dfs = [pd.DataFrame(outcomes_json) for outcomes_json in outcomes_jsonl]
@@ -148,7 +150,7 @@ class OutcomeComponent(Component):
         )
         return pair
 
-    def create_custom_spinner(self):
+    def create_custom_spinner(self) -> html.Div:
         """
         Creates a custom spinner with some fun pre-set text.
         """
@@ -176,7 +178,7 @@ class OutcomeComponent(Component):
             children=[html.H2(phrase), html.H2(dbc.Spinner(color="primary"))]
         )
 
-    def create_div(self):
+    def create_div(self) -> html.Div:
         """
         Creates the outcomes div for the big demo. We want all the graphs to be lined up in a row.
         """
@@ -209,7 +211,7 @@ class OutcomeComponent(Component):
                                      metrics_json: dict,
                                      outcome: str,
                                      outcomes_jsonl: list[dict],
-                                     metric_ranges: list[tuple[float, float]]):
+                                     metric_ranges: list[tuple[float, float]]) -> go.Figure:
         """
         Creates a filtered outcome plot based on the the filtered metrics and the given outcome and outcomes data.
         """
@@ -230,12 +232,13 @@ class OutcomeComponent(Component):
             State({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def update_results_stores(_, context_values: list[float]):
+        def update_results_stores(_, context_values: list[float]) -> tuple[list[dict[str, float]],
+                                                                           list[list[dict[str, float]]],
+                                                                           list[dict[str, float]]]:
             """
             When the presc button is pressed, prescribe actions for the context for all candidates. Then run them
             through En-ROADS to get the outcomes. Finally process the outcomes into metrics. Store the context-actions
             dicts, outcomes dfs, and metrics df in stores.
-            Also stores the energy policies in the energy-policy-store in link.py.
             TODO: Make this only load selected candidates.
             """
             # Prescribe actions for all candidates via. torch
@@ -243,7 +246,7 @@ class OutcomeComponent(Component):
             context_actions_dicts = self.evolution_handler.prescribe_all(context_dict)
 
             # Attach baseline (no actions)
-            context_actions_dicts.append(dict(**context_dict))
+            context_actions_dicts.append({**context_dict})
 
             # Run En-ROADS on all candidates and save as jsonl
             outcomes_dfs = self.evolution_handler.context_actions_to_outcomes(context_actions_dicts)
@@ -253,12 +256,6 @@ class OutcomeComponent(Component):
             metrics_df = self.evolution_handler.outcomes_to_metrics(context_actions_dicts, outcomes_dfs)
             metrics_json = metrics_df.to_dict("records")
 
-            # Parse energy demand policy from outcomes for use in link.py
-            # energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
-            # demands = [f"Primary energy demand of {energy}" for energy in energies]
-            # energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in outcomes_dfs]
-
-            # return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
             return context_actions_dicts, outcomes_jsonl, metrics_json
 
         @app.callback(
@@ -273,7 +270,7 @@ class OutcomeComponent(Component):
         def filter_outcomes_plots(metrics_json: dict,
                                   outcomes: list[str],
                                   outcomes_jsonl: list[dict],
-                                  metric_ranges: list[tuple[float, float]]):
+                                  metric_ranges: list[tuple[float, float]]) -> tuple[list[go.Figure], list[bool]]:
             """
             Filters outcome when sliders are changed. Also un-disables them after loading.
             """
@@ -291,7 +288,7 @@ class OutcomeComponent(Component):
         def change_outcome_type(metrics_json: dict,
                                 outcome: str,
                                 outcomes_jsonl: list[dict],
-                                metric_ranges: list[tuple[float, float]]):
+                                metric_ranges: list[tuple[float, float]]) -> go.Figure:
             """
             Changes the type of outcome being displayed when the dropdown is selected.
             """
@@ -317,7 +314,7 @@ class OutcomeComponent(Component):
             Input("presc-button", "n_clicks"),
             prevent_initial_call=True
         )
-        def update_outcomes_loading_spinner(_):
+        def update_outcomes_loading_spinner(_) -> html.Div:
             """
             Updates the spinner with a fun new phrase every time the presc button is clicked.
             """

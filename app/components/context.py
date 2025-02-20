@@ -60,7 +60,7 @@ class ContextComponent(Component):
 
         self.ssp_df = pd.read_csv("app/ssps.csv")
 
-    def create_context_sliders(self):
+    def create_context_sliders(self) -> html.Div:
         """
         Creates labels aligned with sliders for the context variables.
         """
@@ -97,7 +97,7 @@ class ContextComponent(Component):
         )
         return sliders_div
 
-    def create_ssp_dropdown(self):
+    def create_ssp_dropdown(self) -> dcc.Dropdown:
         """
         Creates dropdown to select an SSP
         """
@@ -112,9 +112,11 @@ class ContextComponent(Component):
         )
         return dropdown
 
-    def create_div(self):
+    def create_div(self) -> html.Div:
         """
         Creates big context div for larger demos.
+        We create a card with a dropdown to select the SSP and sliders to adjust the selected SSP.
+        The description is shown alongside the sliders.
         """
         sliders_div = self.create_context_sliders()
         dropdown_div = self.create_ssp_dropdown()
@@ -156,9 +158,9 @@ class ContextComponent(Component):
                 )
             ]
         )
-        return div
+        return html.Div(div)
 
-    def construct_ssp_desc(self, ssp_idx):
+    def construct_ssp_desc(self, ssp_idx: int) -> html.Div:
         """
         Constructs the description text for the SSP.
         We use a shortened description then add a link to the SSPs website.

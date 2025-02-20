@@ -142,7 +142,7 @@ class TimelineComponent(Component):
             Input("show-actions-button", "n_clicks"),
             State("actions-modal", "is_open")
         )
-        def toggle_actions_modal(n_clicks, is_open):
+        def toggle_actions_modal(n_clicks: int, is_open: bool) -> bool:
             """
             Toggles the actions modal on and off.
             """
@@ -156,7 +156,7 @@ class TimelineComponent(Component):
             State("context-actions-store", "data"),
             Input("cand-link-select", "value")
         )
-        def update_actions_body(context_actions_dicts: list[dict[str, float]], cand_idx) -> tuple[str, bool]:
+        def update_actions_body(context_actions_dicts: list[dict[str, float]], cand_idx: int) -> tuple[str, bool]:
             """
             Updates the body of the modal when a candidate is selected.
             """

@@ -11,7 +11,7 @@ class IntroComponent(Component):
     """
     Title card component
     """
-    def create_intro_paragraph(self):
+    def create_intro_paragraph(self) -> html.Div:
         """
         Creates the intro paragraph describing the project.
         """

@@ -34,7 +34,11 @@ class HeaderComponent(Component):
             )
         )
 
-    def create_div(self):
+    def create_div(self) -> html.Div:
+        """
+        Creates a row of logos, the title, and the icons for the various header components.
+        We use bootstrap classes to center the title with the rest of the content.
+        """
         thumbnails = html.Div(
             style={"display": "flex"},
             children=[

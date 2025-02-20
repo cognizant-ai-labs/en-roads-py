@@ -11,7 +11,7 @@ class TutorialComponent(Component):
     """
     Component storing all the tooltips that target various parts of the app.
     """
-    def create_div(self):
+    def create_div(self) -> html.Div:
         """
         Creates the button to show the tooltips as well as the tooltips themselves.
         """

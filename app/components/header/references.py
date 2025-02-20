@@ -11,7 +11,7 @@ class ReferencesComponent(Component):
     """
     Component to handle references
     """
-    def create_div(self):
+    def create_div(self) -> html.Div:
         """
         Creates div displaying references
         """

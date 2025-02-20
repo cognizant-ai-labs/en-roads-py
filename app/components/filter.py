@@ -28,7 +28,7 @@ class FilterComponent(Component):
                                                  "Government spending",
                                                  "Reduction in energy demand"]))
 
-    def create_metric_sliders(self):
+    def create_metric_sliders(self) -> html.Div:
         """
         Creates initial metric sliders and lines them up with their labels.
         TODO: We need to stop hard-coding their names and adjustments.
@@ -69,9 +69,9 @@ class FilterComponent(Component):
         )
         return div
 
-    def create_div(self):
+    def create_div(self) -> html.Div:
         """
-        Create div for big demo app.
+        Create div for big demo app. Dynamically generates sliders based on metrics.
         """
         div = dbc.Card(
             className="h-100",
@@ -123,7 +123,7 @@ class FilterComponent(Component):
                 )
             ]
         )
-        return div
+        return html.Div(div)
 
     def register_callbacks(self, app):
         """
@@ -173,7 +173,7 @@ class FilterComponent(Component):
             Input({"type": "metric-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def count_selected_cands(metrics_json: dict[str, list], metric_ranges) -> str:
+        def count_selected_cands(metrics_json: dict[str, list], metric_ranges: list[tuple[float, float]]) -> str:
             """
             Counts the number of selected candidates based on the metric ranges from the sliders.
             """

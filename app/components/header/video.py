@@ -11,7 +11,7 @@ class VideoComponent(Component):
     """
     Component storing the video to be played demonstrating the demo
     """
-    def create_div(self):
+    def create_div(self) -> html.Div:
         """
         Creates the div housing the modal that shows the video.
         """

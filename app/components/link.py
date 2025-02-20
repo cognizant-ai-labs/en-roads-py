@@ -1,5 +1,5 @@
 """
-Link Component.
+En-ROADS linking component.
 """
 from dash import Input, Output, html, dcc
 import dash_bootstrap_components as dbc
@@ -12,9 +12,9 @@ from enroadspy.generate_url import actions_to_url
 
 class LinkComponent(Component):
     """
-    Component in charge of displaying the links to En-ROADS.
+    Component in charge of the iFrame that displays En-ROADS.
+    The iFrame is cleared when the user clicks away from the screen so that we don't get weird scrolling issues.
     """
-
     def __init__(self, cand_idxs: list[int], actions: list[str]):
         self.cand_idxs = [i for i in cand_idxs]
 
@@ -26,7 +26,7 @@ class LinkComponent(Component):
 
         self.timeline_component = TimelineComponent(actions)
 
-    def create_div(self):
+    def create_div(self) -> html.Div:
         """
         Creates div showing an iframe displaying enroads, a dropdown to select the candidate, and a button to show the
         actions via. the timeline component.
@@ -85,7 +85,7 @@ class LinkComponent(Component):
             Input("context-actions-store", "data"),
             Input("cand-link-select", "value")
         )
-        def update_cand_link(context_actions_dicts: list[dict[str, float]], cand_idx) -> tuple[str, bool]:
+        def update_cand_link(context_actions_dicts: list[dict[str, float]], cand_idx: int) -> tuple[str, bool]:
             """
             Updates the candidate link when a specific candidate is selected.
             Additionally un-disables the button if this is the first time we're selecting a candidate.
