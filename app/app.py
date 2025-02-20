@@ -36,6 +36,31 @@ header_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
 
+middle = html.Div([
+    header_component.create_div(),
+    dbc.Row(outcome_component.create_div()),
+    dbc.Row(
+        className="mb-5",
+        children=[
+            dbc.Col(
+                context_component.create_div()
+            ),
+            dbc.Col(
+                filter_component.create_div()
+            )
+        ]
+    ),
+    dbc.Row(
+        className="width-100",
+        justify="center",
+        align="center",
+        children=dbc.Col(
+            width="auto",
+            children=html.A(dbc.Button("3. Examine Individual Policy"), href="#link-page")
+        )
+    )
+])
+
 app.layout = html.Div(
     children=[
         dbc.Container(
@@ -43,27 +68,27 @@ app.layout = html.Div(
             style={"height": "100vh"},
             fluid=True,
             children=[
-                header_component.create_div(),
-                dbc.Row(outcome_component.create_div()),
                 dbc.Row(
-                    className="mb-5",
                     children=[
                         dbc.Col(
-                            context_component.create_div()
+                            width=4,
+                            children=html.Div(
+                                id="left-video",
+                                children=html.Div()
+                            )
                         ),
                         dbc.Col(
-                            filter_component.create_div()
+                            width=4,
+                            children=middle
+                        ),
+                        dbc.Col(
+                            width=4,
+                            children=html.Div(
+                                id="right-video",
+                                children=html.Div()
+                            )
                         )
                     ]
-                ),
-                dbc.Row(
-                    className="width-100",
-                    justify="center",
-                    align="center",
-                    children=dbc.Col(
-                        width="auto",
-                        children=html.A(dbc.Button("3. Examine Individual Policy"), href="#link-page")
-                    )
                 )
             ]
         ),

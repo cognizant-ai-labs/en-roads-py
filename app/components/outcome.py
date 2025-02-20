@@ -218,6 +218,12 @@ class OutcomeComponent(Component):
         fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
         return fig
 
+    def make_iframe(self, vid_code: str):
+        return html.Iframe(
+            style={"height": "100vh", "width": "100%"},
+            src=f"https://www.youtube.com/embed/{vid_code}?autoplay=1&mute=1&controls=0"
+        )
+
     def register_callbacks(self, app):
         """
         Registers callbacks relating to the outcomes section of the app.
@@ -279,6 +285,23 @@ class OutcomeComponent(Component):
             """
             figs = [self.create_filtered_outcome_plot(metrics_json, o, outcomes_jsonl, metric_ranges) for o in outcomes]
             return figs, [False] * len(outcomes)
+
+        @app.callback(
+            Output("left-video", "children"),
+            Output("right-video", "children"),
+            State("metrics-store", "data"),
+            Input({"type": "metric-slider", "index": ALL}, "value"),
+            prevent_initial_call=True
+        )
+        def update_video(metrics_json: dict, metric_ranges: list[tuple[float, float]]):
+            metrics_df = filter_metrics_json(metrics_json, metric_ranges)
+            if len(metrics_df) > 1 and metrics_df["Temperature above 1.5C"].nlargest(2).iloc[1] <= 2:
+                left_video = self.make_iframe("intRX7BRA90")
+                right_video = self.make_iframe("-mnahHs7ttY")
+            else:
+                left_video = self.make_iframe("PLOPygVcaVE")
+                right_video = self.make_iframe("LkoGBOs5ecM")
+            return left_video, right_video
 
         @app.callback(
             Output({"type": "outcome-graph", "index": MATCH}, "figure", allow_duplicate=True),
