@@ -8,4 +8,6 @@ temp/
 results/
 animations/
 
+input_specs.jsonl
+
 !app/results
