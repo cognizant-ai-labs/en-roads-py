@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 from app.components.component import Component
 from app.components.header.intro import IntroComponent
 from app.components.header.references import ReferencesComponent
-from app.components.header.video import VideoComponent
+from app.components.header.tutorial import TutorialComponent
 
 
 class HeaderComponent(Component):
@@ -17,7 +17,7 @@ class HeaderComponent(Component):
     def __init__(self):
         self.intro_component = IntroComponent()
         self.references_component = ReferencesComponent()
-        self.video_component = VideoComponent()
+        self.tutorial_component = TutorialComponent()
 
     def create_thumbnail(self, src):
         """
@@ -53,7 +53,7 @@ class HeaderComponent(Component):
                         width="auto",
                         children=dbc.Row([
                             dbc.Col(self.intro_component.create_div()),
-                            dbc.Col(self.video_component.create_div()),
+                            dbc.Col(self.tutorial_component.create_div()),
                             dbc.Col(self.references_component.create_div())
                         ])
                     )
@@ -68,4 +68,4 @@ class HeaderComponent(Component):
         """
         self.intro_component.register_callbacks(app)
         self.references_component.register_callbacks(app)
-        self.video_component.register_callbacks(app)
+        self.tutorial_component.register_callbacks(app)

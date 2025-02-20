@@ -62,7 +62,10 @@ app.layout = html.Div(
                     align="center",
                     children=dbc.Col(
                         width="auto",
-                        children=html.A(dbc.Button("3. Examine Individual Policy"), href="#link-page")
+                        children=html.A(
+                            dbc.Button("3. Examine Individual Policy", id="scroll-button"),
+                            href="#link-page"
+                        )
                     )
                 )
             ]
