@@ -123,7 +123,7 @@ class FilterComponent(Component):
                 )
             ]
         )
-        return html.Div(div)
+        return html.Div(div, className="h-100")
 
     def register_callbacks(self, app):
         """
