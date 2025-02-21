@@ -63,7 +63,7 @@ class HeaderComponent(Component):
 
         # We do bootstrap convention instead of dbc here because we want to use the start-50 translate-middle-x classes
         div = html.Div(
-            className="mb-5",
+            className="mb-3",
             style={"border-bottom": "1px solid #ccc"},
             children=html.Div(
                 className="d-flex justify-content-between align-items-center position-relative",

@@ -37,8 +37,9 @@ class TutorialComponent(Component):
                             children="2. Filter metrics as desired",
                             **tutorial_params),
                 dbc.Tooltip(id={"type": "tutorial", "index": 4},
-                            target="scroll-button",
+                            target="enroads-button",
                             children="3. Examine individual policies",
+                            placement="top",
                             **tutorial_params)
             ]
         )

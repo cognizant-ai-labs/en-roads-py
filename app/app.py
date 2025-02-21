@@ -23,7 +23,7 @@ context_component = ContextComponent()
 filter_component = FilterComponent(metrics)
 header_component = HeaderComponent()
 outcome_component = OutcomeComponent(evolution_handler)
-link_component = LinkComponent(sample_idxs, actions)
+link_component = LinkComponent(actions)
 
 # Initialize the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP, "assets/styles.css"])
@@ -39,7 +39,7 @@ link_component.register_callbacks(app)
 # TODO: Maybe move these into their own components?
 main_page = dbc.Container(
     id="main-page",
-    style={"height": "100vh"},
+    # style={"height": "100vh"},
     fluid=True,
     children=[
         header_component.create_div(),
@@ -54,25 +54,13 @@ main_page = dbc.Container(
                     filter_component.create_div()
                 )
             ]
-        ),
-        dbc.Row(
-            className="width-100",
-            justify="center",
-            align="center",
-            children=dbc.Col(
-                width="auto",
-                children=html.A(
-                    dbc.Button("3. Examine Individual Policy", id="scroll-button"),
-                    href="#link-page"
-                )
-            )
         )
     ]
 )
 
 link_page = dbc.Container(
     id="link-page",
-    style={"height": "100vh"},
+    # style={"height": "100vh"},
     fluid=True,
     children=[
         dbc.Row([
