@@ -36,43 +36,28 @@ header_component.register_callbacks(app)
 outcome_component.register_callbacks(app)
 link_component.register_callbacks(app)
 
-# TODO: Maybe move these into their own components?
-main_page = dbc.Container(
-    id="main-page",
-    # style={"height": "100vh"},
-    fluid=True,
-    children=[
-        header_component.create_div(),
-        dbc.Row(outcome_component.create_div()),
-        dbc.Row(
-            className="mb-5",
-            children=[
-                dbc.Col(
-                    context_component.create_div()
-                ),
-                dbc.Col(
-                    filter_component.create_div()
-                )
-            ]
-        )
-    ]
-)
-
-link_page = dbc.Container(
-    id="link-page",
-    # style={"height": "100vh"},
-    fluid=True,
-    children=[
-        dbc.Row([
-            link_component.create_div()
-        ])
-    ]
-)
-
 app.layout = html.Div(
     children=[
-        main_page,
-        link_page
+        dbc.Container(
+            id="main-page",
+            fluid=True,
+            children=[
+                header_component.create_div(),
+                dbc.Row(outcome_component.create_div()),
+                dbc.Row(
+                    className="mb-5",
+                    children=[
+                        dbc.Col(
+                            context_component.create_div()
+                        ),
+                        dbc.Col(
+                            filter_component.create_div()
+                        )
+                    ]
+                ),
+                dbc.Row(link_component.create_div())
+            ]
+        )
     ]
 )
 
