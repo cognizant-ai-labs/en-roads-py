@@ -70,10 +70,9 @@ class LinkComponent(Component):
                                     )
                                 )
                             ]
-                            
                         )
                     ]
-                )                
+                )
             ]
         )
         return div
