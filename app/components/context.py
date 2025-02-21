@@ -237,8 +237,6 @@ class ContextComponent(Component):
         def select_ssp_dropdown(value):
             """
             When we select a dropdown value, update the sliders.
-            TODO: How can we make it go the other way, where moving a slider updates the dropdown?
-            Currently it may create an infinite loop...
             """
             scenario = f"{value}-Baseline"
             row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
