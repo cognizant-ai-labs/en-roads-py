@@ -2,18 +2,19 @@
 OutcomeComponent class for the outcome section of the app.
 """
 import json
+import random
 
-from dash import Input, Output, State, html, dcc, MATCH
+from dash import Input, Output, State, html, dcc, MATCH, ALL
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from app.classes import JUMBOTRON, CONTAINER, HEADER
+from app.components.component import Component
 from app.utils import EvolutionHandler, filter_metrics_json
 
 
-class OutcomeComponent():
+class OutcomeComponent(Component):
     """
     Component in charge of showing the outcomes of the prescribed actions for the selected prescriptors.
     Has drop downs to allow the user to select which outcomes they want to see.
@@ -30,16 +31,16 @@ class OutcomeComponent():
                               "Government net revenue from adjustments",
                               "Total Primary Energy Demand"]
 
-        self.metric_ids = [metric.replace(" ", "-").replace(".", "_") for metric in self.evolution_handler.outcomes]
-
         with open("app/units.json", "r", encoding="utf-8") as f:
             self.units = json.load(f)
 
-    def plot_outcome_over_time(self, outcome: str, outcomes_jsonl: list[list[dict[str, float]]], cand_idxs: list[int]):
+    def plot_outcome_over_time(self,
+                               outcome: str,
+                               outcomes_jsonl: list[list[dict[str, float]]],
+                               cand_idxs: list[int]) -> go.Figure:
         """
         Plots all the candidates' prescribed actions' outcomes for a given context.
         Also plots the baseline given the context.
-        TODO: Fix colors to match parcoords
         """
         best_cand_idxs = cand_idxs[:10]
         outcomes_dfs = [pd.DataFrame(outcomes_json) for outcomes_json in outcomes_jsonl]
@@ -122,7 +123,7 @@ class OutcomeComponent():
 
         fig.update_layout(
             title={
-                "text": f"{outcome} Over Time",
+                "text": f"{outcome}",
                 "x": 0.5,
                 "xanchor": "center"},
             yaxis_range=[y_min, y_max],
@@ -130,99 +131,94 @@ class OutcomeComponent():
         )
         return fig
 
-    def create_outcomes_div(self):
+    def create_outcome_graph_label(self, idx: int) -> html.Div:
         """
-        Note: We have nested loads here. The outer load is for both graphs and triggers when the outcomes store
-        is updated. Otherwise, we have individual loads for each graph.
+        Creates pairs of outcome dropdown and outcome graph so they're lined up.
         """
-        div = html.Div(
-            className=JUMBOTRON,
+        pair = html.Div(
             children=[
-                dbc.Container(
-                    fluid=True,
-                    className=CONTAINER,
+                html.Div(
+                    dcc.Dropdown(
+                        id={"type": "outcome-dropdown", "index": idx},
+                        options=self.plot_outcomes,
+                        value=self.plot_outcomes[idx],
+                        disabled=True
+                    ),
+                ),
+                dcc.Graph(id={"type": "outcome-graph", "index": idx})
+            ]
+        )
+        return pair
+
+    def create_custom_spinner(self) -> html.Div:
+        """
+        Creates a custom spinner with some fun pre-set text.
+        """
+        phrases = [
+            "Saving the planet...",
+            "Planting some trees...",
+            "Protecting polar bears' habitats...",
+            "Performing nuclear fission...",
+            "Taxing carbon...",
+            "Building wind turbines...",
+            "De-acidifying the ocean...",
+            "Preventing famine...",
+            "Stopping hurricanes...",
+            "Fostering international cooperation...",
+            "Funding climate research...",
+            "Impeaching climate deniers...",
+            "Asking Taylor to stop flying so much...",
+            "Inspiring the youth...",
+            "Cleaning up rivers...",
+            "Preserving biodiversity..."
+        ]
+        phrase = random.choice(phrases)
+        return html.Div(
+            className="d-flex flex-column align-items-center",
+            children=[html.H2(phrase), html.H2(dbc.Spinner(color="primary"))]
+        )
+
+    def create_div(self) -> html.Div:
+        """
+        Creates the outcomes div for the big demo. We want all the graphs to be lined up in a row.
+        """
+        outcome_labels = [self.create_outcome_graph_label(i) for i in range(4)]
+
+        div = html.Div(
+            className="w-100",
+            children=[
+                dcc.Loading(
+                    id="outcomes-loading",
+                    target_components={"context-actions-store": "*", "outcomes-store": "*"},
+                    overlay_style={"visibility": "visible", "opacity": 0.2},
+                    custom_spinner=html.Div(id="outcomes-spinner", children=self.create_custom_spinner()),
                     children=[
-                        html.H2("Outcomes for Selected Policies", className=HEADER),
-                        html.Div(
-                            className="d-flex flex-row w-100",
+                        dcc.Store(id="context-actions-store"),
+                        dcc.Store(id="outcomes-store"),
+                        dbc.Row(
+                            className="g-0",
                             children=[
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 0},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[0],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                ),
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 1},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[1],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                )
-                            ]
-                        ),
-                        dcc.Loading(
-                            target_components={"context-actions-store": "*"},
-                            type="circle",
-                            children=[
-                                dbc.Row(
-                                    className="g-0",
-                                    children=[
-                                        dcc.Store(id="context-actions-store"),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 0}), width=6),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 1}), width=6)
-                                    ]
-                                )
-                            ]
-                        ),
-                        html.Div(
-                            className="d-flex flex-row w-100",
-                            children=[
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 2},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[2],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                ),
-                                html.Div(
-                                    dcc.Dropdown(
-                                        id={"type": "outcome-dropdown", "index": 3},
-                                        options=self.plot_outcomes,
-                                        value=self.plot_outcomes[3],
-                                        disabled=True
-                                    ),
-                                    className="flex-fill"
-                                )
-                            ]
-                        ),
-                        dcc.Loading(
-                            target_components={"outcomes-store": "*"},
-                            type="circle",
-                            children=[
-                                dbc.Row(
-                                    className="g-0",
-                                    children=[
-                                        dcc.Store(id="outcomes-store"),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 2}), width=6),
-                                        dbc.Col(dcc.Graph(id={"type": "outcome-graph", "index": 3}), width=6)
-                                    ]
-                                )
+                                dbc.Col(outcome_label, width=3) for outcome_label in outcome_labels
                             ]
                         )
                     ]
                 )
             ]
         )
-
         return div
+
+    def create_filtered_outcome_plot(self,
+                                     metrics_json: dict,
+                                     outcome: str,
+                                     outcomes_jsonl: list[dict],
+                                     metric_ranges: list[tuple[float, float]]) -> go.Figure:
+        """
+        Creates a filtered outcome plot based on the the filtered metrics and the given outcome and outcomes data.
+        """
+        metrics_df = filter_metrics_json(metrics_json, metric_ranges)
+        cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
+        fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
+        return fig
 
     def register_callbacks(self, app):
         """
@@ -232,17 +228,17 @@ class OutcomeComponent():
             Output("context-actions-store", "data"),
             Output("outcomes-store", "data"),
             Output("metrics-store", "data"),
-            Output("energy-policy-store", "data"),
             Input("presc-button", "n_clicks"),
-            [State(f"context-slider-{i}", "value") for i in range(4)],
+            State({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def update_results_stores(_, *context_values):
+        def update_results_stores(_, context_values: list[float]) -> tuple[list[dict[str, float]],
+                                                                           list[list[dict[str, float]]],
+                                                                           list[dict[str, float]]]:
             """
             When the presc button is pressed, prescribe actions for the context for all candidates. Then run them
             through En-ROADS to get the outcomes. Finally process the outcomes into metrics. Store the context-actions
             dicts, outcomes dfs, and metrics df in stores.
-            Also stores the energy policies in the energy-policy-store in link.py.
             TODO: Make this only load selected candidates.
             """
             # Prescribe actions for all candidates via. torch
@@ -250,7 +246,7 @@ class OutcomeComponent():
             context_actions_dicts = self.evolution_handler.prescribe_all(context_dict)
 
             # Attach baseline (no actions)
-            context_actions_dicts.append(dict(**context_dict))
+            context_actions_dicts.append({**context_dict})
 
             # Run En-ROADS on all candidates and save as jsonl
             outcomes_dfs = self.evolution_handler.context_actions_to_outcomes(context_actions_dicts)
@@ -260,43 +256,66 @@ class OutcomeComponent():
             metrics_df = self.evolution_handler.outcomes_to_metrics(context_actions_dicts, outcomes_dfs)
             metrics_json = metrics_df.to_dict("records")
 
-            # Parse energy demand policy from outcomes for use in link.py
-            energies = ["coal", "oil", "gas", "renew and hydro", "bio", "nuclear", "new tech"]
-            demands = [f"Primary energy demand of {energy}" for energy in energies]
-            energy_policy_jsonl = [outcomes_df[demands].to_dict("records") for outcomes_df in outcomes_dfs]
-
-            return context_actions_dicts, outcomes_jsonl, metrics_json, energy_policy_jsonl
+            return context_actions_dicts, outcomes_jsonl, metrics_json
 
         @app.callback(
-            Output({"type": "outcome-graph", "index": MATCH}, "figure"),
-            Output({"type": "outcome-dropdown", "index": MATCH}, "disabled"),
+            Output({"type": "outcome-graph", "index": ALL}, "figure", allow_duplicate=True),
+            Output({"type": "outcome-dropdown", "index": ALL}, "disabled", allow_duplicate=True),
             State("metrics-store", "data"),
-            Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
-            Input("outcomes-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            State({"type": "outcome-dropdown", "index": ALL}, "value"),
+            State("outcomes-store", "data"),
+            Input({"type": "metric-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def update_outcomes_plots(metrics_json, outcome, outcomes_jsonl, *metric_ranges):
+        def filter_outcomes_plots(metrics_json: dict,
+                                  outcomes: list[str],
+                                  outcomes_jsonl: list[dict],
+                                  metric_ranges: list[tuple[float, float]]) -> tuple[list[go.Figure], list[bool]]:
             """
-            Updates outcome plot when specific outcome is selected or context scatter point is clicked.
-            We also un-disable the dropdowns when the user selects a context.
+            Filters outcome when sliders are changed. Also un-disables them after loading.
             """
-            metrics_df = filter_metrics_json(metrics_json, metric_ranges)
-            cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
-            fig = self.plot_outcome_over_time(outcome, outcomes_jsonl, cand_idxs)
-            return fig, False
+            figs = [self.create_filtered_outcome_plot(metrics_json, o, outcomes_jsonl, metric_ranges) for o in outcomes]
+            return figs, [False] * len(outcomes)
+
+        @app.callback(
+            Output({"type": "outcome-graph", "index": MATCH}, "figure", allow_duplicate=True),
+            State("metrics-store", "data"),
+            Input({"type": "outcome-dropdown", "index": MATCH}, "value"),
+            State("outcomes-store", "data"),
+            State({"type": "metric-slider", "index": ALL}, "value"),
+            prevent_initial_call=True
+        )
+        def change_outcome_type(metrics_json: dict,
+                                outcome: str,
+                                outcomes_jsonl: list[dict],
+                                metric_ranges: list[tuple[float, float]]) -> go.Figure:
+            """
+            Changes the type of outcome being displayed when the dropdown is selected.
+            """
+            return self.create_filtered_outcome_plot(metrics_json, outcome, outcomes_jsonl, metric_ranges)
 
         @app.callback(
             Output("cand-link-select", "options"),
             State("metrics-store", "data"),
-            [Input(f"{metric_id}-slider", "value") for metric_id in self.metric_ids],
+            Input({"type": "metric-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
         def update_cand_link_select(metrics_json: dict[str, list],
-                                    *metric_ranges: list[tuple[float, float]]) -> list[int]:
+                                    metric_ranges: list[tuple[float, float]]) -> list[int]:
             """
             Updates the available candidates in the link dropdown based on metric ranges.
             """
             metrics_df = filter_metrics_json(metrics_json, metric_ranges)
             cand_idxs = list(metrics_df.index)[:-1]  # So we don't include the baseline
             return cand_idxs
+
+        @app.callback(
+            Output("outcomes-spinner", "children", allow_duplicate=True),
+            Input("presc-button", "n_clicks"),
+            prevent_initial_call=True
+        )
+        def update_outcomes_loading_spinner(_) -> html.Div:
+            """
+            Updates the spinner with a fun new phrase every time the presc button is clicked.
+            """
+            return self.create_custom_spinner()

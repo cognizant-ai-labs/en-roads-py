@@ -55,6 +55,8 @@ class EvolutionHandler():
         self.F = np.load(save_path + "/F.npy")
 
         # TODO: Make this not hard-coded
+        # Here we rescale the outcomes: temperature vs. temperature difference, government spending becomes positive,
+        # and energy difference becomes positive.
         self.F[:, 0] += 1.5
         self.F[:, 2] *= -1
         self.F[:, 3] *= -1
@@ -67,7 +69,7 @@ class EvolutionHandler():
         self.runner = EnroadsRunner()
         self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
 
-    def prescribe_all(self, context_dict: dict[str, float]):
+    def prescribe_all(self, context_dict: dict[str, float]) -> list[dict[str, float]]:
         """
         Takes a dict containing a single context and prescribes actions for it using all the candidates.
         Returns a context_actions dict for each candidate.
@@ -85,7 +87,7 @@ class EvolutionHandler():
 
         return context_actions_dicts
 
-    def context_actions_to_outcomes(self, context_actions_dicts: list[dict[str, float]]):
+    def context_actions_to_outcomes(self, context_actions_dicts: list[dict[str, float]]) -> list[pd.DataFrame]:
         """
         Takes a context dict and prescribes actions for it. Then runs enroads on those actions and returns the outcomes.
         """
@@ -117,7 +119,7 @@ class EvolutionHandler():
 
         return metrics_df
 
-    def context_baseline_outcomes(self, context_dict: dict[str, float]):
+    def context_baseline_outcomes(self, context_dict: dict[str, float]) -> pd.DataFrame:
         """
         Takes a context dict and returns the outcomes when no actions are performed.
         """
