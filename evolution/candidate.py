@@ -2,158 +2,74 @@
 Candidate class to be used during evolution.
 """
 from collections import OrderedDict
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from presp.prescriptor import NNPrescriptor
 import torch
 
 from enroadspy import load_input_specs
 
 
-class Candidate():
+class EnROADSPrescriptor(NNPrescriptor):
     """
-    Candidate class that holds the model and stores evaluation and sorting information for evolution.
-    Model can be persisted to disk.
+    Prescriptor candidate for En-ROADS. Runs context as a torch tensor through the model and parses the output into
+    the enroadsrunner actions dict format
     """
-    def __init__(self,
-                 cand_id: str,
-                 parents: list[str],
-                 model_params: dict,
-                 actions: list[str]):
-        self.cand_id = cand_id
-        self.actions = actions
-        self.metrics = {}
+    def __init__(self, model_params: list[dict], actions: list[str], device: str = "cpu"):
+        device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        super().__init__(model_params, device)
+        self.actions = list(actions)
+        self.output_parser = OutputParser(self.actions, device=device)
 
-        self.parents = parents
-        self.rank = None
-        self.distance = None
-
-        # Model
-        self.model_params = model_params
-        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = NNPrescriptor(**model_params).to(self.device)
-        self.model.eval()
-
-        self.output_parser = OutputParser(actions, device=self.device)
+    def forward(self, context: torch.Tensor) -> list[dict]:
+        with torch.no_grad():
+            nn_outputs = super().forward(context)
+            outputs = self.output_parser.parse_output(nn_outputs).cpu().numpy()
+        actions_dicts = [dict(zip(self.actions, output.tolist())) for output in outputs]
+        return actions_dicts
 
     @classmethod
-    def from_pymoo_params(cls, x: np.ndarray, model_params: dict, actions: list[str]):
+    def from_pymoo_params(cls, x: np.ndarray, model_params: dict, actions: list[str]) -> "EnROADSPrescriptor":
         """
         Creates a candidate from a 1d numpy array of parameters that have to be reshaped into tensors and loaded
         as a state dict.
         """
-        candidate = cls("pymoo", [], model_params, actions)
+        candidate = cls(model_params, actions)
 
         flattened = torch.Tensor(x)
         state_dict = OrderedDict()
         pcount = 0
 
-        in_size = model_params["in_size"]
-        hidden_size = model_params["hidden_size"]
-        out_size = model_params["out_size"]
+        pcount = 0
+        for i, layer in enumerate(model_params):
+            if layer["type"] == "linear":
+                in_size = layer["in_features"]
+                out_size = layer["out_features"]
 
-        state_dict["nn.0.weight"] = flattened[:in_size * hidden_size].reshape(hidden_size, in_size)
-        pcount += in_size * hidden_size
-
-        state_dict["nn.0.bias"] = flattened[pcount:pcount + hidden_size]
-        pcount += model_params["hidden_size"]
-
-        state_dict["nn.2.weight"] = flattened[pcount:pcount + hidden_size * out_size].reshape(out_size, hidden_size)
-        pcount += hidden_size * out_size
-
-        state_dict["nn.2.bias"] = flattened[pcount:pcount + out_size]
+                state_dict[f"{i}.weight"] = flattened[pcount:pcount+(in_size*out_size)].reshape(out_size, in_size)
+                pcount += in_size * out_size
+                state_dict[f"{i}.bias"] = flattened[pcount:pcount+out_size]
+                pcount += out_size
 
         candidate.model.load_state_dict(state_dict)
         return candidate
 
-    @classmethod
-    def from_seed(cls, path: Path, model_params: dict, actions: list[str]):
-        """
-        Loads PyTorch seed from disk.
-        """
-        cand_id = path.stem
-        parents = []
-        candidate = cls(cand_id, parents, model_params, actions)
-        candidate.model.load_state_dict(torch.load(path))
-        return candidate
-
-    def save(self, path: Path):
-        """
-        Saves PyTorch state dict to disk.
-        """
-        path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(self.model.state_dict(), path)
-
-    def prescribe(self, x: torch.Tensor) -> list[dict[str, float]]:
-        """
-        Runs the model on a batch of contexts and returns a list of actions dicts.
-        Parses the output of our model so that we can use it in en-roads model.
-        """
-        with torch.no_grad():
-            nn_outputs = self.model.forward(x)
-            outputs = self.output_parser.parse_output(nn_outputs).cpu().numpy()
-        actions_dicts = [dict(zip(self.actions, output.tolist())) for output in outputs]
-        return actions_dicts
-
-    def record_state(self):
-        """
-        Records metrics as well as seed and parents for reconstruction.
-        """
-        state = {
-            "cand_id": self.cand_id,
-            "parents": self.parents,
-            "rank": self.rank,
-            "distance": self.distance,
-        }
-        for metric, value in self.metrics.items():
-            state[metric] = value
-        return state
-
-    def __str__(self):
-        return f"Candidate({self.cand_id})"
-
-    def __repr__(self):
-        return f"Candidate({self.cand_id})"
-
-
-class NNPrescriptor(torch.nn.Module):
-    """
-    Torch neural network that the candidate wraps around.
-    """
-    def __init__(self, in_size, hidden_size, out_size):
-        super().__init__()
-        self.nn = torch.nn.Sequential(
-            torch.nn.Linear(in_size, hidden_size),
-            torch.nn.Tanh(),
-            torch.nn.Linear(hidden_size, out_size),
-            torch.nn.Sigmoid()
-        )
-
-        # Orthogonal initialization
-        for layer in self.nn:
-            if isinstance(layer, torch.nn.Linear):
-                torch.nn.init.orthogonal_(layer.weight)
-                layer.bias.data.fill_(0.01)
-
-    def forward(self, x):
-        """
-        Forward pass of neural network.
-        Returns a tensor of shape (batch_size, num_actions).
-        Values are scaled between 0 and 1.
-        """
-        nn_output = self.nn(x)
-        return nn_output
-
 
 class OutputParser():
     """
-    Parses the output of our NNPrescriptor. All the values are between 0 and 1 and it's our job to scale them to
+    Parses the output of our neural network. All the values are between 0 and 1 and it's our job to scale them to
     match the input specs. It's ok to have an end date before a start date, the simulator just handles it interally.
     """
-    def __init__(self, actions: list[str], device="cpu"):
+    def __init__(self, actions: list[str], device: str = "cpu"):
         input_specs = load_input_specs()
         self.actions = actions
+
+        # Make sure all the actions are in the input specs
+        valid_actions = input_specs["varId"].unique()
+        for action in actions:
+            if action not in valid_actions:
+                raise ValueError(f"Action {action} not in input specs")
 
         # Index into the dataframe with actions
         filtered = input_specs[input_specs["varId"].isin(actions)].copy()
@@ -169,6 +85,7 @@ class OutputParser():
         on_values = filtered["onValue"].fillna(0).values
         off_values = filtered["offValue"].fillna(0).values
 
+        # Torch values to scale by
         self.bias = torch.FloatTensor(bias).to(device)
         self.scale = torch.FloatTensor(scale).to(device)
 

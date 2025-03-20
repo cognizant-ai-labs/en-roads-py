@@ -7,20 +7,26 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
-from evolution.candidate import Candidate, NNPrescriptor, OutputParser
+from evolution.candidate import EnROADSPrescriptor, OutputParser
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
 
 DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def train_seed(model_params: dict, dataset: Dataset, label: torch.Tensor, epochs=200, batch_size=1) -> NNPrescriptor:
+def train_seed(model_params: dict,
+               actions: list[str],
+               dataset: Dataset,
+               label: torch.Tensor,
+               epochs=200,
+               batch_size=1) -> EnROADSPrescriptor:
     """
     Simple PyTorch training loop training a seed model with model_params using data from dataloader to match
     label label for epochs epochs.
     """
     label_tensor = label.to(DEVICE)
-    model = NNPrescriptor(**model_params)
+    presc = EnROADSPrescriptor(model_params, actions)
+    model = presc.model
     model.to(DEVICE)
     model.train()
     optimizer = torch.optim.AdamW(model.parameters())
@@ -41,7 +47,7 @@ def train_seed(model_params: dict, dataset: Dataset, label: torch.Tensor, epochs
                 n += 1
             pbar.set_description(f"Avg Loss: {(avg_loss / n):.5f}")
 
-    return model
+    return presc
 
 
 def actions_to_label(actions: list[str], actions_dict: dict[str, float], output_parser: OutputParser) -> torch.Tensor:
@@ -103,11 +109,11 @@ def create_custom_labels(actions: list[str], seed_urls: list[str], output_parser
     return labels
 
 
-def create_seeds(model_params: dict,
+def create_seeds(model_params: list[dict],
                  context_ds: Dataset,
                  actions: list[str],
                  seed_urls: Optional[list[str]] = None,
-                 epochs: Optional[int] = 1000) -> list[Candidate]:
+                 epochs: Optional[int] = 1000) -> list[EnROADSPrescriptor]:
     """
     Creates seed prescriptors for a given context dataset and actions. If seed_urls are provided, they are used to
     create custom labels for the seeds. Otherwise, we simply seed the default actions, min/off actions, and
@@ -120,9 +126,8 @@ def create_seeds(model_params: dict,
 
     seeds = []
     for i, label in enumerate(labels):
-        nn = train_seed(model_params, context_ds, label, epochs=epochs)
-        candidate = Candidate(f"0_{i}", [], model_params, actions)
-        candidate.model = nn
+        candidate = train_seed(model_params, actions, context_ds, label, epochs=epochs)
+        candidate.cand_id = f"0_{i}"
         seeds.append(candidate)
 
     return seeds

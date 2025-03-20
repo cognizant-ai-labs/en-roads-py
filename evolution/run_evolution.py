@@ -7,7 +7,12 @@ from pathlib import Path
 import shutil
 import sys
 
-from evolution.evolution import Evolution
+from presp.prescriptor import NNPrescriptorFactory
+from presp.evolution import Evolution
+import yaml
+
+from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.candidate import EnROADSPrescriptor
 from evolution.utils import modify_config
 
 
@@ -20,22 +25,34 @@ def main():
     parser.add_argument("--config", type=str, help="Path to config file.")
     args = parser.parse_args()
 
-    with open(args.config, "r", encoding="utf-8") as f:
-        config = json.load(f)
+    config_path = "evolution/configs/config.yml"
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
 
-    config = modify_config(config)
-    print(config)
+    # config = modify_config(config)
+    print(json.dumps(config, indent=4))
 
-    if Path(config["save_path"]).exists():
+    if Path(config["evolution_params"]["save_path"]).exists():
         inp = input("Save path already exists, do you want to overwrite? (y/n):")
         if inp.lower() == "y":
-            shutil.rmtree(config["save_path"])
+            shutil.rmtree(config["evolution_params"]["save_path"])
         else:
             print("Exiting")
             sys.exit()
 
-    evolution = Evolution(config)
-    evolution.neuroevolution()
+    prescriptor_factory = NNPrescriptorFactory(EnROADSPrescriptor,
+                                               model_params=config["model_params"],
+                                               device=config["device"],
+                                               actions=config["actions"])
+
+    evaluator = EnROADSEvaluator(config["context"],
+                                 config["actions"],
+                                 config["outcomes"],
+                                 batch_size=config["batch_size"],
+                                 device=config["device"])
+
+    evolution = Evolution(**config["evolution_params"], prescriptor_factory=prescriptor_factory, evaluator=evaluator)
+    evolution.run_evolution()
 
 
 if __name__ == "__main__":

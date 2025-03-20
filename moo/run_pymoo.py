@@ -35,7 +35,12 @@ def create_nn_problem(actions: list[str], outcomes: dict[str, bool]) -> NNProble
     """
     context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
     context_df = context_df.drop(columns=["F", "scenario"])
-    model_params = {"in_size": len(context_df.columns), "hidden_size": 16, "out_size": len(actions)}
+    model_params = [
+        {"type": "linear", "in_features": len(context_df.columns), "out_features": 16},
+        {"type": "tanh"},
+        {"type": "linear", "in_features": 16, "out_features": len(actions)},
+        {"type": "sigmoid"}
+    ]    
     problem = NNProblem(context_df, model_params, actions, outcomes)
     return problem
 

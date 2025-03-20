@@ -11,7 +11,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from enroadspy.enroads_runner import EnroadsRunner
-from evolution.candidate import Candidate
+from evolution.candidate import EnROADSPrescriptor
 from evolution.evaluation.data import ContextDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
 from evolution.seeding.train_seeds import create_seeds
@@ -23,14 +23,15 @@ class NNProblem(ElementwiseProblem):
     """
     def __init__(self,
                  context_df: pd.DataFrame,
-                 model_params: dict,
+                 model_params: list[dict],
                  actions: list[str],
                  outcomes: dict[str, bool],
                  batch_size=128):
-        in_size = model_params["in_size"]
-        hidden_size = model_params["hidden_size"]
-        out_size = model_params["out_size"]
-        num_params = (in_size + 1) * hidden_size + (hidden_size + 1) * out_size
+        
+        num_params = 0
+        for layer in model_params:
+            if layer["type"] == "linear":
+                num_params += (layer["in_features"] + 1) * layer["out_features"]
 
         xl = np.array([-1 for _ in range(num_params)])
         xu = np.array([1 for _ in range(num_params)])
@@ -54,11 +55,11 @@ class NNProblem(ElementwiseProblem):
         returns the contexts and actions as a list of dicts.
         """
         # Create candidate from params and pass contexts through it to get actions dicts for each context
-        candidate = Candidate.from_pymoo_params(x, self.model_params, self.actions)
+        candidate = EnROADSPrescriptor.from_pymoo_params(x, self.model_params, self.actions)
         context_actions_dicts = []
         context_dl = DataLoader(self.context_ds, batch_size=self.batch_size, shuffle=False)
         for batch, _ in context_dl:
-            context_actions_dicts.extend(candidate.prescribe(batch.to(self.device)))
+            context_actions_dicts.extend(candidate.forward(batch.to(self.device)))
 
         # Attaches correct context to each action dict
         assert len(context_actions_dicts) == len(self.context_df)
@@ -101,16 +102,21 @@ class NNProblem(ElementwiseProblem):
         out["G"] = []
 
 
-def candidate_to_params(candidate: Candidate) -> np.ndarray:
+def candidate_to_params(candidate: EnROADSPrescriptor) -> np.ndarray:
     """
     Takes a candidate and flattens its parameters into a 1d numpy array
     """
     state_dict = candidate.model.state_dict()
+    
+    linear_idxs = []
+    for i, layer in enumerate(candidate.model_params):
+        if layer["type"] == "linear":
+            linear_idxs.append(i)
+
     params = []
-    params.append(state_dict["nn.0.weight"].flatten())
-    params.append(state_dict["nn.0.bias"].squeeze())
-    params.append(state_dict["nn.2.weight"].flatten())
-    params.append(state_dict["nn.2.bias"].squeeze())
+    for i in linear_idxs:
+        params.append(state_dict[f"{i}.weight"].flatten())
+        params.append(state_dict[f"{i}.bias"].squeeze())
     params = torch.cat(params).cpu().numpy()
     return params
 

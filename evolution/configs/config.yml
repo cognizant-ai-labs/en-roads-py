@@ -1,0 +1,98 @@
+# Evolution params
+evolution_params:
+  n_generations: 10
+  population_size: 100
+  remove_population_pct: 0.8
+  n_elites: 10
+  mutation_rate: 0.1
+  mutation_factor: 0.1
+  save_path: results/temp
+
+device: mps
+batch_size: 64
+
+model_params:
+  - type: linear
+    in_features: 4
+    out_features: 64
+  - type: tanh
+  - type: linear
+    in_features: 64
+    out_features: 61
+  - type: sigmoid
+
+context:
+ - _long_term_gdp_per_capita_rate
+ - _near_term_gdp_per_capita_rate
+ - _transition_time_to_reach_long_term_gdp_per_capita_rate
+ - _global_population_in_2100
+
+actions:
+ - _source_subsidy_delivered_coal_tce
+ - _source_subsidy_start_time_delivered_coal
+ - _source_subsidy_stop_time_delivered_coal
+ - _no_new_coal
+ - _year_of_no_new_capacity_coal
+ - _utilization_adjustment_factor_delivered_coal
+ - _utilization_policy_start_time_delivered_coal
+ - _utilization_policy_stop_time_delivered_coal
+ - _target_accelerated_retirement_rate_electric_coal
+ - _source_subsidy_delivered_oil_boe
+ - _source_subsidy_start_time_delivered_oil
+ - _source_subsidy_stop_time_delivered_oil
+ - _no_new_oil
+ - _year_of_no_new_capacity_oil
+ - _utilization_adjustment_factor_delivered_oil
+ - _utilization_policy_start_time_delivered_oil
+ - _utilization_policy_stop_time_delivered_oil
+ - _source_subsidy_delivered_gas_mcf
+ - _source_subsidy_start_time_delivered_gas
+ - _source_subsidy_stop_time_delivered_gas
+ - _no_new_gas
+ - _year_of_no_new_capacity_gas
+ - _utilization_adjustment_factor_delivered_gas
+ - _utilization_policy_start_time_delivered_gas
+ - _utilization_policy_stop_time_delivered_gas
+ - _source_subsidy_renewables_kwh
+ - _source_subsidy_start_time_renewables
+ - _source_subsidy_stop_time_renewables
+ - _use_subsidies_by_feedstock
+ - _source_subsidy_delivered_bio_boe
+ - _source_subsidy_start_time_delivered_bio
+ - _source_subsidy_stop_time_delivered_bio
+ - _no_new_bio
+ - _year_of_no_new_capacity_bio
+ - _wood_feedstock_subsidy_boe
+ - _crop_feedstock_subsidy_boe
+ - _other_feedstock_subsidy_boe
+ - _source_subsidy_nuclear_kwh
+ - _source_subsidy_start_time_nuclear
+ - _source_subsidy_stop_time_nuclear
+ - _carbon_tax_initial_target
+ - _carbon_tax_phase_1_start
+ - _carbon_tax_time_to_achieve_initial_target
+ - _carbon_tax_final_target
+ - _carbon_tax_phase_3_start
+ - _carbon_tax_time_to_achieve_final_target
+ - _apply_carbon_tax_to_biofuels
+ - _ccs_carbon_tax_qualifier
+ - _qualifying_path_renewables
+ - _qualifying_path_nuclear
+ - _qualifying_path_new_zero_carbon
+ - _qualifying_path_beccs
+ - _qualifying_path_bioenergy
+ - _qualifying_path_fossil_ccs
+ - _qualifying_path_gas
+ - _electric_standard_active
+ - _electric_standard_target
+ - _electric_standard_start_year
+ - _electric_standard_target_time
+ - _emissions_performance_standard
+ - _performance_standard_time
+
+outcomes:
+  Temperature above 1.5C: true
+  Max cost of energy: true
+  Government net revenue below zero: false
+  Total energy below baseline: false
+

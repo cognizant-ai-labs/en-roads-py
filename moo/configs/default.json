@@ -72,5 +72,5 @@
         "Total energy below baseline": false,
         "Action magnitude": true
     },
-    "save_path": "results/pymoo/context-updated2"
+    "save_path": "results/pymoo/temp"
 }
