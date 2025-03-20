@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from evolution.candidate import EnROADSPrescriptor
-from evolution.evaluation.data import SSPDataset
+from evolution.data import SSPDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
 from enroadspy import load_input_specs
 from enroadspy.enroads_runner import EnroadsRunner
@@ -19,9 +19,15 @@ class EnROADSEvaluator(Evaluator):
     Evaluates candidates by generating the actions and running the enroads model on them.
     Generates and stores context data based on config using ContextDataset.
     """
-    def __init__(self, context: list[str], actions: list[str], outcomes: dict[str, bool], batch_size=64, device="cpu"):
+    def __init__(self,
+                 context: list[str],
+                 actions: list[str],
+                 outcomes: dict[str, bool],
+                 n_jobs=1,
+                 batch_size=64,
+                 device="cpu"):
         outcome_names = list(outcomes.keys())
-        super().__init__(outcome_names)
+        super().__init__(outcomes=outcome_names, n_jobs=n_jobs)
         self.actions = actions
         self.outcome_manager = OutcomeManager(outcome_names)
         self.minimize_dict = {o: m for o, m in outcomes.items()}

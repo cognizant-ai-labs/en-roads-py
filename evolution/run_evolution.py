@@ -11,9 +11,8 @@ from presp.prescriptor import NNPrescriptorFactory
 from presp.evolution import Evolution
 import yaml
 
-from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.evaluator import EnROADSEvaluator
 from evolution.candidate import EnROADSPrescriptor
-from evolution.utils import modify_config
 
 
 def main():
@@ -25,29 +24,34 @@ def main():
     parser.add_argument("--config", type=str, help="Path to config file.")
     args = parser.parse_args()
 
-    config_path = "evolution/configs/config.yml"
+    config_path = args.config
     with open(config_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    # config = modify_config(config)
     print(json.dumps(config, indent=4))
 
-    if Path(config["evolution_params"]["save_path"]).exists():
+    save_path = Path(config["evolution_params"]["save_path"])
+    if save_path.exists():
         inp = input("Save path already exists, do you want to overwrite? (y/n):")
         if inp.lower() == "y":
-            shutil.rmtree(config["evolution_params"]["save_path"])
+            shutil.rmtree(save_path)
         else:
             print("Exiting")
             sys.exit()
+
+    save_path.mkdir(parents=True, exist_ok=True)
+    with open(save_path / "config.yml", "w", encoding="utf-8") as f:
+        yaml.dump(config, f)
 
     prescriptor_factory = NNPrescriptorFactory(EnROADSPrescriptor,
                                                model_params=config["model_params"],
                                                device=config["device"],
                                                actions=config["actions"])
 
-    evaluator = EnROADSEvaluator(config["context"],
-                                 config["actions"],
-                                 config["outcomes"],
+    evaluator = EnROADSEvaluator(context=config["context"],
+                                 actions=config["actions"],
+                                 outcomes=config["outcomes"],
+                                 n_jobs=config["n_jobs"],
                                  batch_size=config["batch_size"],
                                  device=config["device"])
 

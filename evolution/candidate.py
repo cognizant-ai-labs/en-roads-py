@@ -17,7 +17,6 @@ class EnROADSPrescriptor(NNPrescriptor):
     the enroadsrunner actions dict format
     """
     def __init__(self, model_params: list[dict], actions: list[str], device: str = "cpu"):
-        device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
         super().__init__(model_params, device)
         self.actions = list(actions)
         self.output_parser = OutputParser(self.actions, device=device)
