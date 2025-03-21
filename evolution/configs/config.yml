@@ -1,14 +1,14 @@
 # Evolution params
 evolution_params:
-  n_generations: 10
-  population_size: 100
+  n_generations: 1000
+  population_size: 200
   remove_population_pct: 0.8
-  n_elites: 10
+  n_elites: 20
   mutation_rate: 0.1
   mutation_factor: 0.1
-  save_path: results/temp
+  save_path: results/longer
 
-device: mps
+device: cuda
 batch_size: 64
 n_jobs: 1
 
