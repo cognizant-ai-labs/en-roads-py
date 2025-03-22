@@ -9,7 +9,7 @@ from presp.prescriptor import NNPrescriptorFactory
 import torch
 
 from evolution.candidate import EnROADSPrescriptor
-from evolution.evaluator import Evaluator
+from evolution.evaluator import EnROADSEvaluator
 from enroadspy import load_input_specs
 
 
@@ -37,7 +37,7 @@ def open_browser(results_dir, cand_id, input_idx):
         config = json.load(f)
 
     # Get prescribed actions from model
-    evaluator = Evaluator(config["context"], config["actions"], config["outcomes"])
+    evaluator = EnROADSEvaluator(config["context"], config["actions"], config["outcomes"])
 
     device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
     factory = NNPrescriptorFactory(EnROADSPrescriptor, config["model_params"], device, actions=config["actions"])
