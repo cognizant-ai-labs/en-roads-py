@@ -5,12 +5,12 @@ import unittest
 
 import numpy as np
 import pandas as pd
+from presp.prescriptor import NNPrescriptorFactory
 import torch
 
 from enroadspy import load_input_specs
-from evolution.candidate import Candidate
-from evolution.evaluation.evaluator import Evaluator
-from evolution.utils import modify_config
+from evolution.candidate import EnROADSPrescriptor
+from evolution.evaluator import EnROADSEvaluator
 
 
 class TestEvaluator(unittest.TestCase):
@@ -19,25 +19,27 @@ class TestEvaluator(unittest.TestCase):
     en-roads model. We need to make sure all our inputs and outputs are correct.
     """
     def setUp(self):
-        device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        torch.manual_seed(42)
+        np.random.seed(42)
         # Dummy config to test with
         config = {
             "evolution_params": {
                 "n_generations": 100,
-                "pop_size": 100,
-                "n_elites": 10
+                "population_size": 100,
+                "remove_population_pct": 0.8,
+                "n_elites": 10,
+                "mutation_rate": 0.1,
+                "mutation_factor": 0.1,
+                "save_path": "tests/temp"
             },
-            "remove_population_pct": 0.7,
-            "mutation_factor": 0.1,
-            "mutation_rate": 0.1,
-            "model_params": {
-                "in_size": 4,
-                "hidden_size": 64,
-                "out_size": 114
-            },
-            "eval_params": {
-                "device": device
-            },
+            "device": "cpu",
+            "batch_size": 64,
+            "n_jobs": 1,
+            "model_params": [
+                {"type": "linear", "in_features": 4, "out_features": 64},
+                {"type": "tanh"},
+                {"type": "linear", "in_features": 64, "out_features": 115}
+            ],
             "context": [
                 "_global_population_in_2100",
                 "_long_term_gdp_per_capita_rate",
@@ -161,16 +163,26 @@ class TestEvaluator(unittest.TestCase):
                 "_mineralization_percent_of_max_cdr_achieved",
                 "_mineralization_start_year"
             ],
-            "outcomes": [
-                "Net cumulative emissions",
-                "Total cost of energy",
-                "Cost of energy next 10 years"
-            ],
-            "save_path": "tests/blah"
+            "outcomes": {
+                "Net cumulative emissions": True,
+                "Total cost of energy": True,
+                "Cost of energy next 10 years": True
+            },
         }
 
-        self.config = modify_config(config)
-        self.evaluator = Evaluator(**self.config["eval_params"])
+        self.config = config
+
+        self.evaluator = EnROADSEvaluator(context=config["context"],
+                                          actions=config["actions"],
+                                          outcomes=config["outcomes"],
+                                          n_jobs=config["n_jobs"],
+                                          batch_size=config["batch_size"],
+                                          device=config["device"])
+
+        self.factory = NNPrescriptorFactory(EnROADSPrescriptor,
+                                            config["model_params"],
+                                            config["device"],
+                                            actions=config["actions"])
 
     def test_default_input(self):
         """
@@ -231,7 +243,7 @@ class TestEvaluator(unittest.TestCase):
         """
         Makes sure that the same candidate evaluated twice has the same metrics.
         """
-        candidate = Candidate("0_0", [], self.config["model_params"], self.config["actions"])
+        candidate = self.factory.random_init()
         self.evaluator.evaluate_candidate(candidate)
         original = dict(candidate.metrics.items())
         self.evaluator.evaluate_candidate(candidate)

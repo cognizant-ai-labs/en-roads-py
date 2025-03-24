@@ -11,7 +11,8 @@ from presp.prescriptor import NNPrescriptorFactory
 from presp.evolution import Evolution
 import yaml
 
-from evolution.evaluator import EnROADSEvaluator
+# from evolution.evaluator import EnROADSEvaluator
+from evolution.novelty import NoveltyEvaluator
 from evolution.candidate import EnROADSPrescriptor
 
 
@@ -20,6 +21,10 @@ def main():
     Parses arguments, modifies config to reduce the amount of manual text added to it, then runs the evolution process.
     Prompts the user to overwrite the save path if it already exists.
     """
+    import torch
+    torch.manual_seed(42)
+    import numpy as np
+    np.random.seed(42)
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, help="Path to config file.")
     args = parser.parse_args()
@@ -48,13 +53,16 @@ def main():
                                                device=config["device"],
                                                actions=config["actions"])
 
-    evaluator = EnROADSEvaluator(context=config["context"],
-                                 actions=config["actions"],
-                                 outcomes=config["outcomes"],
-                                 n_jobs=config["n_jobs"],
-                                 batch_size=config["batch_size"],
-                                 device=config["device"])
-
+    # evaluator = EnROADSEvaluator(context=config["context"],
+    #                              actions=config["actions"],
+    #                              outcomes=config["outcomes"],
+    #                              n_jobs=config["n_jobs"],
+    #                              batch_size=config["batch_size"],
+    #                              device=config["device"])
+    evaluator = NoveltyEvaluator(
+        context=config["context"],
+        actions=config["actions"]
+    )
     evolution = Evolution(**config["evolution_params"], prescriptor_factory=prescriptor_factory, evaluator=evaluator)
     evolution.run_evolution()
 
