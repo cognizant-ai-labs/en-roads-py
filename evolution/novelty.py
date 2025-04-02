@@ -64,7 +64,7 @@ class NoveltyEvaluator(EnROADSEvaluator):
         novelties = np.array(novelties).reshape(-1, 1)
         novelties = [-1 * novelty for novelty in novelties]
         return novelties
-    
+
     def evaluate_population(self, population: list[EnROADSPrescriptor], force=True, verbose=1):
         """
         Evaluates an entire population of prescriptors.

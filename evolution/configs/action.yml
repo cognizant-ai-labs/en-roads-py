@@ -1,12 +1,12 @@
 # Evolution params
 evolution_params:
-  n_generations: 100
-  population_size: 500
+  n_generations: 1000
+  population_size: 200
   remove_population_pct: 0.8
-  n_elites: 0
+  n_elites: 20
   mutation_rate: 0.1
   mutation_factor: 0.1
-  save_path: results/novelty
+  save_path: results/action
 
 device: cpu
 batch_size: 64
@@ -93,4 +93,5 @@ actions:
 
 outcomes:
   Temperature above 1.5C: true
-  Cost Change Squared: true
+  Actions taken: true
+  Action magnitude: true

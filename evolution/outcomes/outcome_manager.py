@@ -4,8 +4,8 @@ actions_dict.
 """
 import pandas as pd
 
-# from evolution.outcomes.actions import ActionsOutcome
-# from evolution.outcomes.action_magnitude import ActionMagnitudeOutcome
+from evolution.outcomes.actions import ActionsOutcome
+from evolution.outcomes.action_magnitude import ActionMagnitudeOutcome
 # from evolution.outcomes.average_cost import AverageCostOutcome
 # from evolution.outcomes.cost_change_year import CostChangeYearOutcome
 # from evolution.outcomes.cost_exp import CostExpOutcome
@@ -31,10 +31,10 @@ class OutcomeManager():
     def __init__(self, outcomes: list[str]):
         outcome_dict = {}
         for outcome in outcomes:
-            # if outcome == "Actions taken":
-            #     outcome_dict[outcome] = ActionsOutcome()
-            # elif outcome == "Action magnitude":
-            #     outcome_dict[outcome] = ActionMagnitudeOutcome()
+            if outcome == "Actions taken":
+                outcome_dict[outcome] = ActionsOutcome()
+            elif outcome == "Action magnitude":
+                outcome_dict[outcome] = ActionMagnitudeOutcome()
             # elif outcome == "Average Adjusted cost of energy per GJ":
             #     outcome_dict[outcome] = AverageCostOutcome()
             # elif outcome == "Average Percent Energy Change":
@@ -43,7 +43,7 @@ class OutcomeManager():
             #     outcome_dict[outcome] = NearCostOutcome()
             # elif outcome == "Year Zero Emissions Reached":
             #     outcome_dict[outcome] = ZeroEmissionsOutcome()
-            if outcome == "Government net revenue below zero":
+            elif outcome == "Government net revenue below zero":
                 outcome_dict[outcome] = RevenueOutcome()
             # if outcome == "Emissions Above Paris Agreement":
             #     outcome_dict[outcome] = ParisOutcome()
