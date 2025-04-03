@@ -7,13 +7,14 @@ from pathlib import Path
 import shutil
 import sys
 
-from presp.prescriptor import NNPrescriptorFactory
+# from presp.prescriptor import NNPrescriptorFactory
 from presp.evolution import Evolution
 import yaml
 
 from evolution.evaluation.evaluator import EnROADSEvaluator
 # from evolution.novelty import NoveltyEvaluator
-from evolution.candidates.candidate import EnROADSPrescriptor
+# from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.candidates.direct import DirectPrescriptor, DirectFactory
 
 
 def main():
@@ -44,11 +45,12 @@ def main():
     with open(save_path / "config.yml", "w", encoding="utf-8") as f:
         yaml.dump(config, f)
 
-    prescriptor_factory = NNPrescriptorFactory(EnROADSPrescriptor,
-                                               model_params=config["model_params"],
-                                               device=config["device"],
-                                               actions=config["actions"])
-
+    # prescriptor_factory = NNPrescriptorFactory(EnROADSPrescriptor,
+    #                                            model_params=config["model_params"],
+    #                                            device=config["device"],
+    #                                            actions=config["actions"])
+    prescriptor_factory = DirectFactory(config["actions"])
+    
     evaluator = EnROADSEvaluator(context=config["context"],
                                  actions=config["actions"],
                                  outcomes=config["outcomes"],

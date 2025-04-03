@@ -45,7 +45,7 @@ class EnROADSEvaluator(Evaluator):
             self.context_dataset = SSPDataset()
         # NOTE: This is a hack. We don't actually pass context into the direct prescriptor so we just grab the first
         # example to force the direct prescriptor to return a single actions dict
-        elif set(context) == {"direct"}:
+        elif len(context) == 0:
             self.context_dataset = Subset(SSPDataset(), range(0, 1))
         else:
             raise ValueError(f"Context {context} not recognized.")

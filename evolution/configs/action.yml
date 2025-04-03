@@ -1,32 +1,19 @@
 # Evolution params
 evolution_params:
-  n_generations: 1000
-  population_size: 200
+  n_generations: 300
+  population_size: 500
   remove_population_pct: 0.8
-  n_elites: 20
+  n_elites: 50
   mutation_rate: 0.1
   mutation_factor: 0.1
-  save_path: results/action
+  save_path: results/action-direct-cost
+  seed_dir: evolution/seeding/seeds/direct
 
 device: cpu
 batch_size: 64
 n_jobs: -1
 
-model_params:
-  - type: linear
-    in_features: 4
-    out_features: 64
-  - type: tanh
-  - type: linear
-    in_features: 64
-    out_features: 61
-  - type: sigmoid
-
-context:
- - _long_term_gdp_per_capita_rate
- - _near_term_gdp_per_capita_rate
- - _transition_time_to_reach_long_term_gdp_per_capita_rate
- - _global_population_in_2100
+context: []
 
 actions:
  - _source_subsidy_delivered_coal_tce
@@ -93,5 +80,6 @@ actions:
 
 outcomes:
   Temperature above 1.5C: true
+  Max cost of energy: true
   Actions taken: true
   Action magnitude: true
