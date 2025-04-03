@@ -7,7 +7,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
-from evolution.candidate import EnROADSPrescriptor, OutputParser
+from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.candidates.direct import DirectPrescriptor
+from evolution.candidates.output_parser import OutputParser
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
 
@@ -66,6 +68,8 @@ def actions_to_label(actions: list[str], actions_dict: dict[str, float], output_
 
 def create_default_labels(actions: list[str], output_parser: OutputParser) -> list[torch.Tensor]:
     """
+    Creates 3 seeds: one where all min actions are taken, one where all max actions are taken, and one where
+    all default values are taken.
     WARNING: Labels have to be added in the exact same order as the model.
     """
     input_specs = load_input_specs()
@@ -131,3 +135,35 @@ def create_seeds(model_params: list[dict],
         seeds.append(candidate)
 
     return seeds
+
+
+def create_direct_seeds(actions: list[str], seed_urls: Optional[list[str]] = None) -> list[DirectPrescriptor]:
+    """
+    Creates seed models for direct evolution by directly turning the label into a genome.
+    """
+    output_parser = OutputParser(actions)
+    labels = create_default_labels(actions, output_parser)
+    if seed_urls is not None:
+        labels.extend(create_custom_labels(actions, seed_urls, output_parser))
+
+    seeds = []
+    for i, label in enumerate(labels):
+        candidate = DirectPrescriptor(actions)
+        candidate.genome = label
+        candidate.cand_id = f"0_{i}"
+        seeds.append(candidate)
+
+    return seeds
+
+if __name__ == "__main__":
+    import yaml
+    with open("evolution/configs/action.yml", "r") as f:
+        config = yaml.safe_load(f)
+
+    actions = config["actions"]
+    seeds = create_direct_seeds(actions)
+    from evolution.candidates.direct import DirectFactory
+
+    factory = DirectFactory(actions)
+    for seed in seeds:
+        factory.save(seed, "evolution/seeding/seeds/direct/" + seed.cand_id + ".pt")

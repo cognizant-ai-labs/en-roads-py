@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from evolution.candidate import EnROADSPrescriptor
-from evolution.evaluator import EnROADSEvaluator
+from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.evaluation.evaluator import EnROADSEvaluator
 
 
 class NoveltyEvaluator(EnROADSEvaluator):

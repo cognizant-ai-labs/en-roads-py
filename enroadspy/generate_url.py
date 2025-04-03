@@ -8,8 +8,8 @@ import webbrowser
 from presp.prescriptor import NNPrescriptorFactory
 import torch
 
-from evolution.candidate import EnROADSPrescriptor
-from evolution.evaluator import EnROADSEvaluator
+from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.evaluation.evaluator import EnROADSEvaluator
 from enroadspy import load_input_specs
 
 

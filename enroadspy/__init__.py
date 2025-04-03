@@ -1,9 +1,13 @@
 """
 Universal way to gain access to the input specs for the enroads model.
+Also stores the bad switch name because it has the same on and off value, messing up some tests.
 """
 import json
 
 import pandas as pd
+
+
+BAD_SWITCH = "_qualifying_path_renewables"
 
 
 def load_input_specs() -> pd.DataFrame:

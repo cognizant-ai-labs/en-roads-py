@@ -6,5 +6,6 @@ __pycache__
 temp/
 .vscode
 results/
+*.out
 
 !app/results

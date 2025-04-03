@@ -51,9 +51,9 @@ class TestPymoo(unittest.TestCase):
 
         self.assertEqual(res.F.shape[1], len(self.config["outcomes"]))
 
-        in_size = res.problem.model_params["in_size"]
-        hidden_size = res.problem.model_params["hidden_size"]
-        out_size = res.problem.model_params["out_size"]
+        in_size = res.problem.model_params[0]["in_features"]
+        hidden_size = res.problem.model_params[0]["out_features"]
+        out_size = res.problem.model_params[2]["out_features"]
         num_params = (in_size + 1) * hidden_size + (hidden_size + 1) * out_size
         self.assertEqual(res.X.shape[1], num_params)
 

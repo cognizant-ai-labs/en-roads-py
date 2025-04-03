@@ -9,8 +9,8 @@ from presp.prescriptor import NNPrescriptorFactory
 import torch
 
 from enroadspy import load_input_specs
-from evolution.candidate import EnROADSPrescriptor
-from evolution.evaluator import EnROADSEvaluator
+from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.evaluation.evaluator import EnROADSEvaluator
 
 
 class TestEvaluator(unittest.TestCase):
@@ -38,7 +38,8 @@ class TestEvaluator(unittest.TestCase):
             "model_params": [
                 {"type": "linear", "in_features": 4, "out_features": 64},
                 {"type": "tanh"},
-                {"type": "linear", "in_features": 64, "out_features": 115}
+                {"type": "linear", "in_features": 64, "out_features": 115},
+                {"type": "sigmoid"}
             ],
             "context": [
                 "_global_population_in_2100",
@@ -164,9 +165,8 @@ class TestEvaluator(unittest.TestCase):
                 "_mineralization_start_year"
             ],
             "outcomes": {
-                "Net cumulative emissions": True,
-                "Total cost of energy": True,
-                "Cost of energy next 10 years": True
+                "Temperature above 1.5C": True,
+                "Max cost of energy": True
             },
         }
 
@@ -244,12 +244,10 @@ class TestEvaluator(unittest.TestCase):
         Makes sure that the same candidate evaluated twice has the same metrics.
         """
         candidate = self.factory.random_init()
-        self.evaluator.evaluate_candidate(candidate)
-        original = dict(candidate.metrics.items())
-        self.evaluator.evaluate_candidate(candidate)
+        metrics1 = self.evaluator.evaluate_candidate(candidate)
+        metrics2 = self.evaluator.evaluate_candidate(candidate)
 
-        for outcome in self.config["outcomes"]:
-            self.assertEqual(original[outcome], candidate.metrics[outcome])
+        self.assertTrue(np.equal(metrics1, metrics2).all())
 
     def test_checkbox_actions(self):
         """

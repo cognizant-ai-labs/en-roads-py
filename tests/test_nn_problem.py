@@ -6,7 +6,7 @@ import unittest
 from presp.prescriptor import NNPrescriptorFactory
 import torch
 
-from evolution.candidate import EnROADSPrescriptor
+from evolution.candidates.candidate import EnROADSPrescriptor
 from moo.problems.nn_problem import candidate_to_params
 
 

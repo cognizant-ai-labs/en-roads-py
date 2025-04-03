@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 import torch
 
 from enroadspy.enroads_runner import EnroadsRunner
-from evolution.candidate import EnROADSPrescriptor
+from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.outcomes.outcome_manager import OutcomeManager
 
 

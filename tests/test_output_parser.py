@@ -6,7 +6,7 @@ import unittest
 import torch
 
 from enroadspy import load_input_specs
-from evolution.candidate import OutputParser
+from evolution.candidates.output_parser import OutputParser
 
 
 class TestOutputParser(unittest.TestCase):

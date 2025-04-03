@@ -11,10 +11,10 @@ import torch
 from torch.utils.data import DataLoader
 
 from enroadspy.enroads_runner import EnroadsRunner
-from evolution.candidate import EnROADSPrescriptor
+from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.data import ContextDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
-from evolution.train_seeds import create_seeds
+from evolution.seeding.train_seeds import create_seeds
 
 
 class NNProblem(ElementwiseProblem):

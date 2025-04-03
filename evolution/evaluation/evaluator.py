@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 from presp.evaluator import Evaluator
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
-from evolution.candidate import EnROADSPrescriptor
+from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.data import SSPDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
 from enroadspy import load_input_specs
@@ -43,6 +43,10 @@ class EnROADSEvaluator(Evaluator):
                             "_near_term_gdp_per_capita_rate",
                             "_transition_time_to_reach_long_term_gdp_per_capita_rate"}:
             self.context_dataset = SSPDataset()
+        # NOTE: This is a hack. We don't actually pass context into the direct prescriptor so we just grab the first
+        # example to force the direct prescriptor to return a single actions dict
+        elif set(context) == {"direct"}:
+            self.context_dataset = Subset(SSPDataset(), range(0, 1))
         else:
             raise ValueError(f"Context {context} not recognized.")
 

@@ -7,7 +7,7 @@ from presp.prescriptor import NNPrescriptorFactory
 import torch
 import yaml
 
-from evolution.candidate import EnROADSPrescriptor
+from evolution.candidates.candidate import EnROADSPrescriptor
 
 
 class Experimenter:

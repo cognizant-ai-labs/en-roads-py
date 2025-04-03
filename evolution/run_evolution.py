@@ -11,9 +11,9 @@ from presp.prescriptor import NNPrescriptorFactory
 from presp.evolution import Evolution
 import yaml
 
-from evolution.evaluator import EnROADSEvaluator
+from evolution.evaluation.evaluator import EnROADSEvaluator
 # from evolution.novelty import NoveltyEvaluator
-from evolution.candidate import EnROADSPrescriptor
+from evolution.candidates.candidate import EnROADSPrescriptor
 
 
 def main():
