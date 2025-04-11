@@ -1,14 +1,18 @@
 """
 Trains seeds for the first generation of evolution using desired behavior.
 """
+from argparse import ArgumentParser
+from pathlib import Path
+import shutil
 from typing import Optional
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+import yaml
 
 from evolution.candidates.candidate import EnROADSPrescriptor
-from evolution.candidates.direct import DirectPrescriptor
+from evolution.candidates.direct import DirectPrescriptor, DirectFactory
 from evolution.candidates.output_parser import OutputParser
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
@@ -150,20 +154,47 @@ def create_direct_seeds(actions: list[str], seed_urls: Optional[list[str]] = Non
     for i, label in enumerate(labels):
         candidate = DirectPrescriptor(actions)
         candidate.genome = label
-        candidate.cand_id = f"0_{i}"
+        candidate.cand_id = f"1_{i}"
         seeds.append(candidate)
 
     return seeds
 
-if __name__ == "__main__":
-    import yaml
-    with open("evolution/configs/action.yml", "r") as f:
+
+def main_direct():
+    """
+    Main logic that takes in user-specified arguments and trains seeds based on them for direct evolution.
+    TODO: This needs to be written for neural network evolution.
+    """
+
+    parser = ArgumentParser()
+    parser.add_argument("--config", type=str, help="Path to the config file to use to train seeds")
+    args = parser.parse_args()
+
+    with open(args.config, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
+    # Train seeds
     actions = config["actions"]
-    seeds = create_direct_seeds(actions)
-    from evolution.candidates.direct import DirectFactory
+    seed_urls = config.get("seed_urls", None)
+    seeds = create_direct_seeds(actions, seed_urls)
 
+    # Handle if the seed directory already exists
+    seed_dir = Path(config["evolution_params"]["seed_dir"])
+    if seed_dir.exists():
+        delete = input("Seed directory already exists. Would you like to overwrite it? (Y/n):")
+        if delete.lower() != "y":
+            print("Exiting...")
+            return
+        else:
+            print(f"Overwiting seeds in {seed_dir}")
+            shutil.rmtree(seed_dir)
+    seed_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save seeds to disk with factory
     factory = DirectFactory(actions)
     for seed in seeds:
-        factory.save(seed, "evolution/seeding/seeds/direct/" + seed.cand_id + ".pt")
+        factory.save(seed, seed_dir / (seed.cand_id + ".pt"))
+
+
+if __name__ == "__main__":
+    main_direct()
