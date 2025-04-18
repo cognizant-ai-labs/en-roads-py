@@ -7,5 +7,7 @@ temp/
 .vscode
 results/
 *.out
+input_specs.jsonl
+app/animations
 
 !app/results

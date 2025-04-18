@@ -23,9 +23,10 @@ class EnROADSEvaluator(Evaluator):
                  context: list[str],
                  actions: list[str],
                  outcomes: dict[str, bool],
-                 n_jobs=1,
-                 batch_size=64,
-                 device="cpu"):
+                 n_jobs: int = 1,
+                 batch_size: int = 64,
+                 device: str = "cpu",
+                 decomplexify: bool = False):
         outcome_names = list(outcomes.keys())
         super().__init__(outcomes=outcome_names, n_jobs=n_jobs)
         self.actions = actions
@@ -52,6 +53,19 @@ class EnROADSEvaluator(Evaluator):
 
         self.batch_size = batch_size
         self.device = device
+
+        # Get the switches that should always be on when decomplexifying
+        self.decomplexify = decomplexify
+        if self.decomplexify:
+            input_specs = load_input_specs()
+            condition = (
+                (input_specs["kind"] == "switch") &
+                (input_specs["varId"] != "_electric_standard_active") &
+                (input_specs["slidersActiveWhenOn"].apply(lambda x: isinstance(x, list) and len(x) > 0))
+            )
+            always_on_switches = input_specs.loc[condition, "varId"]
+            always_on_values = input_specs.loc[condition, "onValue"]
+            self.decomplexify_dict = dict(zip(always_on_switches, always_on_values))
 
         self.enroads_runner = EnroadsRunner()
 
@@ -99,9 +113,15 @@ class EnROADSEvaluator(Evaluator):
     def run_enroads(self, context_actions_dicts: list[dict]) -> list[pd.DataFrame]:
         """
         Runs enroads on context_actions dicts and returns the time series outcomes dfs.
+        If decomplexify is active, we activate the switches to decomplexify the model.
         """
         outcomes_dfs = []
         for context_actions_dict in context_actions_dicts:
+            # If decomplexify is active, set the decomplexify switches to on
+            if self.decomplexify:
+                # We don't want to overwrite the context actions dicts so we create a new dict
+                context_actions_dict = dict(context_actions_dict)
+                context_actions_dict.update(self.decomplexify_dict)
             outcomes_df = self.enroads_runner.evaluate_actions(context_actions_dict)
             self.validate_outcomes(outcomes_df)
             outcomes_dfs.append(outcomes_df)

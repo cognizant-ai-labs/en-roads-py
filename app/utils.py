@@ -79,7 +79,7 @@ class EvolutionHandler():
             context_list = [context_dict[context] for context in self.context_df.columns]
             context_scaled = self.scaler.transform([context_list])
             context_tensor = torch.tensor(context_scaled, dtype=torch.float32, device=self.device)
-            actions_dict = candidate.prescribe(context_tensor)[0]
+            actions_dict = candidate.forward(context_tensor)[0]
             actions_dict.update(context_dict)
             context_actions_dicts.append(actions_dict)
 

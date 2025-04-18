@@ -14,7 +14,7 @@ import yaml
 from evolution.evaluation.evaluator import EnROADSEvaluator
 # from evolution.novelty import NoveltyEvaluator
 # from evolution.candidates.candidate import EnROADSPrescriptor
-from evolution.candidates.direct import DirectPrescriptor, DirectFactory
+from evolution.candidates.direct import DirectFactory
 
 
 def main():
@@ -50,13 +50,14 @@ def main():
     #                                            device=config["device"],
     #                                            actions=config["actions"])
     prescriptor_factory = DirectFactory(config["actions"])
-    
+
     evaluator = EnROADSEvaluator(context=config["context"],
                                  actions=config["actions"],
                                  outcomes=config["outcomes"],
                                  n_jobs=config["n_jobs"],
                                  batch_size=config["batch_size"],
-                                 device=config["device"])
+                                 device=config["device"],
+                                 decomplexify=config.get("decomplexify", False))
     # evaluator = NoveltyEvaluator(
     #     context=config["context"],
     #     actions=config["actions"]

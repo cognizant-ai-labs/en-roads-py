@@ -21,7 +21,7 @@ class DirectPrescriptor(Prescriptor):
         self.output_parser = OutputParser(self.actions)
         self.genome = torch.zeros((1, len(actions)), dtype=torch.float32)
 
-    def forward(self, context) -> list[dict]:
+    def forward(self, _) -> list[dict]:
         """
         Doesn't require a context tensor input, just converts the genome to a dict of actions by rescaling them.
         """
@@ -37,14 +37,14 @@ class DirectFactory(PrescriptorFactory):
     Prescriptor factory handling the construction of direct evolution candidates.
     """
     def __init__(self, actions: list[str]):
-        self.actions = list(actions)
+        self.presc_args = {"actions": list(actions)}
 
     def random_init(self) -> DirectPrescriptor:
         """
         Creates a randomly initialized vector of floats between 0 and 1 uniformly.
         """
-        genome = torch.rand((1, len(self.actions)), dtype=torch.float32)
-        candidate = DirectPrescriptor(self.actions)
+        genome = torch.rand((1, len(self.presc_args["actions"])), dtype=torch.float32)
+        candidate = DirectPrescriptor(**self.presc_args)
         candidate.genome = genome
         return candidate
 
@@ -55,7 +55,7 @@ class DirectFactory(PrescriptorFactory):
         parent1 = parents[0].genome
         parent2 = parents[1].genome
         child_genome = torch.where(torch.rand_like(parent1) < 0.5, parent1, parent2)
-        child = DirectPrescriptor(self.actions)
+        child = DirectPrescriptor(**self.presc_args)
         child.genome = child_genome
         return [child]
 
@@ -86,6 +86,6 @@ class DirectFactory(PrescriptorFactory):
         with open(path, "rb") as f:
             # Load the genome from a tensor
             genome = torch.load(f)
-        candidate = DirectPrescriptor(self.actions)
+        candidate = DirectPrescriptor(**self.presc_args)
         candidate.genome = genome
         return candidate

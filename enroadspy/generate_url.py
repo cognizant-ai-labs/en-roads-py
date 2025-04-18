@@ -55,12 +55,25 @@ def open_browser(results_dir, cand_id, input_idx):
     webbrowser.open(url)
 
 
-def actions_to_url(actions_dict: dict[str, float]) -> str:
+def actions_to_url(actions_dict: dict[str, float], decomplexify: bool = False) -> str:
     """
     Converts an actions dict to a URL.
     """
     # Parse actions into format for URL
     input_specs = load_input_specs()
+
+    if decomplexify:
+        condition = (
+            (input_specs["kind"] == "switch") &
+            (input_specs["varId"] != "_electric_standard_active") &
+            (input_specs["slidersActiveWhenOn"].apply(lambda x: isinstance(x, list) and len(x) > 0))
+        )
+        always_on_switches = input_specs.loc[condition, "varId"]
+        always_on_values = input_specs.loc[condition, "onValue"]
+        decomplexify_dict = dict(zip(always_on_switches, always_on_values))
+        actions_dict = dict(actions_dict)
+        actions_dict.update(decomplexify_dict)
+
     id_vals = {}
     for action, val in actions_dict.items():
         row = input_specs[input_specs["varId"] == action].iloc[0]

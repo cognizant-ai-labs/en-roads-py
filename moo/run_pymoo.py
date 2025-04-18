@@ -28,7 +28,7 @@ def create_default_problem(actions: list[str], outcomes: dict[str, bool]) -> Enr
     return EnroadsProblem(actions, outcomes)
 
 
-def create_nn_problem(actions: list[str], outcomes: dict[str, bool]) -> NNProblem:
+def create_nn_problem(actions: list[str], outcomes: dict[str, bool], device: str = "cpu") -> NNProblem:
     """
     Creates problem that uses neural network with context.
     TODO: Make the context file selectable.
@@ -40,8 +40,8 @@ def create_nn_problem(actions: list[str], outcomes: dict[str, bool]) -> NNProble
         {"type": "tanh"},
         {"type": "linear", "in_features": 16, "out_features": len(actions)},
         {"type": "sigmoid"}
-    ]    
-    problem = NNProblem(context_df, model_params, actions, outcomes)
+    ]
+    problem = NNProblem(context_df, model_params, actions, outcomes, device=device)
     return problem
 
 
@@ -54,7 +54,7 @@ def optimize(config: dict, nn: bool):
         X0 = seed_default(problem, config["actions"], config["pop_size"])
         alg_params = {"sampling": X0}
     else:
-        problem = create_nn_problem(config["actions"], config["outcomes"])
+        problem = create_nn_problem(config["actions"], config["outcomes"], config.get("device", "cpu"))
         X0 = seed_nn(problem, config["pop_size"], config.get("seed_urls", None), epochs=config.get("seed_epochs", 1000))
         alg_params = {"sampling": X0}
 

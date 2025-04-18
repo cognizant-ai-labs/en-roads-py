@@ -33,8 +33,9 @@ class Experimenter:
                                           self.config["outcomes"],
                                           n_jobs=1,
                                           batch_size=self.config["batch_size"],
-                                          device=self.config["device"])
-        
+                                          device=self.config["device"],
+                                          decomplexify=self.config.get("decomplexify", False))
+
         self.results_cache = {}
 
     @abstractmethod
@@ -73,6 +74,10 @@ class Experimenter:
         # Cache results for future use
         self.results_cache[cand_id] = (context_actions_dicts, outcomes_dfs, metrics)
 
+        # Return copies to avoid in-place modifications
+        context_actions_dicts = [dict(context_actions_dict) for context_actions_dict in context_actions_dicts]
+        outcomes_dfs = [outcomes_df.copy() for outcomes_df in outcomes_dfs]
+        metrics = metrics.copy()
         return context_actions_dicts, outcomes_dfs, metrics
 
 

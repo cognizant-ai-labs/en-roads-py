@@ -26,8 +26,9 @@ class NNProblem(ElementwiseProblem):
                  model_params: list[dict],
                  actions: list[str],
                  outcomes: dict[str, bool],
-                 batch_size=128):
-        
+                 batch_size: int = 128,
+                 device: str = "cpu"):
+
         num_params = 0
         for layer in model_params:
             if layer["type"] == "linear":
@@ -47,7 +48,7 @@ class NNProblem(ElementwiseProblem):
         self.context_df = context_df
         self.context_ds = ContextDataset(context_df)
         self.batch_size = batch_size
-        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
 
     def params_to_context_actions_dicts(self, x: np.ndarray) -> list[dict[str, float]]:
         """
@@ -107,7 +108,7 @@ def candidate_to_params(candidate: EnROADSPrescriptor) -> np.ndarray:
     Takes a candidate and flattens its parameters into a 1d numpy array
     """
     state_dict = candidate.model.state_dict()
-    
+
     linear_idxs = []
     for i, layer in enumerate(candidate.model_params):
         if layer["type"] == "linear":

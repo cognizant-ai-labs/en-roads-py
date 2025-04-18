@@ -11,12 +11,11 @@ class OutputParser():
     """
     Parses the output of our neural network. All the values are between 0 and 1 and it's our job to scale them to
     match the input specs.
-    The decomplexify parameter can be set to true, which forces switches that enable "detailed" mode to be always on.
     NOTE: It's ok to have an end date before a start date, the simulator just handles it interally.
     TODO: Make it not ok to have an end date before a start date, these count as actions taken for the actions taken
     count even though they shouldn't.
     """
-    def __init__(self, actions: list[str], decomplexify: bool = False, device: str = "cpu"):
+    def __init__(self, actions: list[str], device: str = "cpu"):
         input_specs = load_input_specs()
         self.actions = actions
 
@@ -30,21 +29,6 @@ class OutputParser():
         filtered = input_specs[input_specs["varId"].isin(actions)].copy()
         filtered["varId"] = pd.Categorical(filtered["varId"], categories=actions, ordered=True)
         filtered = filtered.sort_values("varId")
-
-        # If decomplexify is on, we always turn on switches that activate "detailed" mode.
-        # NOTE: We manually have to remove the actions for the "non-detailed" sliders that get disabled to avoid
-        # counting them in the action count.
-        if decomplexify:
-            # Identify the switches that enable detailed mode.
-            # NOTE: electric_standard_active is a weird case that we have to remove from here.
-            condition = (
-                (filtered["kind"] == "switch") &
-                (filtered["varId"] != "_electric_standard_active") &
-                (filtered["slidersActiveWhenOn"].apply(lambda x: isinstance(x, list) and len(x) > 0))
-            )
-
-            # Make it so these switches can never be turned off.
-            filtered.loc[condition, "offValue"] = filtered.loc[condition, "onValue"]
 
         # Non-sliders are left scaled between 0 and 1.
         bias = filtered["minValue"].fillna(0).values

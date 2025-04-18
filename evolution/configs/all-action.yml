@@ -1,17 +1,19 @@
 # Evolution params
 evolution_params:
-  n_generations: 100
+  n_generations: 400
   population_size: 200
-  remove_population_pct: 0.8
-  n_elites: 20
+  remove_population_pct: 0
+  n_elites: 0
   mutation_rate: 0.1
   mutation_factor: 0.1
-  save_path: results/all-action-direct
-  seed_dir: evolution/seeding/seeds/all-action-direct
+  save_path: results/all-action-direct-decomplexify
+  seed_dir: evolution/seeding/seeds/all-action-direct-decomplexify
 
 device: cpu
 batch_size: 64
 n_jobs: -1
+
+decomplexify: true
 
 context: []
 
@@ -44,8 +46,6 @@ actions:
   - _source_subsidy_renewables_kwh
   - _source_subsidy_start_time_renewables
   - _source_subsidy_stop_time_renewables
-  - _use_subsidies_by_feedstock
-  - _source_subsidy_delivered_bio_boe
   - _source_subsidy_start_time_delivered_bio
   - _source_subsidy_stop_time_delivered_bio
   - _no_new_bio
@@ -77,8 +77,6 @@ actions:
   - _electric_standard_target_time
   - _emissions_performance_standard
   - _performance_standard_time
-  - _electric_carrier_subsidy_with_required_comp_assets
-  - _switch_to_use_transport_electrification_detailed_settings
   - _electric_carrier_subsidy_transport
   - _percent_of_required_elec_complementary_assets_to_build
   - _electric_carrier_subsidy_end_year_transport
@@ -93,13 +91,10 @@ actions:
   - _cap_fuel_powered_stationary
   - _time_to_achieve_electrification_target_stationary
   - _year_starting_electrification_policy_stationary
-  - _target_change_in_other_ghgs_for_ag
-  - _use_detailed_food_and_ag_controls
   - _target_change_in_other_ghgs_for_ls
   - _target_change_in_other_ghgs_for_crops
   - _start_year_for_ag_practice_adoption
   - _time_to_achieve_ag_practice_targets
-  - _land_cdr_percent_of_reference
   - _choose_nature_cdr_by_type
   - _percent_available_land_for_afforestation
   - _afforestation_cdr_start_year
@@ -109,24 +104,18 @@ actions:
   - _agricultural_soil_carbon_start_year
   - _biochar_percent_of_max_cdr_achieved
   - _biochar_start_year
-  - _target_change_other_ghgs_leakage_and_waste
-  - _use_detailed_other_ghg_controls
   - _target_change_other_ghgs_energy
   - _target_change_other_ghgs_waste
   - _target_change_other_gas_industry
   - _target_change_f_gas
   - _other_ghg_emissions_change_start_year
   - _time_to_achieve_other_ghg_changes
-  - _deforestation_slider_setting
-  - _switch_use_land_detailed_settings
   - _target_reduction_in_deforestation
   - _start_year_of_deforestation_reduction
   - _years_to_achieve_deforestation_policy
   - _target_reduction_in_mature_forest_degradation
   - _start_year_of_mature_forest_degradation_reduction
   - _years_to_achieve_mature_forest_degradation_policy
-  - _tech_cdr_percent_of_reference
-  - _choose_cdr_by_type
   - _dac_percent_of_max_cdr_achieved
   - _direct_air_capture_start_year
   - _mineralization_percent_of_max_cdr_achieved
