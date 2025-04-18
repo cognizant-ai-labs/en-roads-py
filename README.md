@@ -9,7 +9,9 @@ En-ROADS is a climate change simulator developed by [Climate Interactive](https:
 NOTE: the "Qualifying path renewables" variable has the same on and off value which may cause some issues.
 
 ### Installation
-This project was created with Python 3.10.14. Run `pip install -r requirements.txt` to install the required packages. Then run `python -m enroadspy.download_sdk` to download the SDK. In order to download the SDK environment variables must be set.
+This project was created with Python 3.10.14. Run `pip install -r requirements.txt` to install the required packages.
+
+The En-ROADS SDK must be loaded for this project to run. This can be done with `python -m enroadspy.load_sdk`, after the proper permissions are granted and environment variables are set.
 
 ## Evolution
 

@@ -4,13 +4,15 @@ Timeline component.
 from collections import defaultdict
 
 import numpy as np
-from dash import html
+from dash import html, Input, Output, State
+import dash_bootstrap_components as dbc
 import yaml
 
+from app.components.component import Component
 from enroadspy import load_input_specs
 
 
-class TimelineComponent():
+class TimelineComponent(Component):
     """
     Component handling generation of a timeline of actions taken.
     """
@@ -77,7 +79,7 @@ class TimelineComponent():
 
         return events
 
-    def create_timeline_div(self, context_actions_dict: dict[str, float]) -> html.Div:
+    def create_timeline(self, context_actions_dict: dict[str, float]) -> html.Div:
         """
         Creates a nice timeline of actions taken as well as the initial actions taken.
         """
@@ -110,3 +112,56 @@ class TimelineComponent():
                 children.append(html.P(event))
 
         return html.Div(children)
+
+    def create_div(self) -> html.Div:
+        """
+        A button that produces a modal of the timeline.
+        """
+        div = html.Div(
+            children=[
+                dbc.Button("Show Actions", id="show-actions-button"),
+                dbc.Modal(
+                    id="actions-modal",
+                    scrollable=True,
+                    is_open=False,
+                    children=[
+                        dbc.ModalHeader(dbc.ModalTitle("Actions")),
+                        dbc.ModalBody("These are the actions taken", id="actions-body")
+                    ]
+                )
+            ]
+        )
+        return div
+
+    def register_callbacks(self, app):
+        """
+        Registers callbacks that open and close the modal and update the text when a candidate is selected.
+        """
+        @app.callback(
+            Output("actions-modal", "is_open"),
+            Input("show-actions-button", "n_clicks"),
+            State("actions-modal", "is_open")
+        )
+        def toggle_actions_modal(n_clicks: int, is_open: bool) -> bool:
+            """
+            Toggles the actions modal on and off.
+            """
+            if n_clicks:
+                return True
+            return is_open
+
+        @app.callback(
+            Output("actions-body", "children"),
+            Output("show-actions-button", "disabled"),
+            State("context-actions-store", "data"),
+            Input("cand-link-select", "value")
+        )
+        def update_actions_body(context_actions_dicts: list[dict[str, float]], cand_idx: int) -> tuple[str, bool]:
+            """
+            Updates the body of the modal when a candidate is selected.
+            """
+            if cand_idx is not None:
+                context_actions_dict = context_actions_dicts[cand_idx]
+                # return self.timeline_component.create_timeline_div(context_actions_dict)
+                return self.create_timeline(context_actions_dict), False
+            return "Timeline goes here", False

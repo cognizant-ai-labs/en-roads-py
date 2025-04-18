@@ -20,10 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . .
 
 # Download En-ROADS SDK and extract it
-ENV ENROADS_URL=$ENROADS_URL
-ENV ENROADS_ID=$ENROADS_ID
-ENV ENROADS_PASSWORD=$ENROADS_PASSWORD
-RUN python -m enroadspy.download_sdk
+RUN python -m enroadspy.load_sdk
 
 # Expose Flask (Dash) port
 EXPOSE 4057
