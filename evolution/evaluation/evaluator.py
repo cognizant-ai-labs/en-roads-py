@@ -31,7 +31,7 @@ class EnROADSEvaluator(Evaluator):
         super().__init__(outcomes=outcome_names, n_jobs=n_jobs)
         self.actions = actions
         self.outcome_manager = OutcomeManager(outcome_names)
-        self.minimize_dict = {o: m for o, m in outcomes.items()}
+        self.minimize_dict = dict(outcomes)
 
         # Precise float is required to load the enroads inputs properly
         self.input_specs = load_input_specs()
@@ -92,6 +92,14 @@ class EnROADSEvaluator(Evaluator):
             context_dicts.append(context_dict)
         return context_dicts
 
+    def decomplexify_actions_dict(self, actions_dict: dict[str, float]) -> dict[str, float]:
+        """
+        Copies an actions dict and then updates it with the decomplexify dict.
+        """
+        actions_dict = dict(actions_dict)
+        actions_dict.update(self.decomplexify_dict)
+        return actions_dict
+
     def prescribe_actions(self, candidate: EnROADSPrescriptor) -> list[dict]:
         """
         Takes a candidate, batches contexts, and prescribes actions for each one. Then attaches the context to the
@@ -119,9 +127,7 @@ class EnROADSEvaluator(Evaluator):
         for context_actions_dict in context_actions_dicts:
             # If decomplexify is active, set the decomplexify switches to on
             if self.decomplexify:
-                # We don't want to overwrite the context actions dicts so we create a new dict
-                context_actions_dict = dict(context_actions_dict)
-                context_actions_dict.update(self.decomplexify_dict)
+                context_actions_dict = self.decomplexify_actions_dict(context_actions_dict)
             outcomes_df = self.enroads_runner.evaluate_actions(context_actions_dict)
             self.validate_outcomes(outcomes_df)
             outcomes_dfs.append(outcomes_df)
