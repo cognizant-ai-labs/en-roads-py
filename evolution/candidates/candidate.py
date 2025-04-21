@@ -39,7 +39,6 @@ class EnROADSPrescriptor(NNPrescriptor):
         state_dict = OrderedDict()
         pcount = 0
 
-        pcount = 0
         for i, layer in enumerate(model_params):
             if layer["type"] == "linear":
                 in_size = layer["in_features"]
