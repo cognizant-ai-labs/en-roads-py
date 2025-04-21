@@ -1,3 +1,6 @@
+"""
+Evaluation used for novelty search. We use the faiss library for fast distance computation.
+"""
 import faiss
 import numpy as np
 import pandas as pd
@@ -8,6 +11,9 @@ from evolution.evaluation.evaluator import EnROADSEvaluator
 
 
 class NoveltyEvaluator(EnROADSEvaluator):
+    """
+    Evaluates based on novel behavior of the temperature change graph.
+    """
     def __init__(self, context: list[str], actions: list[str]):
         super().__init__(context=context, actions=actions, outcomes={"novelty": False})
 
