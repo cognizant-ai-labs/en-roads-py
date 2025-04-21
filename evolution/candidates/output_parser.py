@@ -11,7 +11,7 @@ class OutputParser():
     """
     Parses the output of our neural network. All the values are between 0 and 1 and it's our job to scale them to
     match the input specs.
-    NOTE: It's ok to have an end date before a start date, the simulator just handles it interally.
+    NOTE: It's ok to have an end date before a start date, the simulator just handles it internally.
     TODO: Make it not ok to have an end date before a start date, these count as actions taken for the actions taken
     count even though they shouldn't.
     """
