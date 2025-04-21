@@ -7,7 +7,7 @@ matplotlib==3.9.0
 numpy==1.26.4
 pandas==2.2.2
 plotly==5.23.0
-git+https://github.com/Project-Resilience/presp.git@318cfcdbb58a9f0cce1aa0653d1c4d7908756afe#egg=presp
+presp @ git+https://github.com/Project-Resilience/presp
 pymoo==0.6.1.3
 pyyaml==6.0.2
 scikit-learn==1.5.1
