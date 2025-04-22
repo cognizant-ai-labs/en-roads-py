@@ -8,6 +8,24 @@ import pandas as pd
 
 
 BAD_SWITCH = "_qualifying_path_renewables"
+SIMPLE_ACTIONS = [
+    '_source_subsidy_delivered_coal_tce',
+    '_source_subsidy_delivered_oil_boe',
+    '_source_subsidy_delivered_gas_mcf',
+    '_source_subsidy_renewables_kwh',
+    '_source_subsidy_delivered_bio_boe',
+    '_source_subsidy_nuclear_kwh',
+    '_carbon_tax_initial_target',
+    '_annual_improvement_to_energy_efficiency_of_new_capital_stationary',
+    '_annual_improvement_to_energy_efficiency_of_new_capital_transport',
+    '_electric_carrier_subsidy_with_required_comp_assets',
+    '_electric_carrier_subsidy_stationary',
+    '_target_change_in_other_ghgs_for_ag',
+    '_land_cdr_percent_of_reference',
+    '_target_change_other_ghgs_leakage_and_waste',
+    '_deforestation_slider_setting',
+    '_tech_cdr_percent_of_reference'
+]
 
 
 def load_input_specs() -> pd.DataFrame:
