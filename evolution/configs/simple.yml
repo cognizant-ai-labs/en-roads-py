@@ -1,0 +1,43 @@
+# This experiment uses all the simple sliders since we are able to check if they have realistic values.
+
+# Evolution params
+evolution_params:
+  n_generations: 400
+  population_size: 200
+  remove_population_pct: 0
+  n_elites: 0
+  mutation_rate: 0.1
+  mutation_factor: 0.1
+  save_path: results/action-simple-nocarbon
+  seed_dir: evolution/seeding/seeds/action-simple-nocarbon
+
+device: cpu
+batch_size: 64
+n_jobs: -1
+
+decomplexify: false
+
+context: []
+
+actions:
+  - _source_subsidy_delivered_coal_tce
+  - _source_subsidy_delivered_oil_boe
+  - _source_subsidy_delivered_gas_mcf
+  - _source_subsidy_renewables_kwh
+  - _source_subsidy_delivered_bio_boe
+  - _source_subsidy_nuclear_kwh
+  # - _carbon_tax_initial_target
+  - _annual_improvement_to_energy_efficiency_of_new_capital_stationary
+  - _annual_improvement_to_energy_efficiency_of_new_capital_transport
+  - _electric_carrier_subsidy_with_required_comp_assets
+  - _electric_carrier_subsidy_stationary
+  - _target_change_in_other_ghgs_for_ag
+  - _land_cdr_percent_of_reference
+  - _target_change_other_ghgs_leakage_and_waste
+  - _deforestation_slider_setting
+  - _tech_cdr_percent_of_reference
+
+outcomes:
+  Temperature change from 1850: true
+  Actions taken: true
+  Simple action magnitude: true

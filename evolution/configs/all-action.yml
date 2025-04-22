@@ -1,3 +1,5 @@
+# Adds all actions to the actions experiment.
+
 # Evolution params
 evolution_params:
   n_generations: 400
@@ -6,7 +8,7 @@ evolution_params:
   n_elites: 0
   mutation_rate: 0.1
   mutation_factor: 0.1
-  save_path: results/all-action-direct-decomplexify
+  save_path: results/all-action-direct-decomplexify-mean
   seed_dir: evolution/seeding/seeds/all-action-direct-decomplexify
 
 device: cpu
@@ -124,4 +126,4 @@ actions:
 outcomes:
   Temperature change from 1850: true
   Actions taken: true
-  Action magnitude: true
+  Average action magnitude: true

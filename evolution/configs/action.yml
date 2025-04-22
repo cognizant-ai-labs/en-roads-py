@@ -1,3 +1,5 @@
+# Experiment evolving actions vs. action magnitude vs. temperature
+
 # Evolution params
 evolution_params:
   n_generations: 300
