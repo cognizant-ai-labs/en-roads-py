@@ -1,9 +1,13 @@
 """
 Universal way to gain access to the input specs for the enroads model.
+Also stores the bad switch name because it has the same on and off value, messing up some tests.
 """
 import json
 
 import pandas as pd
+
+
+BAD_SWITCH = "_qualifying_path_renewables"
 
 
 def load_input_specs() -> pd.DataFrame:
@@ -32,3 +36,17 @@ def load_input_specs() -> pd.DataFrame:
     input_specs["id"] = input_specs["id"].astype(int)
 
     return input_specs
+
+
+def name_to_id(name: str, input_specs: pd.DataFrame) -> str:
+    """
+    Converts the En-ROADS nice variable name to its unique ID (also a string).
+    """
+    return input_specs.loc[input_specs["varName"] == name, "varId"].values[0]
+
+
+def id_to_name(var_id: str, input_specs: pd.DataFrame) -> str:
+    """
+    Converts the En-ROADS unique ID to its nice variable name.
+    """
+    return input_specs.loc[input_specs["varId"] == var_id, "varName"].values[0]

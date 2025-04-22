@@ -112,7 +112,7 @@ class EnroadsRunner():
     def evaluate_actions(self, actions_dict: dict[str, str]):
         """
         Evaluates actions a candidate produced.
-        Any actions not provided are replaced with the default value.
+        Any actions not provided are implicitly set to the default value.
         Returns a DataFrame in the same format as the En-ROADS output with a column for each outcome and a row for each
         year.
         """

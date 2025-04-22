@@ -17,4 +17,7 @@ class EnroadsOutcome(Outcome):
         """
         Simple case where we return the specified outcome in 2100.
         """
+        # Check if the outcome is in the dataframe
+        if self.outcome not in outcomes_df.columns:
+            raise ValueError(f"Outcome '{self.outcome}' not found in the dataframe.")
         return outcomes_df[self.outcome].iloc[-1]

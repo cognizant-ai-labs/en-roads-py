@@ -5,11 +5,11 @@ import argparse
 import json
 from pathlib import Path
 import webbrowser
-
+from presp.prescriptor import NNPrescriptorFactory
 import torch
 
-from evolution.candidate import Candidate
-from evolution.evaluation.evaluator import Evaluator
+from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.evaluation.evaluator import EnROADSEvaluator
 from enroadspy import load_input_specs
 
 
@@ -37,10 +37,12 @@ def open_browser(results_dir, cand_id, input_idx):
         config = json.load(f)
 
     # Get prescribed actions from model
-    evaluator = Evaluator(config["context"], config["actions"], config["outcomes"])
-    candidate = Candidate.from_seed(results_dir / cand_id.split("_")[0] / f"{cand_id}.pt",
-                                    config["model_params"],
-                                    config["actions"])
+    evaluator = EnROADSEvaluator(config["context"], config["actions"], config["outcomes"])
+
+    device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+    factory = NNPrescriptorFactory(EnROADSPrescriptor, config["model_params"], device, actions=config["actions"])
+    candidate = factory.load(results_dir / cand_id.split("_")[0] / f"{cand_id}.pt")
+
     context_tensor, context_vals = evaluator.context_dataset[input_idx]
     device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
     actions_dicts = candidate.prescribe(context_tensor.to(device).unsqueeze(0))
@@ -59,6 +61,7 @@ def actions_to_url(actions_dict: dict[str, float]) -> str:
     """
     # Parse actions into format for URL
     input_specs = load_input_specs()
+
     id_vals = {}
     for action, val in actions_dict.items():
         row = input_specs[input_specs["varId"] == action].iloc[0]

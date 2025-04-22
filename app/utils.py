@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 import torch
 
 from enroadspy.enroads_runner import EnroadsRunner
-from evolution.candidate import Candidate
+from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.outcomes.outcome_manager import OutcomeManager
 
 
@@ -76,12 +76,12 @@ class EvolutionHandler():
         """
         context_actions_dicts = []
         for x in self.X:
-            candidate = Candidate.from_pymoo_params(x, self.model_params, self.actions)
+            candidate = EnROADSPrescriptor.from_pymoo_params(x, self.model_params, self.actions)
             # Process context_dict into tensor
             context_list = [context_dict[context] for context in self.context_df.columns]
             context_scaled = self.scaler.transform([context_list])
             context_tensor = torch.tensor(context_scaled, dtype=torch.float32, device=self.device)
-            actions_dict = candidate.prescribe(context_tensor)[0]
+            actions_dict = candidate.forward(context_tensor)[0]
             actions_dict.update(context_dict)
             context_actions_dicts.append(actions_dict)
 

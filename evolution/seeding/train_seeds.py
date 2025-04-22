@@ -1,26 +1,38 @@
 """
 Trains seeds for the first generation of evolution using desired behavior.
 """
+from argparse import ArgumentParser
+from pathlib import Path
+import shutil
 from typing import Optional
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
+import yaml
 
-from evolution.candidate import Candidate, NNPrescriptor, OutputParser
+from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.candidates.direct import DirectPrescriptor, DirectFactory
+from evolution.candidates.output_parser import OutputParser
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
 
 DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def train_seed(model_params: dict, dataset: Dataset, label: torch.Tensor, epochs=200, batch_size=1) -> NNPrescriptor:
+def train_seed(model_params: dict,
+               actions: list[str],
+               dataset: Dataset,
+               label: torch.Tensor,
+               epochs=200,
+               batch_size=1) -> EnROADSPrescriptor:
     """
     Simple PyTorch training loop training a seed model with model_params using data from dataloader to match
     label label for epochs epochs.
     """
     label_tensor = label.to(DEVICE)
-    model = NNPrescriptor(**model_params)
+    presc = EnROADSPrescriptor(model_params, actions)
+    model = presc.model
     model.to(DEVICE)
     model.train()
     optimizer = torch.optim.AdamW(model.parameters())
@@ -41,7 +53,7 @@ def train_seed(model_params: dict, dataset: Dataset, label: torch.Tensor, epochs
                 n += 1
             pbar.set_description(f"Avg Loss: {(avg_loss / n):.5f}")
 
-    return model
+    return presc
 
 
 def actions_to_label(actions: list[str], actions_dict: dict[str, float], output_parser: OutputParser) -> torch.Tensor:
@@ -60,6 +72,8 @@ def actions_to_label(actions: list[str], actions_dict: dict[str, float], output_
 
 def create_default_labels(actions: list[str], output_parser: OutputParser) -> list[torch.Tensor]:
     """
+    Creates 3 seeds: one where all min actions are taken, one where all max actions are taken, and one where
+    all default values are taken.
     WARNING: Labels have to be added in the exact same order as the model.
     """
     input_specs = load_input_specs()
@@ -103,11 +117,11 @@ def create_custom_labels(actions: list[str], seed_urls: list[str], output_parser
     return labels
 
 
-def create_seeds(model_params: dict,
+def create_seeds(model_params: list[dict],
                  context_ds: Dataset,
                  actions: list[str],
                  seed_urls: Optional[list[str]] = None,
-                 epochs: Optional[int] = 1000) -> list[Candidate]:
+                 epochs: Optional[int] = 1000) -> list[EnROADSPrescriptor]:
     """
     Creates seed prescriptors for a given context dataset and actions. If seed_urls are provided, they are used to
     create custom labels for the seeds. Otherwise, we simply seed the default actions, min/off actions, and
@@ -120,9 +134,67 @@ def create_seeds(model_params: dict,
 
     seeds = []
     for i, label in enumerate(labels):
-        nn = train_seed(model_params, context_ds, label, epochs=epochs)
-        candidate = Candidate(f"0_{i}", [], model_params, actions)
-        candidate.model = nn
+        candidate = train_seed(model_params, actions, context_ds, label, epochs=epochs)
+        candidate.cand_id = f"0_{i}"
         seeds.append(candidate)
 
     return seeds
+
+
+def create_direct_seeds(actions: list[str], seed_urls: Optional[list[str]] = None) -> list[DirectPrescriptor]:
+    """
+    Creates seed models for direct evolution by directly turning the label into a genome.
+    """
+    output_parser = OutputParser(actions)
+    labels = create_default_labels(actions, output_parser)
+    if seed_urls is not None:
+        labels.extend(create_custom_labels(actions, seed_urls, output_parser))
+
+    seeds = []
+    for i, label in enumerate(labels):
+        candidate = DirectPrescriptor(actions)
+        candidate.genome = label
+        candidate.cand_id = f"1_{i}"
+        seeds.append(candidate)
+
+    return seeds
+
+
+def main_direct():
+    """
+    Main logic that takes in user-specified arguments and trains seeds based on them for direct evolution.
+    TODO: This needs to be written for neural network evolution.
+    """
+
+    parser = ArgumentParser()
+    parser.add_argument("--config", type=str, help="Path to the config file to use to train seeds")
+    args = parser.parse_args()
+
+    with open(args.config, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+
+    # Train seeds
+    actions = config["actions"]
+    seed_urls = config.get("seed_urls", None)
+    seeds = create_direct_seeds(actions, seed_urls)
+
+    # Handle if the seed directory already exists
+    seed_dir = Path(config["evolution_params"]["seed_dir"])
+    if seed_dir.exists():
+        delete = input("Seed directory already exists. Would you like to overwrite it? (Y/n):")
+        if delete.lower() != "y":
+            print("Exiting...")
+            return
+        else:
+            print(f"Overwiting seeds in {seed_dir}")
+            shutil.rmtree(seed_dir)
+    seed_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save seeds to disk with factory
+    factory = DirectFactory(actions)
+    for seed in seeds:
+        factory.save(seed, seed_dir / (seed.cand_id + ".pt"))
+
+
+if __name__ == "__main__":
+    main_direct()
