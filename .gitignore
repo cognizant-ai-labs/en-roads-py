@@ -1,4 +1,4 @@
-en-roads-sdk-v24.6.0-beta1
+en-roads-sdk-*
 *.zip
 __pycache__
 .DS_Store
@@ -7,7 +7,7 @@ temp/
 .vscode
 results/
 *.out
-input_specs.jsonl
+input_specs*.jsonl
 app/animations
 
 !app/results

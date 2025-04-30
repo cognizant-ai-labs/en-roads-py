@@ -9,6 +9,8 @@ import pandas as pd
 
 BAD_SWITCH = "_qualifying_path_renewables"
 
+SDK_VERSION = "v25.4.0-beta1"
+
 
 def load_input_specs() -> pd.DataFrame:
     """
@@ -18,7 +20,7 @@ def load_input_specs() -> pd.DataFrame:
     TODO: Un hard-code the En-ROADS SDK version.
     """
     source_code = ""
-    with open("enroadspy/en-roads-sdk-v24.6.0-beta1/packages/en-roads-core/dist/index.js", "r", encoding="utf-8") as f:
+    with open(f"enroadspy/en-roads-sdk-{SDK_VERSION}/packages/en-roads-core/dist/index.js", "r", encoding="utf-8") as f:
         source_code = f.read()
 
     # Locate var inputSpecs in the source code
