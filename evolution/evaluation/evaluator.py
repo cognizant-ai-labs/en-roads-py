@@ -8,9 +8,9 @@ import torch
 from torch.utils.data import DataLoader, Subset
 
 from evolution.candidates.candidate import EnROADSPrescriptor
-from evolution.data import SSPDataset
+from evolution.evaluation.data import SSPDataset, ConstraintDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
-from enroadspy import load_input_specs
+from enroadspy import load_input_specs, SIMPLE_ACTIONS
 from enroadspy.enroads_runner import EnroadsRunner
 
 
@@ -24,35 +24,17 @@ class EnROADSEvaluator(Evaluator):
                  actions: list[str],
                  outcomes: dict[str, bool],
                  n_jobs: int = 1,
-                 batch_size: int = 64,
+                 batch_size: int = 1,
                  device: str = "cpu",
                  decomplexify: bool = False):
         outcome_names = list(outcomes.keys())
         super().__init__(outcomes=outcome_names, n_jobs=n_jobs)
-        self.actions = actions
+        self.actions = list(actions)
         self.outcome_manager = OutcomeManager(outcome_names)
         self.minimize_dict = dict(outcomes)
 
         # Precise float is required to load the enroads inputs properly
         self.input_specs = load_input_specs()
-
-        self.context = context
-        # Context Dataset outputs a scaled tensor and nonscaled tensor. The scaled tensor goes into PyTorch and
-        # the nonscaled tensor is used to reconstruct the context that goes into enroads.
-        if set(context) == {"_global_population_in_2100",
-                            "_long_term_gdp_per_capita_rate",
-                            "_near_term_gdp_per_capita_rate",
-                            "_transition_time_to_reach_long_term_gdp_per_capita_rate"}:
-            self.context_dataset = SSPDataset()
-        # NOTE: This is a hack. We don't actually pass context into the direct prescriptor so we just grab the first
-        # example to force the direct prescriptor to return a single actions dict
-        elif len(context) == 0:
-            self.context_dataset = Subset(SSPDataset(), range(0, 1))
-        else:
-            raise ValueError(f"Context {context} not recognized.")
-
-        self.batch_size = batch_size
-        self.device = device
 
         # Get the switches that should always be on when decomplexifying
         self.decomplexify = decomplexify
@@ -67,12 +49,29 @@ class EnROADSEvaluator(Evaluator):
             always_on_values = input_specs.loc[condition, "onValue"]
             self.decomplexify_dict = dict(zip(always_on_switches, always_on_values))
 
+        # Create context dataset based on passed context
+        if set(context) == {"_global_population_in_2100",
+                            "_long_term_gdp_per_capita_rate",
+                            "_near_term_gdp_per_capita_rate",
+                            "_transition_time_to_reach_long_term_gdp_per_capita_rate"}:
+            self.context_dataset = SSPDataset()
+        elif set(context) == set(SIMPLE_ACTIONS):
+            self.context_dataset = ConstraintDataset(context)
+        elif len(context) == 0:
+            self.context_dataset = Subset(SSPDataset(), range(0, 1))
+        else:
+            raise ValueError(f"Context {context} not recognized.")
+
+        self.context = list(context)
+        self.batch_size = batch_size
+        self.device = device
+
         self.enroads_runner = EnroadsRunner()
 
     def update_predictor(self, elites):
         pass
 
-    def validate_outcomes(self, outcomes_df: pd.DataFrame):
+    def _validate_outcomes(self, outcomes_df: pd.DataFrame):
         """
         Ensures our outcome columns don't have NaNs or infs
         """
@@ -82,7 +81,7 @@ class EnROADSEvaluator(Evaluator):
         assert not np.isinf(subset.to_numpy()).any(), "Outcomes contain infs."
         return True
 
-    def reconstruct_context_dicts(self, batch_context: torch.Tensor) -> list[dict[str, float]]:
+    def _reconstruct_context_dicts(self, batch_context: torch.Tensor) -> list[dict[str, float]]:
         """
         Takes a torch tensor and zips it with the context labels to create a list of dicts.
         """
@@ -91,14 +90,6 @@ class EnROADSEvaluator(Evaluator):
             context_dict = dict(zip(self.context, row.tolist()))
             context_dicts.append(context_dict)
         return context_dicts
-
-    def decomplexify_actions_dict(self, actions_dict: dict[str, float]) -> dict[str, float]:
-        """
-        Copies an actions dict and then updates it with the decomplexify dict.
-        """
-        actions_dict = dict(actions_dict)
-        actions_dict.update(self.decomplexify_dict)
-        return actions_dict
 
     def prescribe_actions(self, candidate: EnROADSPrescriptor) -> list[dict]:
         """
@@ -109,7 +100,7 @@ class EnROADSEvaluator(Evaluator):
         dataloader = DataLoader(self.context_dataset, batch_size=self.batch_size, shuffle=False)
         # Iterate over batches of contexts
         for batch_tensor, batch_context in dataloader:
-            context_dicts = self.reconstruct_context_dicts(batch_context)
+            context_dicts = self._reconstruct_context_dicts(batch_context)
             actions_dicts = candidate.forward(batch_tensor.to(self.device))
             for actions_dict, context_dict in zip(actions_dicts, context_dicts):
                 # Add context to actions so we can pass it into the model
@@ -117,6 +108,14 @@ class EnROADSEvaluator(Evaluator):
                 context_actions_dicts.append(actions_dict)
 
         return context_actions_dicts
+
+    def decomplexify_actions_dict(self, actions_dict: dict[str, float]) -> dict[str, float]:
+        """
+        Copies an actions dict and then updates it with the decomplexify dict.
+        """
+        actions_dict = dict(actions_dict)
+        actions_dict.update(self.decomplexify_dict)
+        return actions_dict
 
     def run_enroads(self, context_actions_dicts: list[dict]) -> list[pd.DataFrame]:
         """
@@ -129,7 +128,7 @@ class EnROADSEvaluator(Evaluator):
             if self.decomplexify:
                 context_actions_dict = self.decomplexify_actions_dict(context_actions_dict)
             outcomes_df = self.enroads_runner.evaluate_actions(context_actions_dict)
-            self.validate_outcomes(outcomes_df)
+            self._validate_outcomes(outcomes_df)
             outcomes_dfs.append(outcomes_df)
         return outcomes_dfs
 

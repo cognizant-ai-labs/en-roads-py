@@ -11,8 +11,8 @@ from presp.prescriptor import NNPrescriptorFactory
 from presp.evolution import Evolution
 import yaml
 
-from evolution.evaluation.evaluator import EnROADSEvaluator
-# from evolution.novelty import NoveltyEvaluator
+from evolution.evaluation.direct import DirectEvaluator
+from evolution.evaluation.nn import SSPEvaluator
 from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.candidates.direct import DirectFactory
 
@@ -45,19 +45,15 @@ def main():
     with open(save_path / "config.yml", "w", encoding="utf-8") as f:
         yaml.dump(config, f)
 
-    # Choose prescriptor and prescriptor factory type based on if model params are specified
+    # Choose evaluator, prescriptor, and prescriptor factory type based on if model params are specified
     prescriptor_factory = None
     if "model_params" in config:
         prescriptor_factory = NNPrescriptorFactory(EnROADSPrescriptor,
                                                    model_params=config["model_params"],
                                                    device=config["device"],
                                                    actions=config["actions"])
-    elif len(config["context"]) == 0:
-        prescriptor_factory = DirectFactory(config["actions"])
-    else:
-        raise ValueError("Either model params must be present in the config file or we must have no context")
 
-    evaluator = EnROADSEvaluator(context=config["context"],
+        evaluator = SSPEvaluator(context=config["context"],
                                  actions=config["actions"],
                                  outcomes=config["outcomes"],
                                  n_jobs=config["n_jobs"],
@@ -65,10 +61,16 @@ def main():
                                  device=config["device"],
                                  decomplexify=config.get("decomplexify", False))
 
-    # evaluator = NoveltyEvaluator(
-    #     context=config["context"],
-    #     actions=config["actions"]
-    # )
+    # If there's no model params or context, we use the direct experiment setup
+    elif len(config["context"]) == 0:
+        prescriptor_factory = DirectFactory(config["actions"])
+
+        evaluator = DirectEvaluator(actions=config["actions"],
+                                    outcomes=config["outcomes"],
+                                    n_jobs=config["n_jobs"],
+                                    decomplexify=config.get("decomplexify", False))
+    else:
+        raise ValueError("Either model params must be present in the config file or we must have no context")
 
     evolution = Evolution(**config["evolution_params"], prescriptor_factory=prescriptor_factory, evaluator=evaluator)
     evolution.run_evolution()

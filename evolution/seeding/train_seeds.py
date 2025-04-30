@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 from typing import Optional
 
+from presp.prescriptor import NNPrescriptorFactory
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
@@ -14,26 +15,26 @@ import yaml
 from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.candidates.direct import DirectPrescriptor, DirectFactory
 from evolution.candidates.output_parser import OutputParser
+from evolution.evaluation.data import SSPDataset
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
-
-DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def train_seed(model_params: dict,
                actions: list[str],
                dataset: Dataset,
                label: torch.Tensor,
-               epochs=200,
-               batch_size=1) -> EnROADSPrescriptor:
+               epochs: int = 200,
+               batch_size: int = 1,
+               device: str = "cpu") -> EnROADSPrescriptor:
     """
     Simple PyTorch training loop training a seed model with model_params using data from dataloader to match
     label label for epochs epochs.
     """
-    label_tensor = label.to(DEVICE)
+    label_tensor = label.to(device)
     presc = EnROADSPrescriptor(model_params, actions)
     model = presc.model
-    model.to(DEVICE)
+    model.to(device)
     model.train()
     optimizer = torch.optim.AdamW(model.parameters())
     criterion = torch.nn.MSELoss()
@@ -44,7 +45,7 @@ def train_seed(model_params: dict,
             n = 0
             for x, _ in dataloader:
                 optimizer.zero_grad()
-                x = x.to(DEVICE)
+                x = x.to(device)
                 output = model(x)
                 loss = criterion(output, label_tensor.repeat(x.shape[0], 1))
                 loss.backward()
@@ -121,13 +122,14 @@ def create_seeds(model_params: list[dict],
                  context_ds: Dataset,
                  actions: list[str],
                  seed_urls: Optional[list[str]] = None,
-                 epochs: Optional[int] = 1000) -> list[EnROADSPrescriptor]:
+                 epochs: Optional[int] = 1000,
+                 device: str = "cpu") -> list[EnROADSPrescriptor]:
     """
     Creates seed prescriptors for a given context dataset and actions. If seed_urls are provided, they are used to
     create custom labels for the seeds. Otherwise, we simply seed the default actions, min/off actions, and
     max/on actions.
     """
-    output_parser = OutputParser(actions, device=DEVICE)
+    output_parser = OutputParser(actions, device=device)
     labels = create_default_labels(actions, output_parser)
     if seed_urls is not None:
         labels.extend(create_custom_labels(actions, seed_urls, output_parser))
@@ -160,23 +162,16 @@ def create_direct_seeds(actions: list[str], seed_urls: Optional[list[str]] = Non
     return seeds
 
 
-def main_direct():
+def main():
     """
-    Main logic that takes in user-specified arguments and trains seeds based on them for direct evolution.
-    TODO: This needs to be written for neural network evolution.
+    Main logic for seed training. Trains direct seeds or neural network seeds depending on the config file.
     """
-
     parser = ArgumentParser()
     parser.add_argument("--config", type=str, help="Path to the config file to use to train seeds")
     args = parser.parse_args()
 
     with open(args.config, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
-
-    # Train seeds
-    actions = config["actions"]
-    seed_urls = config.get("seed_urls", None)
-    seeds = create_direct_seeds(actions, seed_urls)
 
     # Handle if the seed directory already exists
     seed_dir = Path(config["evolution_params"]["seed_dir"])
@@ -190,11 +185,32 @@ def main_direct():
             shutil.rmtree(seed_dir)
     seed_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save seeds to disk with factory
-    factory = DirectFactory(actions)
+    # Actually train seeds
+    if "model_params" in config:
+        context_ds = SSPDataset()
+        seeds = create_seeds(config["model_params"],
+                             context_ds,
+                             config["actions"],
+                             config.get("seed_urls", None),
+                             config.get("epochs", 1000),
+                             config["device"])
+
+        factory = NNPrescriptorFactory(EnROADSPrescriptor,
+                                       model_params=config["model_params"],
+                                       device=config["device"],
+                                       actions=config["actions"])
+
+    elif len(config["context"]) == 0:
+        seeds = create_direct_seeds(config["actions"], config["seed_urls"])
+        # Save seeds to disk with factory
+        factory = DirectFactory(config["actions"])
+
+    else:
+        raise ValueError("Model params must be present or we have no context")
+
     for seed in seeds:
         factory.save(seed, seed_dir / (seed.cand_id + ".pt"))
 
 
 if __name__ == "__main__":
-    main_direct()
+    main()

@@ -13,7 +13,8 @@ from evolution.candidates.output_parser import OutputParser
 class EnROADSPrescriptor(NNPrescriptor):
     """
     Prescriptor candidate for En-ROADS. Runs context as a torch tensor through the model and parses the output into
-    the enroadsrunner actions dict format
+    the enroadsrunner actions dict format.
+    NOTE: This isn't technically "good" practice because forward returns a list of dicts intead of a tensor.
     """
     def __init__(self, model_params: list[dict], actions: list[str], device: str = "cpu"):
         super().__init__(model_params, device)
