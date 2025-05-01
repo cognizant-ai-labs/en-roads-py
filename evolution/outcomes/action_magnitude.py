@@ -17,10 +17,10 @@ class ActionMagnitudeOutcome(Outcome):
         scaling_values = {}
         for _, row in input_specs.iterrows():
             if row["kind"] == "slider":
-                scaling_values[row["varId"]] = [row["minValue"], row["defaultValue"], row["maxValue"]]
+                scaling_values[row["id"]] = [row["minValue"], row["defaultValue"], row["maxValue"]]
             else:
                 # We don't count change in switches
-                scaling_values[row["varId"]] = [0, 0, 0]
+                scaling_values[row["id"]] = [0, 0, 0]
         self.scaling_values = scaling_values
 
     def process_outcomes(self, actions_dict: dict[str, float], _) -> float:

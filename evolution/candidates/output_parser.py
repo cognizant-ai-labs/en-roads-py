@@ -4,7 +4,7 @@ Output Parser class that goes from normalized torch tensors between 0 and 1 to E
 import pandas as pd
 import torch
 
-from enroadspy import load_input_specs
+from enroadspy import load_input_specs, id_to_name
 
 
 class OutputParser():
@@ -15,20 +15,20 @@ class OutputParser():
     TODO: Make it not ok to have an end date before a start date, these count as actions taken for the actions taken
     count even though they shouldn't.
     """
-    def __init__(self, actions: list[str], device: str = "cpu"):
+    def __init__(self, actions: list[int], device: str = "cpu"):
         input_specs = load_input_specs()
         self.actions = actions
 
         # Make sure all the actions are in the input specs
-        valid_actions = input_specs["varId"].unique()
+        valid_actions = input_specs["id"].unique()
         for action in actions:
             if action not in valid_actions:
-                raise ValueError(f"Action {action} not in input specs")
+                raise ValueError(f"Action {action}, {id_to_name(action, input_specs)} not in input specs")
 
         # Index into the dataframe with actions
-        filtered = input_specs[input_specs["varId"].isin(actions)].copy()
-        filtered["varId"] = pd.Categorical(filtered["varId"], categories=actions, ordered=True)
-        filtered = filtered.sort_values("varId")
+        filtered = input_specs[input_specs["id"].isin(actions)].copy()
+        filtered["id"] = pd.Categorical(filtered["id"], categories=actions, ordered=True)
+        filtered = filtered.sort_values("id")
 
         # Non-sliders are left scaled between 0 and 1.
         bias = filtered["minValue"].fillna(0).values

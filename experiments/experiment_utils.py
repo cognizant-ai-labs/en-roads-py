@@ -12,6 +12,7 @@ import yaml
 from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.candidates.direct import DirectFactory
 from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.utils import process_config
 
 
 class Experimenter:
@@ -25,6 +26,7 @@ class Experimenter:
         self.results_dir = results_dir
         with open(results_dir / "config.yml", "r", encoding="utf-8") as f:
             self.config = yaml.safe_load(f)
+        self.config = process_config(self.config)
 
         self.prescriptor_factory = self.create_prescriptor_factory(self.config)
 

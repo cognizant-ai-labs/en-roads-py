@@ -23,4 +23,4 @@ class TotalEnergyOutcome(Outcome):
         total_energy = outcomes_df["Total Primary Energy Demand"]
         energy_diff = total_energy[total_energy < self.baseline_energy] - \
             self.baseline_energy[total_energy < self.baseline_energy]
-        return energy_diff.sum()
+        return -1 * energy_diff.sum()

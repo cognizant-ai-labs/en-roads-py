@@ -9,9 +9,10 @@ from presp.prescriptor import NNPrescriptorFactory
 import torch
 import yaml
 
-from enroadspy import load_input_specs
+from enroadspy import load_input_specs, name_to_id
 from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.utils import process_config
 
 
 class TestEvaluator(unittest.TestCase):
@@ -25,6 +26,8 @@ class TestEvaluator(unittest.TestCase):
         # Dummy config to test with
         with open("tests/configs/evaluator.yml", "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
+
+        config = process_config(config)
 
         self.config = config
 
@@ -58,7 +61,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
-        actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
+        actions_dict = {"Source tax coal tce": 100}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -75,7 +78,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
-        actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
+        actions_dict = {"Source tax coal tce": 100}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -85,7 +88,7 @@ class TestEvaluator(unittest.TestCase):
             else:
                 self.assertTrue(np.isclose(float(inp_val), default), "Messed up first input")
 
-        actions_dict = {"_source_subsidy_start_time_delivered_coal": 2040}
+        actions_dict = {"Source tax start time coal": 2040}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -113,7 +116,7 @@ class TestEvaluator(unittest.TestCase):
         # Switch all checkboxes to true
         true_actions = {}
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action]
+            row = input_specs[input_specs["id"] == action]
             if row["kind"].iloc[0] == "switch":
                 true_actions[action] = 1
         true_outcomes = self.evaluator.enroads_runner.evaluate_actions(true_actions)
@@ -121,7 +124,7 @@ class TestEvaluator(unittest.TestCase):
         # Switch all checkboxes to false
         false_actions = {}
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action]
+            row = input_specs[input_specs["id"] == action]
             if row["kind"].iloc[0] == "switch":
                 false_actions[action] = 0
         false_outcomes = self.evaluator.enroads_runner.evaluate_actions(false_actions)
@@ -137,7 +140,7 @@ class TestEvaluator(unittest.TestCase):
         baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action].iloc[0]
+            row = input_specs[input_specs["id"] == action].iloc[0]
             if row["kind"] == "switch":
                 actions_dict = {}
                 if row["defaultValue"] == row["onValue"]:
@@ -149,12 +152,13 @@ class TestEvaluator(unittest.TestCase):
                     pd.testing.assert_frame_equal(outcomes.iloc[:2024-1990], baseline.iloc[:2024-1990])
                 except AssertionError:
                     bad_actions.append(action)
-        exceptions = ['_apply_carbon_tax_to_biofuels',
-                      '_ccs_carbon_tax_qualifier',
-                      '_qualifying_path_nuclear',
-                      '_qualifying_path_bioenergy',
-                      '_qualifying_path_fossil_ccs',
-                      '_qualifying_path_gas']
+        exceptions = ['Apply carbon tax to biofuels',
+                      'CCS carbon tax qualifier',
+                      'Qualifying path nuclear',
+                      'Qualifying path bioenergy',
+                      'Qualifying path fossil CCS',
+                      'Qualifying path gas']
+        exceptions = [name_to_id(action, input_specs) for action in exceptions]
         self.assertEqual(set(bad_actions), set(exceptions), "Switches besides exceptions changed the past")
 
     def test_sliders_change_past(self):
@@ -164,9 +168,9 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
-        # TODO: When we set this to input_specs['varId'].unique() we get some fails we need to account for.
+        # TODO: When we set this to input_specs['id'].unique() we get some fails we need to account for.
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action].iloc[0]
+            row = input_specs[input_specs["id"] == action].iloc[0]
             if row["kind"] == "slider":
                 outcomes_min = self.evaluator.enroads_runner.evaluate_actions({action: row["minValue"]})
                 outcomes_max = self.evaluator.enroads_runner.evaluate_actions({action: row["maxValue"]})
@@ -186,13 +190,14 @@ class TestEvaluator(unittest.TestCase):
         """
         Checks if the end time being before the start time breaks anything.
         """
-        actions = ["_source_subsidy_delivered_coal_tce",
-                   "_source_subsidy_start_time_delivered_coal",
-                   "_source_subsidy_stop_time_delivered_coal",]
+        actions = ["Source tax coal tce",
+                   "Source tax start time coal",
+                   "Source tax stop time coal"]
+        actions = [name_to_id(action, load_input_specs()) for action in actions]
 
         input_specs = load_input_specs()
-        min_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["minValue"]
-        max_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["maxValue"]
+        min_time = input_specs[input_specs["id"] == actions[1]].iloc[0]["minValue"]
+        max_time = input_specs[input_specs["id"] == actions[1]].iloc[0]["maxValue"]
 
         both_start_dict = {actions[0]: -15, actions[1]: min_time, actions[2]: min_time}
         both_end_dict = {actions[0]: -15, actions[1]: max_time, actions[2]: max_time}
@@ -213,6 +218,7 @@ class TestDecomplexify(unittest.TestCase):
     def setUp(self):
         with open("tests/configs/decomplexify.yml", "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
+        config = process_config(config)
         self.config = config
 
         self.evaluator = EnROADSEvaluator(context=config["context"],

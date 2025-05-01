@@ -17,6 +17,7 @@ class EnroadsRunner():
     """
     def __init__(self):
         self.input_specs = load_input_specs()
+        self.sdk_version = SDK_VERSION
         self.compile_enroads()
 
     def compile_enroads(self):
@@ -24,7 +25,7 @@ class EnroadsRunner():
         Compiles the en-roads model.
         Make sure you extracted the zip file in the current directory.
         """
-        subprocess.run(["make"], cwd=f"./enroadspy/en-roads-sdk-{SDK_VERSION}/c", check=True)
+        subprocess.run(["make"], cwd=f"./enroadspy/en-roads-sdk-{self.sdk_version}/c", check=True)
 
     def format_string_input(self, value, decimal):
         """
@@ -32,7 +33,7 @@ class EnroadsRunner():
         """
         return f"{value:.{decimal}f}"
 
-    def construct_enroads_input(self, inputs: dict[str, float]):
+    def construct_enroads_input(self, inputs: dict[int, float]):
         """
         Constructs input file according to enroads.
         We want the index of the input and the value separated by a colon. Then separate those by spaces.
@@ -51,11 +52,11 @@ class EnroadsRunner():
         input_specs.loc[input_specs["decimal"] <= 0, "decimal"] = 0
 
         # Get all the values from the dict and replace NaNs with default values
-        value = input_specs["varId"].map(inputs)
+        value = input_specs["id"].map(inputs)
         value.fillna(input_specs["defaultValue"], inplace=True)
         input_specs["value"] = value
 
-        # # Format the values to strings with the correct number of decimals
+        # Format the values to strings with the correct number of decimals
         input_specs["value_str"] = input_specs.apply(lambda row: self.format_string_input(row["value"],
                                                                                           row["decimal"]), axis=1)
 
@@ -95,7 +96,7 @@ class EnroadsRunner():
         if input_str and not self.check_input_string(input_str):
             raise ValueError("Invalid input string")
 
-        command = [f"./enroadspy/en-roads-sdk-{SDK_VERSION}/c/enroads"]
+        command = [f"./enroadspy/en-roads-sdk-{self.sdk_version}/c/enroads"]
         if input_str:
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as temp_file:
                 temp_file.write(input_str)
@@ -109,7 +110,7 @@ class EnroadsRunner():
             return result.stdout
         raise ValueError(f"Enroads failed with error code {result.returncode} and message {result.stderr}")
 
-    def evaluate_actions(self, actions_dict: dict[str, str]):
+    def evaluate_actions(self, actions_dict: dict[int, float]):
         """
         Evaluates actions a candidate produced.
         Any actions not provided are implicitly set to the default value.

@@ -13,7 +13,7 @@ class DirectPrescriptor(Prescriptor):
     """
     Direct evolution candidate. Simply a vector of floats between 0 and 1 that get rescaled during prescription.
     """
-    def __init__(self, actions: list[str]):
+    def __init__(self, actions: list[int]):
         super().__init__()
 
         self.actions = list(actions)

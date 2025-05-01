@@ -20,8 +20,8 @@ class EnROADSEvaluator(Evaluator):
     Generates and stores context data based on config using ContextDataset.
     """
     def __init__(self,
-                 context: list[str],
-                 actions: list[str],
+                 context: list[int],
+                 actions: list[int],
                  outcomes: dict[str, bool],
                  n_jobs: int = 1,
                  batch_size: int = 64,
@@ -29,7 +29,7 @@ class EnROADSEvaluator(Evaluator):
                  decomplexify: bool = False):
         outcome_names = list(outcomes.keys())
         super().__init__(outcomes=outcome_names, n_jobs=n_jobs)
-        self.actions = actions
+        self.actions = list(actions)
         self.outcome_manager = OutcomeManager(outcome_names)
         self.minimize_dict = dict(outcomes)
 
@@ -39,10 +39,8 @@ class EnROADSEvaluator(Evaluator):
         self.context = context
         # Context Dataset outputs a scaled tensor and nonscaled tensor. The scaled tensor goes into PyTorch and
         # the nonscaled tensor is used to reconstruct the context that goes into enroads.
-        if set(context) == {"_global_population_in_2100",
-                            "_long_term_gdp_per_capita_rate",
-                            "_near_term_gdp_per_capita_rate",
-                            "_transition_time_to_reach_long_term_gdp_per_capita_rate"}:
+        # NOTE: These are the IDs for the context variables
+        if set(context) == {63, 235, 64, 236}:
             self.context_dataset = SSPDataset()
         # NOTE: This is a hack. We don't actually pass context into the direct prescriptor so we just grab the first
         # example to force the direct prescriptor to return a single actions dict
@@ -60,10 +58,10 @@ class EnROADSEvaluator(Evaluator):
             input_specs = load_input_specs()
             condition = (
                 (input_specs["kind"] == "switch") &
-                (input_specs["varId"] != "_electric_standard_active") &
+                (input_specs["id"] != 245) &  # "Electric standard active" switch
                 (input_specs["slidersActiveWhenOn"].apply(lambda x: isinstance(x, list) and len(x) > 0))
             )
-            always_on_switches = input_specs.loc[condition, "varId"]
+            always_on_switches = input_specs.loc[condition, "id"]
             always_on_values = input_specs.loc[condition, "onValue"]
             self.decomplexify_dict = dict(zip(always_on_switches, always_on_values))
 
@@ -153,7 +151,7 @@ class EnROADSEvaluator(Evaluator):
 
         return np.array(metrics)
 
-    def evaluate_candidate(self, candidate: EnROADSPrescriptor) -> np.ndarray:
+    def evaluate_candidate(self, candidate: EnROADSPrescriptor) -> tuple[np.ndarray, float]:
         """
         Evaluates a single candidate by running all the context through it and receiving all the batches of actions.
         Then evaluates all the actions to get outcomes and computes the average metrics.
@@ -162,4 +160,4 @@ class EnROADSEvaluator(Evaluator):
         outcomes_dfs = self.run_enroads(context_actions_dicts)
         metrics = self.compute_metrics(context_actions_dicts, outcomes_dfs)
 
-        return metrics
+        return metrics, 0

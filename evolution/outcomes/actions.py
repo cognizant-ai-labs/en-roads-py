@@ -3,7 +3,7 @@ Outcome counting number of actions taken.
 """
 from evolution.outcomes.outcome import Outcome
 
-from enroadspy import load_input_specs
+from enroadspy import load_input_specs, id_to_name, name_to_id
 
 
 class ActionsOutcome(Outcome):
@@ -13,10 +13,10 @@ class ActionsOutcome(Outcome):
     Preprocesses the input specs to find the default values for each action.
     """
     def __init__(self):
-        input_specs = load_input_specs()
+        self.input_specs = load_input_specs()
         default_values = {}
-        for action in input_specs["varId"]:
-            row = input_specs[input_specs["varId"] == action].iloc[0]
+        for action in self.input_specs["id"]:
+            row = self.input_specs[self.input_specs["id"] == action].iloc[0]
             default_values[action] = row["defaultValue"]
 
         self.default_values = default_values
@@ -33,8 +33,11 @@ class ActionsOutcome(Outcome):
             if action in self.default_values and self.default_values[action] != value:
                 actions_taken += 1
             # Check for end time < start time
-            if "start_time" in action:
-                end_time = action.replace("start_time", "end_time")
-                if end_time in actions_dict and actions_dict[end_time] < value:
+            # NOTE: This is a bit of a hack, we should find a better way to detect start/end times
+            action_name = id_to_name(action, self.input_specs)
+            if "start time" in action_name.lower():
+                end_time_name = action_name.replace("start", "end")
+                end_time_action = name_to_id(end_time_name, self.input_specs)
+                if end_time_action in actions_dict and actions_dict[end_time_name] < value:
                     actions_taken -= 2
         return actions_taken
