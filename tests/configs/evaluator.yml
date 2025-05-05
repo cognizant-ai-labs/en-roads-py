@@ -16,7 +16,7 @@ model_params:
    - type: tanh
    - type: linear
      in_features: 64
-     out_features: 115
+     out_features: 129
    - type: sigmoid
 context:
   - Long term GDP per capita rate

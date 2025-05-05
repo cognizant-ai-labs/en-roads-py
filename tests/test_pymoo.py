@@ -18,6 +18,7 @@ class TestPymoo(unittest.TestCase):
     """
 
     def setUp(self):
+        shutil.rmtree("tests/temp")
         with open("tests/configs/dummy.json", "r", encoding="utf-8") as f:
             self.config = json.load(f)
         Path(self.config["save_path"]).mkdir(parents=True)

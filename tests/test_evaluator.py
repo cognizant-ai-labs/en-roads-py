@@ -61,7 +61,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
-        actions_dict = {"Source tax coal tce": 100}
+        actions_dict = {name_to_id("Source tax coal tce", input_specs): 100}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -78,7 +78,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
-        actions_dict = {"Source tax coal tce": 100}
+        actions_dict = {name_to_id("Source tax coal tce", input_specs): 100}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -88,7 +88,7 @@ class TestEvaluator(unittest.TestCase):
             else:
                 self.assertTrue(np.isclose(float(inp_val), default), "Messed up first input")
 
-        actions_dict = {"Source tax start time coal": 2040}
+        actions_dict = {name_to_id("Source tax start time coal", input_specs): 2040}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -103,8 +103,8 @@ class TestEvaluator(unittest.TestCase):
         Makes sure that the same candidate evaluated twice has the same metrics.
         """
         candidate = self.factory.random_init()
-        metrics1 = self.evaluator.evaluate_candidate(candidate)
-        metrics2 = self.evaluator.evaluate_candidate(candidate)
+        metrics1, _ = self.evaluator.evaluate_candidate(candidate)
+        metrics2, _ = self.evaluator.evaluate_candidate(candidate)
 
         self.assertTrue(np.equal(metrics1, metrics2).all())
 
@@ -152,11 +152,10 @@ class TestEvaluator(unittest.TestCase):
                     pd.testing.assert_frame_equal(outcomes.iloc[:2024-1990], baseline.iloc[:2024-1990])
                 except AssertionError:
                     bad_actions.append(action)
-        exceptions = ['Apply carbon tax to biofuels',
-                      'CCS carbon tax qualifier',
+        # TODO: Ask if apply carbon tax to biofuels and qualifying path fossil CCS should be exceptions.
+        exceptions = ['CCS carbon tax qualifier',
                       'Qualifying path nuclear',
                       'Qualifying path bioenergy',
-                      'Qualifying path fossil CCS',
                       'Qualifying path gas']
         exceptions = [name_to_id(action, input_specs) for action in exceptions]
         self.assertEqual(set(bad_actions), set(exceptions), "Switches besides exceptions changed the past")
@@ -234,15 +233,17 @@ class TestDecomplexify(unittest.TestCase):
         Checks that the dict that we expect to pass into the actions when we are decomplexifying is correct.
         """
         true_decomplexify_dict = {
-            '_use_subsidies_by_feedstock': 1,
-            '_use_new_tech_advanced_settings': 1,
-            '_switch_to_use_transport_electrification_detailed_settings': 1,
-            '_use_detailed_food_and_ag_controls': 1,
-            '_choose_nature_cdr_by_type': 1,
-            '_use_detailed_other_ghg_controls': 1,
-            '_switch_use_land_detailed_settings': 1,
-            '_choose_cdr_by_type': 2
+            'Use taxes by feedstock': 1,
+            'Use New tech advanced settings': 1,
+            'SWITCH to use transport electrification detailed settings': 1,
+            'Use detailed food and ag controls': 1,
+            'Choose nature CDR by type': 1,
+            'Use detailed other GHG controls': 1,
+            'SWITCH use land detailed settings': 1,
+            'Choose CDR by type': 2
         }
+        input_specs = load_input_specs()
+        true_decomplexify_dict = {name_to_id(key, input_specs): value for key, value in true_decomplexify_dict.items()}
 
         decomplexify_dict = self.evaluator.decomplexify_dict
 
