@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader, Subset
 
 from evolution.candidates.candidate import EnROADSPrescriptor
-from evolution.data import SSPDataset
+from evolution.data import ContextDataset, SSPDataset
 from evolution.outcomes.outcome_manager import OutcomeManager
 from enroadspy import load_input_specs
 from enroadspy.enroads_runner import EnroadsRunner
@@ -98,13 +98,16 @@ class EnROADSEvaluator(Evaluator):
         actions_dict.update(self.decomplexify_dict)
         return actions_dict
 
-    def prescribe_actions(self, candidate: EnROADSPrescriptor) -> list[dict]:
+    def prescribe_actions(self, candidate: EnROADSPrescriptor, context_dataset: ContextDataset = None) -> list[dict]:
         """
         Takes a candidate, batches contexts, and prescribes actions for each one. Then attaches the context to the
         actions to return context_actions dicts.
+        Takes in a context dataset to prescribe actions for. If None is provided, uses the default context dataset.
         """
         context_actions_dicts = []
-        dataloader = DataLoader(self.context_dataset, batch_size=self.batch_size, shuffle=False)
+        if context_dataset is None:
+            context_dataset = self.context_dataset
+        dataloader = DataLoader(context_dataset, batch_size=self.batch_size, shuffle=False)
         # Iterate over batches of contexts
         for batch_tensor, batch_context in dataloader:
             context_dicts = self.reconstruct_context_dicts(batch_context)

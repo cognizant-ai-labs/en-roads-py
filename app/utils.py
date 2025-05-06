@@ -1,16 +1,17 @@
 """
 Utilities for the demo app.
 """
-import json
+from pathlib import Path
 
-import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from presp.prescriptor import NNPrescriptorFactory
 import torch
+import yaml
 
-from enroadspy.enroads_runner import EnroadsRunner
 from evolution.candidates.candidate import EnROADSPrescriptor
-from evolution.outcomes.outcome_manager import OutcomeManager
+from evolution.data import ContextDataset
+from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.utils import process_config
 
 
 def filter_metrics_json(metrics_json: dict[str, list],
@@ -38,52 +39,52 @@ class EvolutionHandler():
     """
     Handles evolution results and running of prescriptors for the app.
     TODO: Currently we hard-code some metrics to make the app prettier. Later we should just create more app-friendly
-    metrics to optimize in pymoo.
+    metrics to optimize for.
     """
     def __init__(self):
-        save_path = "app/results"
-        with open(save_path + "/config.json", 'r', encoding="utf-8") as f:
-            config = json.load(f)
+        save_path = Path("results/app")
+        with open(save_path / "config.yml", 'r', encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        config = process_config(config)
 
+        self.context = config["context"]
         self.actions = config["actions"]
         self.outcomes = config["outcomes"]
-        # TODO: Make this not hard-coded
-        self.model_params = {"in_size": 4, "hidden_size": 16, "out_size": len(self.actions)}
+        self.model_params = config["model_params"]
         self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.X = np.load(save_path + "/X.npy")
-        self.F = np.load(save_path + "/F.npy")
+        self.factory = NNPrescriptorFactory(EnROADSPrescriptor,
+                                            self.model_params,
+                                            device="cpu",
+                                            actions=self.actions)
 
-        # TODO: Make this not hard-coded
-        # Here we rescale the outcomes: temperature vs. temperature difference, government spending becomes positive,
-        # and energy difference becomes positive.
-        self.F[:, 0] += 1.5
-        self.F[:, 2] *= -1
-        self.F[:, 3] *= -1
+        self.evaluator = EnROADSEvaluator(self.context,
+                                          self.actions,
+                                          self.outcomes,
+                                          n_jobs=1,
+                                          batch_size=1,
+                                          device="cpu",
+                                          decomplexify=False)
 
-        context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
-        self.context_df = context_df.drop(columns=["F", "scenario"])
-        self.scaler = StandardScaler()
-        self.scaler.fit(self.context_df.to_numpy())
-
-        self.runner = EnroadsRunner()
-        self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
+        self.candidates = []
+        pareto_df = pd.read_csv(save_path / f"{config['evolution_params']['n_generations']}.csv")
+        pareto_df = pareto_df[pareto_df["rank"] == 1]
+        for cand_id in pareto_df["cand_id"]:
+            self.candidates.append(self.factory.load(save_path / f"{cand_id.split('_')[0]}" / f"{cand_id}"))
 
     def prescribe_all(self, context_dict: dict[str, float]) -> list[dict[str, float]]:
         """
         Takes a dict containing a single context and prescribes actions for it using all the candidates.
         Returns a context_actions dict for each candidate.
         """
+        context_df = pd.DataFrame([context_dict])
+        # TODO: This is a bit of a hack to pull the scaler out
+        scaler = self.evaluator.context_dataset.context_dataset.scaler
+        context_ds = ContextDataset(context_df, scaler=scaler)
+
         context_actions_dicts = []
-        for x in self.X:
-            candidate = EnROADSPrescriptor.from_pymoo_params(x, self.model_params, self.actions)
-            # Process context_dict into tensor
-            context_list = [context_dict[context] for context in self.context_df.columns]
-            context_scaled = self.scaler.transform([context_list])
-            context_tensor = torch.tensor(context_scaled, dtype=torch.float32, device=self.device)
-            actions_dict = candidate.forward(context_tensor)[0]
-            actions_dict.update(context_dict)
-            context_actions_dicts.append(actions_dict)
+        for candidate in self.candidates:
+            context_actions_dicts.append(self.evaluator.prescribe_actions(candidate, context_ds)[0])
 
         return context_actions_dicts
 
@@ -91,11 +92,7 @@ class EvolutionHandler():
         """
         Takes a context dict and prescribes actions for it. Then runs enroads on those actions and returns the outcomes.
         """
-        outcomes_dfs = []
-        for context_actions_dict in context_actions_dicts:
-            outcomes_df = self.runner.evaluate_actions(context_actions_dict)
-            outcomes_dfs.append(outcomes_df)
-
+        outcomes_dfs = self.evaluator.run_enroads(context_actions_dicts)
         return outcomes_dfs
 
     def outcomes_to_metrics(self,
@@ -106,21 +103,16 @@ class EvolutionHandler():
         All of these metrics dicts are then concatenated into a single DataFrame.
         TODO: We hard-code some metrics to be more app-friendly
         """
-        metrics_dicts = []
+        cand_results = []
         for context_actions_dict, outcomes_df in zip(context_actions_dicts, outcomes_dfs):
-            metrics = self.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
-            metrics_dicts.append(metrics)
+            results_dict = self.evaluator.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
+            cand_results.append(results_dict)
 
-        metrics_df = pd.DataFrame(metrics_dicts)
-
-        metrics_df["Temperature above 1.5C"] += 1.5
-        metrics_df["Government net revenue below zero"] *= -1
-        metrics_df["Total energy below baseline"] *= -1
-
+        metrics_df = pd.DataFrame(cand_results)
         return metrics_df
 
     def context_baseline_outcomes(self, context_dict: dict[str, float]) -> pd.DataFrame:
         """
         Takes a context dict and returns the outcomes when no actions are performed.
         """
-        return self.runner.evaluate_actions(context_dict)
+        return self.evaluator.run_enroads([context_dict])[0]

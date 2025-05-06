@@ -22,10 +22,7 @@ class OutcomeComponent(Component):
     """
     def __init__(self, evolution_handler: EvolutionHandler):
         self.evolution_handler = evolution_handler
-        self.context_cols = ["_long_term_gdp_per_capita_rate",
-                             "_near_term_gdp_per_capita_rate",
-                             "_transition_time_to_reach_long_term_gdp_per_capita_rate",
-                             "_global_population_in_2100"]
+        self.context_cols = evolution_handler.context
         self.plot_outcomes = ["Temperature change from 1850",
                               "Adjusted cost of energy per GJ",
                               "Government net revenue from adjustments",
@@ -255,6 +252,16 @@ class OutcomeComponent(Component):
             # Process outcomes into metrics and save
             metrics_df = self.evolution_handler.outcomes_to_metrics(context_actions_dicts, outcomes_dfs)
             metrics_json = metrics_df.to_dict("records")
+
+            # Before we serialize the data, the context_actions_dicts should be converted to dicts of int: float instead
+            # of np.int64: float
+            updated = []
+            for context_actions_dict in context_actions_dicts:
+                new_ca_dict = {}
+                for key, value in context_actions_dict.items():
+                    new_ca_dict[int(key)] = value
+                updated.append(new_ca_dict)
+            context_actions_dicts = updated
 
             return context_actions_dicts, outcomes_jsonl, metrics_json
 
