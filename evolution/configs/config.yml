@@ -1,12 +1,12 @@
 # Evolution params
 evolution_params:
-  n_generations: 100
+  n_generations: 200
   population_size: 100
-  remove_population_pct: 0.8
-  n_elites: 10
+  remove_population_pct: 0.0
+  n_elites: 0
   mutation_rate: 0.1
   mutation_factor: 0.1
-  save_path: results/app
+  save_path: results/app1
   seed_dir: evolution/seeding/seeds/app
 
 device: mps
@@ -16,6 +16,10 @@ n_jobs: -1
 model_params:
   - type: linear
     in_features: 4
+    out_features: 64
+  - type: tanh
+  - type: linear
+    in_features: 64
     out_features: 64
   - type: tanh
   - type: linear

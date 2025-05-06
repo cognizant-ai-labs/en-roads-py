@@ -18,6 +18,10 @@ class EnROADSEvaluator(Evaluator):
     """
     Evaluates candidates by generating the actions and running the enroads model on them.
     Generates and stores context data based on config using ContextDataset.
+    The main workflow is in the evaluate_candidate method:
+        1. prescribe_actions
+        2. run_enroads
+        3. compute_metrics
     """
     def __init__(self,
                  context: list[int],
