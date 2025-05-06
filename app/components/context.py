@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from app.components.component import Component
-from enroadspy import load_input_specs
+from enroadspy import load_input_specs, id_to_name, id_to_varid
 
 # Constants used for SSPs
 SSP_VALUES = [
@@ -38,25 +38,20 @@ class ContextComponent(Component):
     Component in charge of displaying the preset contexts in a scatter and the corresponding context sliders.
     Adjusts context sliders to match selected preset and displays a blurb about the selected SSP.
     """
-    def __init__(self):
+    def __init__(self, context: list[int]):
 
-        self.context_cols = ["_long_term_gdp_per_capita_rate",
-                             "_near_term_gdp_per_capita_rate",
-                             "_transition_time_to_reach_long_term_gdp_per_capita_rate",
-                             "_global_population_in_2100"]
-        self.varnames = ["Long-Term Economic Growth (GDPPP)",
-                         "Near-Term Economic Growth (GDPPP)",
-                         "Transition Time (years)",
-                         "Population (B)"]
+        self.context = list(context)
 
         # Round context df here instead of automatically by Dash so that we know for sure how it's rounding.
+        # NOTE: context_df uses varIds from old experiments instead of id so we need to convert whenever we access it.
         self.context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
         input_specs = load_input_specs()
-        for col in self.context_cols:
-            row = input_specs[input_specs["varId"] == col].iloc[0]
+        for col in self.context:
+            row = input_specs[input_specs["id"] == col].iloc[0]
             step = row["step"]
             decimals = -1 * int(np.log10(step))
-            self.context_df[col] = self.context_df[col].round(decimals)
+            varid = id_to_varid(col, input_specs)
+            self.context_df[varid] = self.context_df[varid].round(decimals)
 
         self.ssp_df = pd.read_csv("app/ssps.csv")
 
@@ -66,13 +61,13 @@ class ContextComponent(Component):
         """
         input_specs = load_input_specs()
         sliders = []
-        for i, (context_col, varname) in enumerate(zip(self.context_cols, self.varnames)):
-            row = input_specs[input_specs["varId"] == context_col].iloc[0]
+        for i, context_id in enumerate(self.context):
+            row = input_specs[input_specs["id"] == context_id].iloc[0]
             label_slider = dbc.Row([
                 # TODO: It's annoying that bootstrap only does 12 columns and 5/7 split doesn't look nice.
                 dbc.Col(
                     width=6,
-                    children=[html.Label(varname)]
+                    children=[html.Label(id_to_name(context_id, input_specs))]
                 ),
                 dbc.Col(
                     width=6,
@@ -190,7 +185,9 @@ class ContextComponent(Component):
             If we click on a point, show the description of the SSP.
             If there is no click data, that means we updated the sliders, so remove the description.
             """
-            match = self.context_df[self.context_cols].eq(context_values).all(axis=1)
+            input_specs = load_input_specs()
+            varids = [id_to_varid(col, input_specs) for col in self.context]
+            match = self.context_df[varids].eq(context_values).all(axis=1)
 
             # If a match is found, retrieve the row, otherwise handle the case where it isn't found
             if match.any():
@@ -240,7 +237,8 @@ class ContextComponent(Component):
             """
             scenario = f"{value}-Baseline"
             row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
-            return [row[self.context_cols[i]] for i in range(4)]
+            input_specs = load_input_specs()
+            return [row[id_to_varid(self.context[i], input_specs)] for i in range(4)]
 
         @app.callback(
             Output("ssp-dropdown", "value", allow_duplicate=True),
@@ -251,7 +249,9 @@ class ContextComponent(Component):
             """
             If the context sliders don't match any of the SSPs, reset the dropdown.
             """
-            match = self.context_df[self.context_cols].eq(context_values).all(axis=1)
+            input_specs = load_input_specs()
+            varids = [id_to_varid(col, input_specs) for col in self.context]
+            match = self.context_df[varids].eq(context_values).all(axis=1)
 
             # If a match is found, retrieve the row, otherwise handle the case where it isn't found
             if match.any():

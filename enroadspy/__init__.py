@@ -51,7 +51,7 @@ def name_to_id(name: str, input_specs: pd.DataFrame) -> int:
     return filtered["id"].values[0]
 
 
-def id_to_name(input_id: str, input_specs: pd.DataFrame) -> str:
+def id_to_name(input_id: int, input_specs: pd.DataFrame) -> str:
     """
     Converts the En-ROADS unique integer ID to its nice variable name.
     Returns None if not found.
@@ -60,3 +60,25 @@ def id_to_name(input_id: str, input_specs: pd.DataFrame) -> str:
     if filtered.empty:
         return None
     return filtered["varName"].values[0]
+
+
+def varid_to_id(varid: str, input_specs: pd.DataFrame) -> int:
+    """
+    Converts the En-ROADS varId to its unique integer ID.
+    Returns -1 if not found.
+    """
+    filtered = input_specs[input_specs["varId"] == varid]
+    if filtered.empty:
+        return -1
+    return filtered["id"].values[0]
+
+
+def id_to_varid(input_id: int, input_specs: pd.DataFrame) -> str:
+    """
+    Converts the En-ROADS unique integer ID to its varId from the inputSpecs.
+    Returns None if not found.
+    """
+    filtered = input_specs[input_specs["id"] == input_id]
+    if filtered.empty:
+        return None
+    return filtered["varId"].values[0]
