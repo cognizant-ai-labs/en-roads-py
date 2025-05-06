@@ -42,7 +42,7 @@ class EvolutionHandler():
     metrics to optimize for.
     """
     def __init__(self):
-        save_path = Path("results/app")
+        save_path = Path("app/results")
         with open(save_path / "config.yml", 'r', encoding="utf-8") as f:
             config = yaml.safe_load(f)
         config = process_config(config)
@@ -79,7 +79,7 @@ class EvolutionHandler():
         """
         context_df = pd.DataFrame([context_dict])
         # TODO: This is a bit of a hack to pull the scaler out
-        scaler = self.evaluator.context_dataset.context_dataset.scaler
+        scaler = self.evaluator.context_dataset.scaler
         context_ds = ContextDataset(context_df, scaler=scaler)
 
         context_actions_dicts = []

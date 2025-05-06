@@ -1,0 +1,98 @@
+actions:
+- Source tax coal tce
+- Source tax start time coal
+- Source tax stop time coal
+- No new coal
+- Year of no new capacity coal
+- Utilization adjustment factor coal
+- Utilization policy start time coal
+- Utilization policy stop time coal
+- Target accelerated retirement rate electric coal
+- Source tax oil boe
+- Source tax start time oil
+- Source tax stop time oil
+- No new oil
+- Year of no new capacity oil
+- Utilization adjustment factor oil
+- Utilization policy start time oil
+- Utilization policy stop time oil
+- Source tax gas MCF
+- Source tax start time gas
+- Source tax stop time gas
+- No new gas
+- Year of no new capacity gas
+- Utilization adjustment factor gas
+- Utilization policy start time gas
+- Utilization policy stop time gas
+- Source tax renewables kWh
+- Source tax start time renewables
+- Source tax stop time renewables
+- Use taxes by feedstock
+- Source tax bio boe
+- Source tax start time bio
+- Source tax stop time bio
+- No new bio
+- Year of no new capacity bio
+- Wood feedstock tax boe
+- Crop feedstock tax boe
+- Other feedstock tax boe
+- Source tax nuclear kWh
+- Source tax start time nuclear
+- Source tax stop time nuclear
+- Carbon tax initial target
+- Carbon tax phase 1 start
+- Carbon tax time to achieve initial target
+- Carbon tax final target
+- Carbon tax phase 3 start
+- Carbon tax time to achieve final target
+- Apply carbon tax to biofuels
+- CCS carbon tax qualifier
+- Qualifying path renewables
+- Qualifying path nuclear
+- Qualifying path new zero carbon
+- Qualifying path BECCS
+- Qualifying path bioenergy
+- Qualifying path fossil CCS
+- Qualifying path gas
+- Electric Standard Active
+- Electric Standard Target
+- Electric Standard Start Year
+- Electric Standard target time
+- Emissions performance standard
+- Performance standard time
+batch_size: 64
+context:
+- Long term GDP per capita rate
+- Near term GDP per capita rate
+- Transition time to reach long term GDP per capita rate
+- Global population in 2100
+decomplexify: true
+device: mps
+evolution_params:
+  mutation_factor: 0.1
+  mutation_rate: 0.1
+  n_elites: 0
+  n_generations: 200
+  population_size: 100
+  remove_population_pct: 0.0
+  save_path: results/app1
+  seed_dir: evolution/seeding/seeds/app
+model_params:
+- in_features: 4
+  out_features: 64
+  type: linear
+- type: tanh
+- in_features: 64
+  out_features: 64
+  type: linear
+- type: tanh
+- in_features: 64
+  out_features: 61
+  type: linear
+- type: sigmoid
+n_jobs: -1
+outcomes:
+  Temperature change from 1850: true
+  Max cost of energy: true
+  Government net revenue below zero: true
+  Total energy below baseline: true
