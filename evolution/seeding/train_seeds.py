@@ -59,7 +59,7 @@ def train_seed(model_params: dict,
     return presc
 
 
-def actions_to_label(actions: list[str], actions_dict: dict[str, float], output_parser: OutputParser) -> torch.Tensor:
+def actions_to_label(actions: list[str], actions_dict: dict[int, float], output_parser: OutputParser) -> torch.Tensor:
     """
     Converts an actions dict to a label tensor. Actions is passed in to ensure the order is correct. The OutputParser
     unparses the actions dict into what the raw output of the model should be.

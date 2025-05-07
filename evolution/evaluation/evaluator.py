@@ -84,7 +84,7 @@ class EnROADSEvaluator(Evaluator):
         assert not np.isinf(subset.to_numpy()).any(), "Outcomes contain infs."
         return True
 
-    def reconstruct_context_dicts(self, batch_context: torch.Tensor) -> list[dict[str, float]]:
+    def reconstruct_context_dicts(self, batch_context: torch.Tensor) -> list[dict[int, float]]:
         """
         Takes a torch tensor and zips it with the context labels to create a list of dicts.
         """
@@ -94,7 +94,7 @@ class EnROADSEvaluator(Evaluator):
             context_dicts.append(context_dict)
         return context_dicts
 
-    def decomplexify_actions_dict(self, actions_dict: dict[str, float]) -> dict[str, float]:
+    def decomplexify_actions_dict(self, actions_dict: dict[int, float]) -> dict[int, float]:
         """
         Copies an actions dict and then updates it with the decomplexify dict.
         """

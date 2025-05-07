@@ -38,11 +38,9 @@ def filter_metrics_json(metrics_json: dict[str, list],
 class EvolutionHandler():
     """
     Handles evolution results and running of prescriptors for the app.
-    TODO: Currently we hard-code some metrics to make the app prettier. Later we should just create more app-friendly
-    metrics to optimize for.
     """
-    def __init__(self):
-        save_path = Path("app/results")
+    def __init__(self, save_path: str):
+        save_path = Path(save_path)
         with open(save_path / "config.yml", 'r', encoding="utf-8") as f:
             config = yaml.safe_load(f)
         config = process_config(config)
@@ -51,7 +49,6 @@ class EvolutionHandler():
         self.actions = config["actions"]
         self.outcomes = config["outcomes"]
         self.model_params = config["model_params"]
-        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 
         self.factory = NNPrescriptorFactory(EnROADSPrescriptor,
                                             self.model_params,
@@ -72,7 +69,7 @@ class EvolutionHandler():
         for cand_id in pareto_df["cand_id"]:
             self.candidates.append(self.factory.load(save_path / f"{cand_id.split('_')[0]}" / f"{cand_id}"))
 
-    def prescribe_all(self, context_dict: dict[str, float]) -> list[dict[str, float]]:
+    def prescribe_all(self, context_dict: dict[int, float]) -> list[dict[int, float]]:
         """
         Takes a dict containing a single context and prescribes actions for it using all the candidates.
         Returns a context_actions dict for each candidate.
@@ -88,7 +85,7 @@ class EvolutionHandler():
 
         return context_actions_dicts
 
-    def context_actions_to_outcomes(self, context_actions_dicts: list[dict[str, float]]) -> list[pd.DataFrame]:
+    def context_actions_to_outcomes(self, context_actions_dicts: list[dict[int, float]]) -> list[pd.DataFrame]:
         """
         Takes a context dict and prescribes actions for it. Then runs enroads on those actions and returns the outcomes.
         """
@@ -96,7 +93,7 @@ class EvolutionHandler():
         return outcomes_dfs
 
     def outcomes_to_metrics(self,
-                            context_actions_dicts: list[dict[str, float]],
+                            context_actions_dicts: list[dict[int, float]],
                             outcomes_dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """
         Takes parallel lists of context_actions_dicts and outcomes_dfs and processes them into a metrics dict.
@@ -111,7 +108,7 @@ class EvolutionHandler():
         metrics_df = pd.DataFrame(cand_results)
         return metrics_df
 
-    def context_baseline_outcomes(self, context_dict: dict[str, float]) -> pd.DataFrame:
+    def context_baseline_outcomes(self, context_dict: dict[int, float]) -> pd.DataFrame:
         """
         Takes a context dict and returns the outcomes when no actions are performed.
         """

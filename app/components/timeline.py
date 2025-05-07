@@ -35,7 +35,7 @@ class TimelineComponent(Component):
     def _create_timeline_events(self,
                                 action: int,
                                 details: dict,
-                                context_actions_dict: dict[str, float]) -> dict[int, str]:
+                                context_actions_dict: dict[int, float]) -> dict[int, str]:
         """
         Creates 0 or more timeline events for a given action.
         We have to manually handle electric standard being active and if this is the final carbon tax as they rely on

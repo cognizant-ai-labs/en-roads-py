@@ -23,7 +23,7 @@ class ActionMagnitudeOutcome(Outcome):
                 scaling_values[row["id"]] = [0, 0, 0]
         self.scaling_values = scaling_values
 
-    def process_outcomes(self, actions_dict: dict[str, float], _) -> float:
+    def process_outcomes(self, actions_dict: dict[int, float], _) -> float:
         """
         Returns the magnitude of actions taken by normalizing their difference.
         """

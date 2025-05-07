@@ -25,7 +25,7 @@ class Heuristic:
         self.outcome_parser = EnroadsOutcome("CO2 Equivalent Net Emissions")
         self.actions = list(actions)
 
-    def check_action_values(self, actions_dict: dict[str, float], action: str) -> tuple[float, float]:
+    def check_action_values(self, actions_dict: dict[int, float], action: int) -> tuple[float, float]:
         """
         Takes an action and sees if the max or the min is better. Then returns either the max or min and the resulting
         value.
@@ -50,7 +50,7 @@ class Heuristic:
         return best_value, best_outcome
 
     # pylint: disable=no-member
-    def find_heuristic(self) -> tuple[list[str], dict[str, float]]:
+    def find_heuristic(self) -> tuple[list[int], dict[int, float]]:
         """
         Finds the best actions greedily by going over each action we haven't used left, looking at if its max or
         min value is the best, then adding it if so.
@@ -77,7 +77,7 @@ class Heuristic:
         return action_order, actions_dict
     # pylint: enable=no-member
 
-    def plot_actions_used(self, action_order: list[str], actions_dict: dict[str, float]):
+    def plot_actions_used(self, action_order: list[int], actions_dict: dict[int, float]):
         """
         Plot our actions used in a nice grid. This will form a staircase ideally that shows the actions used.
         """
@@ -107,7 +107,7 @@ class Heuristic:
         plt.imshow(grid, cmap=ListedColormap(["lightgreen", "white", "green"]))
         plt.show()
 
-    def get_heuristic_urls(self, action_order: list[str], actions_dict: dict[str, float]) -> list[str]:
+    def get_heuristic_urls(self, action_order: list[int], actions_dict: dict[int, float]) -> list[str]:
         """
         Get the URL adding each sequential action from the action order.
         """

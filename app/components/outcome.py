@@ -229,7 +229,7 @@ class OutcomeComponent(Component):
             State({"type": "context-slider", "index": ALL}, "value"),
             prevent_initial_call=True
         )
-        def update_results_stores(_, context_values: list[float]) -> tuple[list[dict[str, float]],
+        def update_results_stores(_, context_values: list[float]) -> tuple[list[dict[int, float]],
                                                                            list[list[dict[str, float]]],
                                                                            list[dict[str, float]]]:
             """
@@ -257,9 +257,7 @@ class OutcomeComponent(Component):
             # of np.int64: float
             updated = []
             for context_actions_dict in context_actions_dicts:
-                new_ca_dict = {}
-                for key, value in context_actions_dict.items():
-                    new_ca_dict[int(key)] = value
+                new_ca_dict = {int(key): value for key, value in context_actions_dict.items()}
                 updated.append(new_ca_dict)
             context_actions_dicts = updated
 

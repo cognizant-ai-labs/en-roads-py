@@ -11,6 +11,7 @@ import yaml
 
 from enroadspy import load_input_specs, name_to_id
 from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.data import ContextDataset, SSPDataset
 from evolution.evaluation.evaluator import EnROADSEvaluator
 from evolution.utils import process_config
 
@@ -208,6 +209,43 @@ class TestEvaluator(unittest.TestCase):
 
         self.assertTrue(both_start_outcomes.equals(both_end_outcomes))
         self.assertTrue(both_start_outcomes.equals(crossed_outcomes))
+
+    def test_prescribe_actions_default(self):
+        """
+        Tests that passing the default dataset into prescribe actions has the same behavior as passing in None.
+        """
+        test_ds = SSPDataset()
+        cand = self.factory.random_init()
+
+        ca_dicts_train = self.evaluator.prescribe_actions(cand)
+        ca_dicts_test = self.evaluator.prescribe_actions(cand, test_ds)
+
+        # Check that the two evaluations are the same
+        for train_dict, test_dict in zip(ca_dicts_train, ca_dicts_test):
+            # Check the dicts have the same keys and values
+            self.assertEqual(set(train_dict.keys()), set(test_dict.keys()))
+            for key in train_dict:
+                self.assertEqual(train_dict[key], test_dict[key])
+
+    def test_reconstruct_context_dicts(self):
+        """
+        Tests that we can properly reconstruct the context dicts from the batched contexts.
+        """
+        # Normal sample random data for context
+        dummy_context = {}
+        for context in self.config["context"]:
+            dummy_context[context] = np.random.normal(0, 1, size=(1000,))
+        context_df = pd.DataFrame(dummy_context)
+        context_ds = ContextDataset(context_df)
+
+        # Reconstruct context dicts from context dataset
+        context_tensor = context_ds.context
+        context_dicts = self.evaluator.reconstruct_context_dicts(context_tensor)
+        for i, context_dict in enumerate(context_dicts):
+            self.assertEqual(set(context_dict.keys()), set(self.config["context"]))
+            for key in context_dict:
+                # Assert almost equal here because of floating point from python to torch and back
+                self.assertAlmostEqual(context_dict[key], context_df.iloc[i][key], places=6)
 
 
 class TestDecomplexify(unittest.TestCase):

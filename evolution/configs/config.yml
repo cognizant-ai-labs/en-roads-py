@@ -20,10 +20,6 @@ model_params:
   - type: tanh
   - type: linear
     in_features: 64
-    out_features: 64
-  - type: tanh
-  - type: linear
-    in_features: 64
     out_features: 61
   - type: sigmoid
 

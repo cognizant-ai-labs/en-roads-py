@@ -21,7 +21,7 @@ class ActionsOutcome(Outcome):
 
         self.default_values = default_values
 
-    def process_outcomes(self, actions_dict: dict[str, float], _) -> float:
+    def process_outcomes(self, actions_dict: dict[int, float], _) -> float:
         """
         Returns the number of actions taken. We do so by finding how many actions are not the default value.
         If we have a start time less than an end time, they must both not be default and therefore we can decrement our

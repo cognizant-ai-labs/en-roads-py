@@ -23,6 +23,7 @@ class FilterComponent(Component):
         with open("app/units.json", "r", encoding="utf-8") as f:
             self.units = json.load(f)
 
+        # TODO: Un-hardcode these names
         self.names_map = dict(zip(self.metrics, ["Temperature change from 1850",
                                                  "Highest cost of energy",
                                                  "Government spending",
