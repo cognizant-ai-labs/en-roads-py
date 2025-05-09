@@ -87,7 +87,7 @@ class LinkComponent(Component):
             Input("context-actions-store", "data"),
             Input("cand-link-select", "value")
         )
-        def update_cand_link(context_actions_dicts: list[dict[str, float]], cand_idx: int) -> tuple[str, bool]:
+        def update_cand_link(context_actions_dicts: list[dict[int, float]], cand_idx: int) -> tuple[str, bool]:
             """
             Updates the candidate link when a specific candidate is selected.
             """

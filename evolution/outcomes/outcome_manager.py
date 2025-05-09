@@ -71,7 +71,7 @@ class OutcomeManager():
 
         self.outcome_dict = outcome_dict
 
-    def process_outcomes(self, actions_dict: dict[str, float], outcomes_df: pd.DataFrame) -> dict[str, float]:
+    def process_outcomes(self, actions_dict: dict[int, float], outcomes_df: pd.DataFrame) -> dict[str, float]:
         """
         Processes outcomes from outcomes_df with all outcomes in outcome_dict.
         """

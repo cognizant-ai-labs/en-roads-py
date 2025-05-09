@@ -3,9 +3,9 @@ Trains seeds for the first generation of evolution using desired behavior.
 """
 from argparse import ArgumentParser
 from pathlib import Path
-import shutil
 from typing import Optional
 
+from presp.prescriptor import NNPrescriptorFactory
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
@@ -14,6 +14,8 @@ import yaml
 from evolution.candidates.candidate import EnROADSPrescriptor
 from evolution.candidates.direct import DirectPrescriptor, DirectFactory
 from evolution.candidates.output_parser import OutputParser
+from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.utils import process_config
 from enroadspy import load_input_specs
 from enroadspy.generate_url import generate_actions_dict
 
@@ -56,7 +58,7 @@ def train_seed(model_params: dict,
     return presc
 
 
-def actions_to_label(actions: list[str], actions_dict: dict[str, float], output_parser: OutputParser) -> torch.Tensor:
+def actions_to_label(actions: list[str], actions_dict: dict[int, float], output_parser: OutputParser) -> torch.Tensor:
     """
     Converts an actions dict to a label tensor. Actions is passed in to ensure the order is correct. The OutputParser
     unparses the actions dict into what the raw output of the model should be.
@@ -80,7 +82,7 @@ def create_default_labels(actions: list[str], output_parser: OutputParser) -> li
     categories = []
     for action in actions:
         possibilities = []
-        row = input_specs[input_specs["varId"] == action].iloc[0]
+        row = input_specs[input_specs["id"] == action].iloc[0]
         if row["kind"] == "slider":
             possibilities = [row["minValue"], row["maxValue"], row["defaultValue"]]
         elif row["kind"] == "switch":
@@ -109,7 +111,7 @@ def create_custom_labels(actions: list[str], seed_urls: list[str], output_parser
         # Fill actions dict with default values
         for action in actions:
             if action not in actions_dict:
-                actions_dict[action] = input_specs[input_specs["varId"] == action].iloc[0]["defaultValue"]
+                actions_dict[action] = input_specs[input_specs["id"] == action].iloc[0]["defaultValue"]
         # Encode actions dict to tensor
         label = actions_to_label(actions, actions_dict, output_parser)
         labels.append(label)
@@ -135,7 +137,7 @@ def create_seeds(model_params: list[dict],
     seeds = []
     for i, label in enumerate(labels):
         candidate = train_seed(model_params, actions, context_ds, label, epochs=epochs)
-        candidate.cand_id = f"0_{i}"
+        candidate.cand_id = f"1_{i}"
         seeds.append(candidate)
 
     return seeds
@@ -173,27 +175,42 @@ def main_direct():
     with open(args.config, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    # Train seeds
-    actions = config["actions"]
-    seed_urls = config.get("seed_urls", None)
-    seeds = create_direct_seeds(actions, seed_urls)
+    config = process_config(config)
 
     # Handle if the seed directory already exists
-    seed_dir = Path(config["evolution_params"]["seed_dir"])
-    if seed_dir.exists():
-        delete = input("Seed directory already exists. Would you like to overwrite it? (Y/n):")
+    seed_path = Path(config["evolution_params"]["seed_path"])
+    if seed_path.exists():
+        delete = input("Seed file already exists. Would you like to overwrite it? (Y/n):")
         if delete.lower() != "y":
             print("Exiting...")
             return
         else:
-            print(f"Overwiting seeds in {seed_dir}")
-            shutil.rmtree(seed_dir)
-    seed_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Overwiting {seed_path}")
+            seed_path.unlink()
+    seed_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Save seeds to disk with factory
-    factory = DirectFactory(actions)
-    for seed in seeds:
-        factory.save(seed, seed_dir / (seed.cand_id + ".pt"))
+    # Train seeds
+    actions = config["actions"]
+    seed_urls = config.get("seed_urls", None)
+
+    if len(config["context"]) == 0:
+        seeds = create_direct_seeds(actions, seed_urls)
+
+        # Save seeds to disk with factory
+        factory = DirectFactory(actions)
+        factory.save_population(seeds, seed_path)
+    else:
+        evaluator = EnROADSEvaluator(config["context"],
+                                     config["actions"],
+                                     config["outcomes"],
+                                     config["n_jobs"],
+                                     config["batch_size"],
+                                     config["device"],
+                                     config.get("decomplexify", False))
+        seeds = create_seeds(config["model_params"], evaluator.context_dataset, config["actions"], seed_urls)
+
+        factory = NNPrescriptorFactory(EnROADSPrescriptor, config["model_params"], device=DEVICE, actions=actions)
+        factory.save_population(seeds, seed_path)
 
 
 if __name__ == "__main__":

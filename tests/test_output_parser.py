@@ -21,7 +21,7 @@ class TestOutputParser(unittest.TestCase):
         Checks that when we have 0's or 1's the output parser correctly assigns to the min/max indicated in input_specs.
         """
         slider_specs = self.input_specs[self.input_specs["kind"] == "slider"]
-        all_slider_actions = list(slider_specs["varId"])
+        all_slider_actions = list(slider_specs["id"])
 
         # Baseline values to compare against
         min_values = list(slider_specs["minValue"])
@@ -46,7 +46,7 @@ class TestOutputParser(unittest.TestCase):
         Checks that when we have a 0/1 for a switch it correctly assigns the on/off value.
         """
         slider_specs = self.input_specs[self.input_specs["kind"] == "switch"]
-        all_slider_actions = list(slider_specs["varId"])
+        all_slider_actions = list(slider_specs["id"])
 
         # Baseline values to compare against
         off_values = list(slider_specs["offValue"])
@@ -72,7 +72,7 @@ class TestOutputParser(unittest.TestCase):
         """
         # Baseline values to compare against
         slider_specs = self.input_specs.copy()
-        all_slider_actions = list(slider_specs["varId"])
+        all_slider_actions = list(slider_specs["id"])
 
         slider_specs["off_merged"] = slider_specs["offValue"].fillna(slider_specs["minValue"])
         slider_specs["on_merged"] = slider_specs["onValue"].fillna(slider_specs["maxValue"])
@@ -97,11 +97,11 @@ class TestOutputParser(unittest.TestCase):
     def test_parse_unparse(self):
         """
         Checks that the parse and unparse functions are inverses of each other.
-        NOTE: Qualifying path renewables has the same on and off value so we just ignore it here.
+        NOTE: Qualifying path renewables (263) has the same on and off value so we just ignore it here.
         """
         slider_specs = self.input_specs.copy()
-        all_slider_actions = [v for v in list(slider_specs["varId"]) if v != "_qualifying_path_renewables"]
-        slider_specs = slider_specs[slider_specs["varId"].isin(all_slider_actions)]
+        all_slider_actions = [v for v in list(slider_specs["id"]) if v != 263]
+        slider_specs = slider_specs[slider_specs["id"].isin(all_slider_actions)]
 
         slider_specs["off_merged"] = slider_specs["offValue"].fillna(slider_specs["minValue"])
         slider_specs["on_merged"] = slider_specs["onValue"].fillna(slider_specs["maxValue"])

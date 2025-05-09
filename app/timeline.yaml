@@ -1,63 +1,63 @@
-_source_subsidy_delivered_coal_tce:
-  type: subsidy
-  start: _source_subsidy_start_time_delivered_coal
-  stop: _source_subsidy_stop_time_delivered_coal
+_source_tax_coal_tce:
+  type: tax
+  start: _source_tax_start_time_coal
+  stop: _source_tax_stop_time_coal
 _no_new_coal:
   type: no_new
   start: _year_of_no_new_capacity_coal
-_utilization_adjustment_factor_delivered_coal:
+_utilization_adjustment_factor_coal:
   type: adjustment
-  start: _utilization_policy_start_time_delivered_coal
-  stop: _utilization_policy_stop_time_delivered_coal
-_source_subsidy_delivered_oil_boe:
-  type: subsidy
-  start: _source_subsidy_start_time_delivered_oil
-  stop: _source_subsidy_stop_time_delivered_oil
+  start: _utilization_policy_start_time_coal
+  stop: _utilization_policy_stop_time_coal
+_source_tax_oil_boe:
+  type: tax
+  start: _source_tax_start_time_oil
+  stop: _source_tax_stop_time_oil
 _no_new_oil:
   type: no_new
   start: _year_of_no_new_capacity_oil
-_utilization_adjustment_factor_delivered_oil:
+_utilization_adjustment_factor_oil:
   type: adjustment
-  start: _utilization_policy_start_time_delivered_oil
-  stop: _utilization_policy_stop_time_delivered_oil
-_source_subsidy_delivered_gas_mcf:
-  type: subsidy
-  start: _source_subsidy_start_time_delivered_gas
-  stop: _source_subsidy_stop_time_delivered_gas
+  start: _utilization_policy_start_time_oil
+  stop: _utilization_policy_stop_time_oil
+_source_tax_gas_mcf:
+  type: tax
+  start: _source_tax_start_time_gas
+  stop: _source_tax_stop_time_gas
 _no_new_gas:
   type: no_new
   start: _year_of_no_new_capacity_gas
-_utilization_adjustment_factor_delivered_gas:
+_utilization_adjustment_factor_gas:
   type: adjustment
-  start: _utilization_policy_start_time_delivered_gas
-  stop: _utilization_policy_stop_time_delivered_gas
-_source_subsidy_renewables_kwh:
-  type: subsidy
-  start: _source_subsidy_start_time_renewables
-  stop: _source_subsidy_stop_time_renewables
-_source_subsidy_delivered_bio_boe:
-  type: subsidy
-  start: _source_subsidy_start_time_delivered_bio
-  stop: _source_subsidy_stop_time_delivered_bio
-_wood_feedstock_subsidy_boe:
+  start: _utilization_policy_start_time_gas
+  stop: _utilization_policy_stop_time_gas
+_source_tax_renewables_kwh:
+  type: tax
+  start: _source_tax_start_time_renewables
+  stop: _source_tax_stop_time_renewables
+_source_tax_bio_boe:
+  type: tax
+  start: _source_tax_start_time_bio
+  stop: _source_tax_stop_time_bio
+_wood_feedstock_tax_boe:
   type: bio
-  start: _source_subsidy_start_time_delivered_bio
-  stop: _source_subsidy_stop_time_delivered_bio
-_crop_feedstock_subsidy_boe:
+  start: _source_tax_start_time_bio
+  stop: _source_tax_stop_time_bio
+_crop_feedstock_tax_boe:
   type: bio
-  start: _source_subsidy_start_time_delivered_bio
-  stop: _source_subsidy_stop_time_delivered_bio
-_other_feedstock_subsidy_boe:
+  start: _source_tax_start_time_bio
+  stop: _source_tax_stop_time_bio
+_other_feedstock_tax_boe:
   type: bio
-  start: _source_subsidy_start_time_delivered_bio
-  stop: _source_subsidy_stop_time_delivered_bio
+  start: _source_tax_start_time_bio
+  stop: _source_tax_stop_time_bio
 _no_new_bio:
   type: no_new
   start: _year_of_no_new_capacity_bio
-_source_subsidy_nuclear_kwh:
-  type: subsidy
-  start: _source_subsidy_start_time_nuclear
-  stop: _source_subsidy_stop_time_nuclear
+_source_tax_nuclear_kwh:
+  type: tax
+  start: _source_tax_start_time_nuclear
+  stop: _source_tax_stop_time_nuclear
 _carbon_tax_initial_target:
   type: carbon_tax
   start: _carbon_tax_phase_1_start

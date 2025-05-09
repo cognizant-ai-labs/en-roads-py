@@ -25,8 +25,8 @@ class ContextDataset(Dataset):
             self.scaler = StandardScaler()
             transformed = self.scaler.fit_transform(context_df)
 
-        self.scaled_context = torch.Tensor(transformed)
-        self.context = torch.Tensor(context_df.values)
+        self.scaled_context = torch.tensor(transformed, dtype=torch.float32)
+        self.context = torch.tensor(context_df.values, dtype=torch.float32)
 
     def __len__(self):
         return len(self.context)
@@ -35,17 +35,11 @@ class ContextDataset(Dataset):
         return self.scaled_context[idx], self.context[idx]
 
 
-class SSPDataset(Dataset):
+class SSPDataset(ContextDataset):
     """
-    Wrapper around ContextDataset that loads the SSP context data.
+    Child of ContextDataset that loads the pre-generated SSP dataset.
     """
     def __init__(self):
         context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
         context_df = context_df.drop(columns=["F", "scenario"])
-        self.context_dataset = ContextDataset(context_df)
-
-    def __len__(self):
-        return len(self.context_dataset)
-
-    def __getitem__(self, idx):
-        return self.context_dataset[idx]
+        super().__init__(context_df)

@@ -9,9 +9,11 @@ from presp.prescriptor import NNPrescriptorFactory
 import torch
 import yaml
 
-from enroadspy import load_input_specs
+from enroadspy import load_input_specs, name_to_id
 from evolution.candidates.candidate import EnROADSPrescriptor
+from evolution.data import ContextDataset, SSPDataset
 from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.utils import process_config
 
 
 class TestEvaluator(unittest.TestCase):
@@ -25,6 +27,8 @@ class TestEvaluator(unittest.TestCase):
         # Dummy config to test with
         with open("tests/configs/evaluator.yml", "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
+
+        config = process_config(config)
 
         self.config = config
 
@@ -58,7 +62,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
-        actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
+        actions_dict = {name_to_id("Source tax coal tce", input_specs): 100}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -75,7 +79,7 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         vals = input_specs["defaultValue"].to_list()
 
-        actions_dict = {"_source_subsidy_delivered_coal_tce": 100}
+        actions_dict = {name_to_id("Source tax coal tce", input_specs): 100}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -85,7 +89,7 @@ class TestEvaluator(unittest.TestCase):
             else:
                 self.assertTrue(np.isclose(float(inp_val), default), "Messed up first input")
 
-        actions_dict = {"_source_subsidy_start_time_delivered_coal": 2040}
+        actions_dict = {name_to_id("Source tax start time coal", input_specs): 2040}
         enroads_input = self.evaluator.enroads_runner.construct_enroads_input(actions_dict)
         split_input = enroads_input.split(" ")
         for i, (default, inp) in enumerate(zip(vals, split_input)):
@@ -100,8 +104,8 @@ class TestEvaluator(unittest.TestCase):
         Makes sure that the same candidate evaluated twice has the same metrics.
         """
         candidate = self.factory.random_init()
-        metrics1 = self.evaluator.evaluate_candidate(candidate)
-        metrics2 = self.evaluator.evaluate_candidate(candidate)
+        metrics1, _ = self.evaluator.evaluate_candidate(candidate)
+        metrics2, _ = self.evaluator.evaluate_candidate(candidate)
 
         self.assertTrue(np.equal(metrics1, metrics2).all())
 
@@ -113,7 +117,7 @@ class TestEvaluator(unittest.TestCase):
         # Switch all checkboxes to true
         true_actions = {}
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action]
+            row = input_specs[input_specs["id"] == action]
             if row["kind"].iloc[0] == "switch":
                 true_actions[action] = 1
         true_outcomes = self.evaluator.enroads_runner.evaluate_actions(true_actions)
@@ -121,7 +125,7 @@ class TestEvaluator(unittest.TestCase):
         # Switch all checkboxes to false
         false_actions = {}
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action]
+            row = input_specs[input_specs["id"] == action]
             if row["kind"].iloc[0] == "switch":
                 false_actions[action] = 0
         false_outcomes = self.evaluator.enroads_runner.evaluate_actions(false_actions)
@@ -137,7 +141,7 @@ class TestEvaluator(unittest.TestCase):
         baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action].iloc[0]
+            row = input_specs[input_specs["id"] == action].iloc[0]
             if row["kind"] == "switch":
                 actions_dict = {}
                 if row["defaultValue"] == row["onValue"]:
@@ -149,12 +153,12 @@ class TestEvaluator(unittest.TestCase):
                     pd.testing.assert_frame_equal(outcomes.iloc[:2024-1990], baseline.iloc[:2024-1990])
                 except AssertionError:
                     bad_actions.append(action)
-        exceptions = ['_apply_carbon_tax_to_biofuels',
-                      '_ccs_carbon_tax_qualifier',
-                      '_qualifying_path_nuclear',
-                      '_qualifying_path_bioenergy',
-                      '_qualifying_path_fossil_ccs',
-                      '_qualifying_path_gas']
+        # TODO: Ask if apply carbon tax to biofuels and qualifying path fossil CCS should be exceptions.
+        exceptions = ['CCS carbon tax qualifier',
+                      'Qualifying path nuclear',
+                      'Qualifying path bioenergy',
+                      'Qualifying path gas']
+        exceptions = [name_to_id(action, input_specs) for action in exceptions]
         self.assertEqual(set(bad_actions), set(exceptions), "Switches besides exceptions changed the past")
 
     def test_sliders_change_past(self):
@@ -164,9 +168,9 @@ class TestEvaluator(unittest.TestCase):
         input_specs = load_input_specs()
         baseline = self.evaluator.enroads_runner.evaluate_actions({})
         bad_actions = []
-        # TODO: When we set this to input_specs['varId'].unique() we get some fails we need to account for.
+        # TODO: When we set this to input_specs['id'].unique() we get some fails we need to account for.
         for action in self.config["actions"]:
-            row = input_specs[input_specs["varId"] == action].iloc[0]
+            row = input_specs[input_specs["id"] == action].iloc[0]
             if row["kind"] == "slider":
                 outcomes_min = self.evaluator.enroads_runner.evaluate_actions({action: row["minValue"]})
                 outcomes_max = self.evaluator.enroads_runner.evaluate_actions({action: row["maxValue"]})
@@ -186,13 +190,14 @@ class TestEvaluator(unittest.TestCase):
         """
         Checks if the end time being before the start time breaks anything.
         """
-        actions = ["_source_subsidy_delivered_coal_tce",
-                   "_source_subsidy_start_time_delivered_coal",
-                   "_source_subsidy_stop_time_delivered_coal",]
+        actions = ["Source tax coal tce",
+                   "Source tax start time coal",
+                   "Source tax stop time coal"]
+        actions = [name_to_id(action, load_input_specs()) for action in actions]
 
         input_specs = load_input_specs()
-        min_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["minValue"]
-        max_time = input_specs[input_specs["varId"] == actions[1]].iloc[0]["maxValue"]
+        min_time = input_specs[input_specs["id"] == actions[1]].iloc[0]["minValue"]
+        max_time = input_specs[input_specs["id"] == actions[1]].iloc[0]["maxValue"]
 
         both_start_dict = {actions[0]: -15, actions[1]: min_time, actions[2]: min_time}
         both_end_dict = {actions[0]: -15, actions[1]: max_time, actions[2]: max_time}
@@ -205,6 +210,43 @@ class TestEvaluator(unittest.TestCase):
         self.assertTrue(both_start_outcomes.equals(both_end_outcomes))
         self.assertTrue(both_start_outcomes.equals(crossed_outcomes))
 
+    def test_prescribe_actions_default(self):
+        """
+        Tests that passing the default dataset into prescribe actions has the same behavior as passing in None.
+        """
+        test_ds = SSPDataset()
+        cand = self.factory.random_init()
+
+        ca_dicts_train = self.evaluator.prescribe_actions(cand)
+        ca_dicts_test = self.evaluator.prescribe_actions(cand, test_ds)
+
+        # Check that the two evaluations are the same
+        for train_dict, test_dict in zip(ca_dicts_train, ca_dicts_test):
+            # Check the dicts have the same keys and values
+            self.assertEqual(set(train_dict.keys()), set(test_dict.keys()))
+            for key in train_dict:
+                self.assertEqual(train_dict[key], test_dict[key])
+
+    def test_reconstruct_context_dicts(self):
+        """
+        Tests that we can properly reconstruct the context dicts from the batched contexts.
+        """
+        # Normal sample random data for context
+        dummy_context = {}
+        for context in self.config["context"]:
+            dummy_context[context] = np.random.normal(0, 1, size=(1000,))
+        context_df = pd.DataFrame(dummy_context)
+        context_ds = ContextDataset(context_df)
+
+        # Reconstruct context dicts from context dataset
+        context_tensor = context_ds.context
+        context_dicts = self.evaluator.reconstruct_context_dicts(context_tensor)
+        for i, context_dict in enumerate(context_dicts):
+            self.assertEqual(set(context_dict.keys()), set(self.config["context"]))
+            for key in context_dict:
+                # Assert almost equal here because of floating point from python to torch and back
+                self.assertAlmostEqual(context_dict[key], context_df.iloc[i][key], places=6)
+
 
 class TestDecomplexify(unittest.TestCase):
     """
@@ -213,6 +255,7 @@ class TestDecomplexify(unittest.TestCase):
     def setUp(self):
         with open("tests/configs/decomplexify.yml", "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
+        config = process_config(config)
         self.config = config
 
         self.evaluator = EnROADSEvaluator(context=config["context"],
@@ -228,15 +271,17 @@ class TestDecomplexify(unittest.TestCase):
         Checks that the dict that we expect to pass into the actions when we are decomplexifying is correct.
         """
         true_decomplexify_dict = {
-            '_use_subsidies_by_feedstock': 1,
-            '_use_new_tech_advanced_settings': 1,
-            '_switch_to_use_transport_electrification_detailed_settings': 1,
-            '_use_detailed_food_and_ag_controls': 1,
-            '_choose_nature_cdr_by_type': 1,
-            '_use_detailed_other_ghg_controls': 1,
-            '_switch_use_land_detailed_settings': 1,
-            '_choose_cdr_by_type': 2
+            'Use taxes by feedstock': 1,
+            'Use New tech advanced settings': 1,
+            'SWITCH to use transport electrification detailed settings': 1,
+            'Use detailed food and ag controls': 1,
+            'Choose nature CDR by type': 1,
+            'Use detailed other GHG controls': 1,
+            'SWITCH use land detailed settings': 1,
+            'Choose CDR by type': 2
         }
+        input_specs = load_input_specs()
+        true_decomplexify_dict = {name_to_id(key, input_specs): value for key, value in true_decomplexify_dict.items()}
 
         decomplexify_dict = self.evaluator.decomplexify_dict
 
@@ -245,6 +290,6 @@ class TestDecomplexify(unittest.TestCase):
                          "Decomplexify dict keys don't match expected keys")
 
         # Check that the values of the dicts match
-        for key in decomplexify_dict:
-            self.assertEqual(decomplexify_dict[key], true_decomplexify_dict[key],
+        for key, value in decomplexify_dict.items():
+            self.assertEqual(value, true_decomplexify_dict[key],
                              f"Decomplexify dict {key} doesn't match expected {true_decomplexify_dict[key]}")

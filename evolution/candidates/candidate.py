@@ -15,7 +15,7 @@ class EnROADSPrescriptor(NNPrescriptor):
     Prescriptor candidate for En-ROADS. Runs context as a torch tensor through the model and parses the output into
     the enroadsrunner actions dict format
     """
-    def __init__(self, model_params: list[dict], actions: list[str], device: str = "cpu"):
+    def __init__(self, model_params: list[dict], actions: list[int], device: str = "cpu"):
         super().__init__(model_params, device)
         self.actions = list(actions)
         self.output_parser = OutputParser(self.actions, device=device)
@@ -28,7 +28,7 @@ class EnROADSPrescriptor(NNPrescriptor):
         return actions_dicts
 
     @classmethod
-    def from_pymoo_params(cls, x: np.ndarray, model_params: dict, actions: list[str]) -> "EnROADSPrescriptor":
+    def from_pymoo_params(cls, x: np.ndarray, model_params: dict, actions: list[int]) -> "EnROADSPrescriptor":
         """
         Creates a candidate from a 1d numpy array of parameters that have to be reshaped into tensors and loaded
         as a state dict.

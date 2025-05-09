@@ -7,7 +7,9 @@ import json
 import pandas as pd
 
 
-BAD_SWITCH = "_qualifying_path_renewables"
+BAD_SWITCH = 263
+
+SDK_VERSION = "v25.4.0-beta1"
 
 
 def load_input_specs() -> pd.DataFrame:
@@ -18,7 +20,7 @@ def load_input_specs() -> pd.DataFrame:
     TODO: Un hard-code the En-ROADS SDK version.
     """
     source_code = ""
-    with open("enroadspy/en-roads-sdk-v24.6.0-beta1/packages/en-roads-core/dist/index.js", "r", encoding="utf-8") as f:
+    with open(f"enroadspy/en-roads-sdk-{SDK_VERSION}/packages/en-roads-core/dist/index.js", "r", encoding="utf-8") as f:
         source_code = f.read()
 
     # Locate var inputSpecs in the source code
@@ -38,15 +40,45 @@ def load_input_specs() -> pd.DataFrame:
     return input_specs
 
 
-def name_to_id(name: str, input_specs: pd.DataFrame) -> str:
+def name_to_id(name: str, input_specs: pd.DataFrame) -> int:
     """
-    Converts the En-ROADS nice variable name to its unique ID (also a string).
+    Converts the En-ROADS pretty variable name to its unique integer ID.
+    Returns -1 if the name is not found.
     """
-    return input_specs.loc[input_specs["varName"] == name, "varId"].values[0]
+    filtered = input_specs[input_specs["varName"] == name]
+    if filtered.empty:
+        return -1
+    return filtered["id"].values[0]
 
 
-def id_to_name(var_id: str, input_specs: pd.DataFrame) -> str:
+def id_to_name(input_id: int, input_specs: pd.DataFrame) -> str:
     """
-    Converts the En-ROADS unique ID to its nice variable name.
+    Converts the En-ROADS unique integer ID to its nice variable name.
+    Returns None if not found.
     """
-    return input_specs.loc[input_specs["varId"] == var_id, "varName"].values[0]
+    filtered = input_specs[input_specs["id"] == input_id]
+    if filtered.empty:
+        return None
+    return filtered["varName"].values[0]
+
+
+def varid_to_id(varid: str, input_specs: pd.DataFrame) -> int:
+    """
+    Converts the En-ROADS varId to its unique integer ID.
+    Returns -1 if not found.
+    """
+    filtered = input_specs[input_specs["varId"] == varid]
+    if filtered.empty:
+        return -1
+    return filtered["id"].values[0]
+
+
+def id_to_varid(input_id: int, input_specs: pd.DataFrame) -> str:
+    """
+    Converts the En-ROADS unique integer ID to its varId from the inputSpecs.
+    Returns None if not found.
+    """
+    filtered = input_specs[input_specs["id"] == input_id]
+    if filtered.empty:
+        return None
+    return filtered["varId"].values[0]

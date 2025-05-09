@@ -1,10 +1,10 @@
 {
     "Temperature above 1.5C": "°C",
-    "Max cost of energy": "$/GJ",
-    "Government net revenue below zero": "T$",
-    "Total energy below baseline": "EJ",
     "Temperature change from 1850": "°C",
+    "Max cost of energy": "$/GJ",
     "Adjusted cost of energy per GJ": "$/GJ",
+    "Government net revenue below zero": "T$",
     "Government net revenue from adjustments": "T$",
-    "Total Primary Energy Demand": "EJ"
+    "Total Primary Energy Demand": "EJ",
+    "Total energy below baseline": "EJ"
 }

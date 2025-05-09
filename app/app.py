@@ -13,13 +13,13 @@ from app.components.link import LinkComponent
 
 from app.utils import EvolutionHandler
 
-evolution_handler = EvolutionHandler()
+# The evolution handler is the entry point for all the backend logic of the app.
+evolution_handler = EvolutionHandler(save_path="app/results")
+context = evolution_handler.context
 actions = evolution_handler.actions
-metrics = evolution_handler.outcomes.keys()
-# The candidates are sorted by rank then distance so the 'best' ones are the first 10
-sample_idxs = list(range(10))
+metrics = list(evolution_handler.outcomes.keys())
 
-context_component = ContextComponent()
+context_component = ContextComponent(context)
 filter_component = FilterComponent(metrics)
 header_component = HeaderComponent()
 outcome_component = OutcomeComponent(evolution_handler)
