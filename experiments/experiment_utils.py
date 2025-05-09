@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from presp.prescriptor import Prescriptor, PrescriptorFactory, NNPrescriptorFactory
+from presp.prescriptor import PrescriptorFactory, NNPrescriptorFactory
 import yaml
 
 from evolution.candidates.candidate import EnROADSPrescriptor
@@ -29,6 +29,7 @@ class Experimenter:
         self.config = process_config(self.config)
 
         self.prescriptor_factory = self.create_prescriptor_factory(self.config)
+        self.population = self.prescriptor_factory.load_population(self.results_dir / "population")
 
         self.evaluator = EnROADSEvaluator(self.config["context"],
                                           self.config["actions"],
@@ -47,28 +48,16 @@ class Experimenter:
         """
         raise NotImplementedError("Must implement prescriptor factory creation in subclass")
 
-    def get_candidate_from_id(self, cand_id: str) -> Prescriptor:
-        """
-        Loads a candidate from an id.
-        NOTE: The seeds get saved in generation 1 but are indicated by starting with 0 so we hard-code their loading.
-        """
-        gen = cand_id.split("_")[0]
-        if gen == 0:
-            gen += 1
-        cand_path = self.results_dir / cand_id.split("_")[0] / f"{cand_id}"
-        return self.prescriptor_factory.load(cand_path)
-
     def get_candidate_results(self, cand_id: str) -> tuple[list[dict], list[pd.DataFrame], np.ndarray]:
         """
         Gets the context_actions dicts, outcomes_dfs, and metrics for a candidate.
         """
-
         # If the results are already cached, just grab them
         if cand_id in self.results_cache:
             return self.results_cache[cand_id]
 
         # The full process of evaluation on a candidate
-        candidate = self.get_candidate_from_id(cand_id)
+        candidate = self.population[cand_id]
         context_actions_dicts = self.evaluator.prescribe_actions(candidate)
         outcomes_dfs = self.evaluator.run_enroads(context_actions_dicts)
         metrics = self.evaluator.compute_metrics(context_actions_dicts, outcomes_dfs)
