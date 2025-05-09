@@ -290,6 +290,6 @@ class TestDecomplexify(unittest.TestCase):
                          "Decomplexify dict keys don't match expected keys")
 
         # Check that the values of the dicts match
-        for key in decomplexify_dict:
-            self.assertEqual(decomplexify_dict[key], true_decomplexify_dict[key],
+        for key, value in decomplexify_dict.items():
+            self.assertEqual(value, true_decomplexify_dict[key],
                              f"Decomplexify dict {key} doesn't match expected {true_decomplexify_dict[key]}")

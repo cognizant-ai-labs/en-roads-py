@@ -44,7 +44,7 @@ def open_browser(results_dir: Path, cand_id: str, context_idx: int):
 
     device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
     factory = NNPrescriptorFactory(EnROADSPrescriptor, config["model_params"], device, actions=config["actions"])
-    candidate = factory.load(results_dir / cand_id.split("_")[0] / f"{cand_id}")
+    candidate = factory.load_population(results_dir / "population")[cand_id]
 
     context_tensor, context_vals = evaluator.context_dataset[context_idx]
     device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
