@@ -7,7 +7,7 @@ evolution_params:
   mutation_rate: 0.1
   mutation_factor: 0.1
   save_path: results/app1
-  seed_dir: evolution/seeding/seeds/app
+  seed_path: evolution/seeding/seeds/app
 
 device: mps
 batch_size: 64

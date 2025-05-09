@@ -3,7 +3,6 @@ Trains seeds for the first generation of evolution using desired behavior.
 """
 from argparse import ArgumentParser
 from pathlib import Path
-import shutil
 from typing import Optional
 
 from presp.prescriptor import NNPrescriptorFactory
@@ -179,16 +178,16 @@ def main_direct():
     config = process_config(config)
 
     # Handle if the seed directory already exists
-    seed_dir = Path(config["evolution_params"]["seed_dir"])
-    if seed_dir.exists():
-        delete = input("Seed directory already exists. Would you like to overwrite it? (Y/n):")
+    seed_path = Path(config["evolution_params"]["seed_path"])
+    if seed_path.exists():
+        delete = input("Seed file already exists. Would you like to overwrite it? (Y/n):")
         if delete.lower() != "y":
             print("Exiting...")
             return
         else:
-            print(f"Overwiting seeds in {seed_dir}")
-            shutil.rmtree(seed_dir)
-    seed_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Overwiting {seed_path}")
+            seed_path.unlink()
+    seed_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Train seeds
     actions = config["actions"]
@@ -199,8 +198,7 @@ def main_direct():
 
         # Save seeds to disk with factory
         factory = DirectFactory(actions)
-        for seed in seeds:
-            factory.save(seed, seed_dir / (seed.cand_id + ".pt"))
+        factory.save_population(seeds, seed_path)
     else:
         evaluator = EnROADSEvaluator(config["context"],
                                      config["actions"],
@@ -212,8 +210,7 @@ def main_direct():
         seeds = create_seeds(config["model_params"], evaluator.context_dataset, config["actions"], seed_urls)
 
         factory = NNPrescriptorFactory(EnROADSPrescriptor, config["model_params"], device=DEVICE, actions=actions)
-        for seed in seeds:
-            factory.save(seed, seed_dir / (seed.cand_id + ".pt"))
+        factory.save_population(seeds, seed_path)
 
 
 if __name__ == "__main__":

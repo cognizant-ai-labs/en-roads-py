@@ -77,15 +77,20 @@ class DirectFactory(PrescriptorFactory):
         # Is this necessary?
         candidate.genome = genome
 
-    def save(self, candidate: DirectPrescriptor, path: Path):
+    def save_population(self, population: list[DirectPrescriptor], path: Path):
+        pop_dict = {cand.cand_id: cand.genome for cand in population}
         with open(path, "wb") as f:
-            # Save the genome as a tensor
-            torch.save(candidate.genome, f)
+            # Save the genomes as tensors
+            torch.save(pop_dict, f)
 
-    def load(self, path: Path) -> DirectPrescriptor:
+    def load_population(self, path: Path) -> dict[str, DirectPrescriptor]:
+        population = {}
         with open(path, "rb") as f:
-            # Load the genome from a tensor
-            genome = torch.load(f)
-        candidate = DirectPrescriptor(**self.presc_args)
-        candidate.genome = genome
-        return candidate
+            pop_dict = torch.load(f)
+            for cand_id, genome in pop_dict.items():
+                candidate = DirectPrescriptor(**self.presc_args)
+                candidate.genome = genome
+                candidate.cand_id = cand_id
+                population[cand_id] = candidate
+
+        return population

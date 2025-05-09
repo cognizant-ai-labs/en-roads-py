@@ -58,6 +58,7 @@ class EnROADSEvaluator(Evaluator):
 
         # Get the switches that should always be on when decomplexifying
         self.decomplexify = decomplexify
+        self.decomplexify_dict = {}
         if self.decomplexify:
             input_specs = load_input_specs()
             condition = (
@@ -107,6 +108,7 @@ class EnROADSEvaluator(Evaluator):
         Takes a candidate, batches contexts, and prescribes actions for each one. Then attaches the context to the
         actions to return context_actions dicts.
         Takes in a context dataset to prescribe actions for. If None is provided, uses the default context dataset.
+        If decomplexify is active, we activate the switches to decomplexify the model.
         """
         context_actions_dicts = []
         if context_dataset is None:
@@ -119,6 +121,9 @@ class EnROADSEvaluator(Evaluator):
             for actions_dict, context_dict in zip(actions_dicts, context_dicts):
                 # Add context to actions so we can pass it into the model
                 actions_dict.update(context_dict)
+                # If decomplexify is active, we need to activate decomplexify switches
+                if self.decomplexify:
+                    actions_dict = self.decomplexify_actions_dict(actions_dict)
                 context_actions_dicts.append(actions_dict)
 
         return context_actions_dicts
@@ -126,13 +131,9 @@ class EnROADSEvaluator(Evaluator):
     def run_enroads(self, context_actions_dicts: list[dict]) -> list[pd.DataFrame]:
         """
         Runs enroads on context_actions dicts and returns the time series outcomes dfs.
-        If decomplexify is active, we activate the switches to decomplexify the model.
         """
         outcomes_dfs = []
         for context_actions_dict in context_actions_dicts:
-            # If decomplexify is active, set the decomplexify switches to on
-            if self.decomplexify:
-                context_actions_dict = self.decomplexify_actions_dict(context_actions_dict)
             outcomes_df = self.enroads_runner.evaluate_actions(context_actions_dict)
             self.validate_outcomes(outcomes_df)
             outcomes_dfs.append(outcomes_df)
