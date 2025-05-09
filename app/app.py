@@ -17,7 +17,7 @@ from app.utils import EvolutionHandler
 evolution_handler = EvolutionHandler(save_path="app/results")
 context = evolution_handler.context
 actions = evolution_handler.actions
-metrics = evolution_handler.outcomes.keys()
+metrics = list(evolution_handler.outcomes.keys())
 
 context_component = ContextComponent(context)
 filter_component = FilterComponent(metrics)

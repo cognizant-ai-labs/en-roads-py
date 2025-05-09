@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 from presp.prescriptor import NNPrescriptorFactory
-import torch
 import yaml
 
 from evolution.candidates.candidate import EnROADSPrescriptor
@@ -47,7 +46,13 @@ class EvolutionHandler():
 
         self.context = config["context"]
         self.actions = config["actions"]
-        self.outcomes = config["outcomes"]
+        # TODO: This is hardcoded for now, not sure whether to make it on the user to modify the config or the app to
+        # fix the ordering.
+        metrics = ["Temperature change from 1850",
+                   "Max cost of energy",
+                   "Government net revenue below zero",
+                   "Total energy below baseline"]
+        self.outcomes = {metric: config["outcomes"][metric] for metric in metrics}
         self.model_params = config["model_params"]
 
         self.factory = NNPrescriptorFactory(EnROADSPrescriptor,
@@ -63,11 +68,11 @@ class EvolutionHandler():
                                           device="cpu",
                                           decomplexify=False)
 
-        self.candidates = []
-        pareto_df = pd.read_csv(save_path / f"{config['evolution_params']['n_generations']}.csv")
-        pareto_df = pareto_df[pareto_df["rank"] == 1]
-        for cand_id in pareto_df["cand_id"]:
-            self.candidates.append(self.factory.load(save_path / f"{cand_id.split('_')[0]}" / f"{cand_id}"))
+        self.population = self.factory.load_population(save_path / "population")
+        # Get the order in which the candidates should be prescribed with
+        results_df = pd.read_csv(save_path / "results.csv")
+        results_df = results_df[(results_df["gen"] == results_df["gen"].max()) & (results_df["rank"] == 1)]
+        self.cand_ids = results_df["cand_id"].tolist()
 
     def prescribe_all(self, context_dict: dict[int, float]) -> list[dict[int, float]]:
         """
@@ -80,8 +85,8 @@ class EvolutionHandler():
         context_ds = ContextDataset(context_df, scaler=scaler)
 
         context_actions_dicts = []
-        for candidate in self.candidates:
-            context_actions_dicts.append(self.evaluator.prescribe_actions(candidate, context_ds)[0])
+        for cand_id in self.cand_ids:
+            context_actions_dicts.append(self.evaluator.prescribe_actions(self.population[cand_id], context_ds)[0])
 
         return context_actions_dicts
 
