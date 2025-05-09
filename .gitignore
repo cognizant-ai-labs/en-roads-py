@@ -9,5 +9,8 @@ results/
 *.out
 input_specs*.jsonl
 app/animations
+new_outcomes.csv
+check.py
+evolution/seeding/seeds
 
 !app/results
