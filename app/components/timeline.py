@@ -9,31 +9,33 @@ import dash_bootstrap_components as dbc
 import yaml
 
 from app.components.component import Component
-from enroadspy import load_input_specs
+from enroadspy import load_input_specs, varid_to_id
 
 
 class TimelineComponent(Component):
     """
     Component handling generation of a timeline of actions taken.
     """
-    def __init__(self, actions: list[str]):
-        self.actions = [a for a in actions]
-
+    def __init__(self, actions: list[int]):
+        self.actions = list(actions)
+        self.input_specs = load_input_specs()
         # Pre-compute timeline actions for later when we show actions
         with open("app/timeline.yaml", "r", encoding="utf-8") as f:
             self.timeline = yaml.load(f, Loader=yaml.FullLoader)
         self.timeline_actions = []
         for action, details in self.timeline.items():
-            self.timeline_actions.append(action)
-            for d in details.values():
-                self.timeline_actions.append(d)
-
-        self.input_specs = load_input_specs()
+            self.timeline_actions.append(varid_to_id(action, self.input_specs))
+            if "start" in details:
+                self.timeline_actions.append(varid_to_id(details["start"], self.input_specs))
+            if "stop" in details:
+                self.timeline_actions.append(varid_to_id(details["stop"], self.input_specs))
+            if "length" in details:
+                self.timeline_actions.append(varid_to_id(details["length"], self.input_specs))
 
     def _create_timeline_events(self,
-                                action: str,
+                                action: int,
                                 details: dict,
-                                context_actions_dict: dict[str, float]) -> dict[int, str]:
+                                context_actions_dict: dict[int, float]) -> dict[int, str]:
         """
         Creates 0 or more timeline events for a given action.
         We have to manually handle electric standard being active and if this is the final carbon tax as they rely on
@@ -41,29 +43,39 @@ class TimelineComponent(Component):
         We also manually handle if the action is a different type of bioenergy
         Returns a dict with the year as the key and the event as the value.
         """
-        # Electric standard needs to be active
-        if action == "_electric_standard_target" and not context_actions_dict["_electric_standard_active"]:
+        # Parse details into ids instead of varids
+        if "start" in details:
+            details["start"] = varid_to_id(details["start"], self.input_specs)
+        if "stop" in details:
+            details["stop"] = varid_to_id(details["stop"], self.input_specs)
+        if "length" in details:
+            details["length"] = varid_to_id(details["length"], self.input_specs)
+
+        # Electric standard needs to be active for electric standard target to show
+        if action == 247 and not context_actions_dict[245]:
             return {}
         # If we're doing subsidy by feedstock ignore the default bio subsidy
-        if action == "_source_subsidy_delivered_bio_boe" and context_actions_dict["_use_subsidies_by_feedstock"]:
+        if action == 27 and context_actions_dict[331]:
             return {}
         # If we're not doing subsidy by feedstock ignore the specific feedstock subsidies
-        if action in ["_wood_feedstock_subsidy_boe", "_crop_feedstock_subsidy_boe", "_other_feedstock_subsidy_boe"] \
-           and not context_actions_dict["_use_subsidies_by_feedstock"]:
+        if action in [292, 293, 294] \
+           and not context_actions_dict[311]:
             return {}
 
         events = {}
-        row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+        row = self.input_specs[self.input_specs["id"] == action].iloc[0]
         name = row["varName"]
         decimal = np.ceil(-1 * np.log10(row["step"])).astype(int)
         value = context_actions_dict[action]
 
         start_year = context_actions_dict[details["start"]]
-
         # Carbon price phasing start date needs to be after previous carbon price phase end date
-        if action == "_carbon_tax_final_target":
-            initial_end = context_actions_dict["_carbon_tax_phase_1_start"] + \
-                context_actions_dict["_carbon_tax_time_to_achieve_initial_target"]
+        # 42: final carbon target
+        # 40: carbon price phase 1 end date
+        # 41: carbon price time to achieve initial target
+        if action == 42:
+            initial_end = context_actions_dict[40] + \
+                context_actions_dict[41]
             if start_year < initial_end:
                 start_year = initial_end
 
@@ -79,7 +91,7 @@ class TimelineComponent(Component):
 
         return events
 
-    def create_timeline(self, context_actions_dict: dict[str, float]) -> html.Div:
+    def create_timeline(self, context_actions_dict: dict[int, float]) -> html.Div:
         """
         Creates a nice timeline of actions taken as well as the initial actions taken.
         """
@@ -87,7 +99,7 @@ class TimelineComponent(Component):
         children = [html.H3("Initial Actions")]
         for action in context_actions_dict:
             if action not in self.timeline_actions and action in self.actions:
-                input_spec = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+                input_spec = self.input_specs[self.input_specs["id"] == action].iloc[0]
                 val = context_actions_dict[action]
                 if input_spec["kind"] == "slider":
                     formatting = input_spec["format"]
@@ -99,6 +111,7 @@ class TimelineComponent(Component):
         # Generate timeline
         timeline = defaultdict(list)
         for action, details in self.timeline.items():
+            action = varid_to_id(action, self.input_specs)
             if action in context_actions_dict:
                 events = self._create_timeline_events(action, details, context_actions_dict)
                 for year, event in events.items():
@@ -156,12 +169,13 @@ class TimelineComponent(Component):
             State("context-actions-store", "data"),
             Input("cand-link-select", "value")
         )
-        def update_actions_body(context_actions_dicts: list[dict[str, float]], cand_idx: int) -> tuple[str, bool]:
+        def update_actions_body(context_actions_dicts: list[dict[int, float]], cand_idx: int) -> tuple[str, bool]:
             """
             Updates the body of the modal when a candidate is selected.
             """
             if cand_idx is not None:
                 context_actions_dict = context_actions_dicts[cand_idx]
-                # return self.timeline_component.create_timeline_div(context_actions_dict)
+                # Context actions dict is a dict of string, float but we want it to be int, float
+                context_actions_dict = {int(k): v for k, v in context_actions_dict.items()}
                 return self.create_timeline(context_actions_dict), False
             return "Timeline goes here", False

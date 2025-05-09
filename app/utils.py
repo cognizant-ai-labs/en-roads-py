@@ -1,16 +1,16 @@
 """
 Utilities for the demo app.
 """
-import json
+from pathlib import Path
 
-import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-import torch
+from presp.prescriptor import NNPrescriptorFactory
+import yaml
 
-from enroadspy.enroads_runner import EnroadsRunner
 from evolution.candidates.candidate import EnROADSPrescriptor
-from evolution.outcomes.outcome_manager import OutcomeManager
+from evolution.data import ContextDataset
+from evolution.evaluation.evaluator import EnROADSEvaluator
+from evolution.utils import process_config
 
 
 def filter_metrics_json(metrics_json: dict[str, list],
@@ -37,90 +37,84 @@ def filter_metrics_json(metrics_json: dict[str, list],
 class EvolutionHandler():
     """
     Handles evolution results and running of prescriptors for the app.
-    TODO: Currently we hard-code some metrics to make the app prettier. Later we should just create more app-friendly
-    metrics to optimize in pymoo.
     """
-    def __init__(self):
-        save_path = "app/results"
-        with open(save_path + "/config.json", 'r', encoding="utf-8") as f:
-            config = json.load(f)
+    def __init__(self, save_path: str):
+        save_path = Path(save_path)
+        with open(save_path / "config.yml", 'r', encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        config = process_config(config)
 
+        self.context = config["context"]
         self.actions = config["actions"]
-        self.outcomes = config["outcomes"]
-        # TODO: Make this not hard-coded
-        self.model_params = {"in_size": 4, "hidden_size": 16, "out_size": len(self.actions)}
-        self.device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        # TODO: This is hardcoded for now, not sure whether to make it on the user to modify the config or the app to
+        # fix the ordering.
+        metrics = ["Temperature change from 1850",
+                   "Max cost of energy",
+                   "Government net revenue below zero",
+                   "Total energy below baseline"]
+        self.outcomes = {metric: config["outcomes"][metric] for metric in metrics}
+        self.model_params = config["model_params"]
 
-        self.X = np.load(save_path + "/X.npy")
-        self.F = np.load(save_path + "/F.npy")
+        self.factory = NNPrescriptorFactory(EnROADSPrescriptor,
+                                            self.model_params,
+                                            device="cpu",
+                                            actions=self.actions)
 
-        # TODO: Make this not hard-coded
-        # Here we rescale the outcomes: temperature vs. temperature difference, government spending becomes positive,
-        # and energy difference becomes positive.
-        self.F[:, 0] += 1.5
-        self.F[:, 2] *= -1
-        self.F[:, 3] *= -1
+        self.evaluator = EnROADSEvaluator(self.context,
+                                          self.actions,
+                                          self.outcomes,
+                                          n_jobs=1,
+                                          batch_size=1,
+                                          device="cpu",
+                                          decomplexify=False)
 
-        context_df = pd.read_csv("experiments/scenarios/gdp_context.csv")
-        self.context_df = context_df.drop(columns=["F", "scenario"])
-        self.scaler = StandardScaler()
-        self.scaler.fit(self.context_df.to_numpy())
+        self.population = self.factory.load_population(save_path / "population")
+        # Get the order in which the candidates should be prescribed with
+        results_df = pd.read_csv(save_path / "results.csv")
+        results_df = results_df[(results_df["gen"] == results_df["gen"].max()) & (results_df["rank"] == 1)]
+        self.cand_ids = results_df["cand_id"].tolist()
 
-        self.runner = EnroadsRunner()
-        self.outcome_manager = OutcomeManager(list(self.outcomes.keys()))
-
-    def prescribe_all(self, context_dict: dict[str, float]) -> list[dict[str, float]]:
+    def prescribe_all(self, context_dict: dict[int, float]) -> list[dict[int, float]]:
         """
         Takes a dict containing a single context and prescribes actions for it using all the candidates.
         Returns a context_actions dict for each candidate.
         """
+        context_df = pd.DataFrame([context_dict])
+        # TODO: This is a bit of a hack to pull the scaler out
+        scaler = self.evaluator.context_dataset.scaler
+        context_ds = ContextDataset(context_df, scaler=scaler)
+
         context_actions_dicts = []
-        for x in self.X:
-            candidate = EnROADSPrescriptor.from_pymoo_params(x, self.model_params, self.actions)
-            # Process context_dict into tensor
-            context_list = [context_dict[context] for context in self.context_df.columns]
-            context_scaled = self.scaler.transform([context_list])
-            context_tensor = torch.tensor(context_scaled, dtype=torch.float32, device=self.device)
-            actions_dict = candidate.forward(context_tensor)[0]
-            actions_dict.update(context_dict)
-            context_actions_dicts.append(actions_dict)
+        for cand_id in self.cand_ids:
+            context_actions_dicts.append(self.evaluator.prescribe_actions(self.population[cand_id], context_ds)[0])
 
         return context_actions_dicts
 
-    def context_actions_to_outcomes(self, context_actions_dicts: list[dict[str, float]]) -> list[pd.DataFrame]:
+    def context_actions_to_outcomes(self, context_actions_dicts: list[dict[int, float]]) -> list[pd.DataFrame]:
         """
         Takes a context dict and prescribes actions for it. Then runs enroads on those actions and returns the outcomes.
         """
-        outcomes_dfs = []
-        for context_actions_dict in context_actions_dicts:
-            outcomes_df = self.runner.evaluate_actions(context_actions_dict)
-            outcomes_dfs.append(outcomes_df)
-
+        outcomes_dfs = self.evaluator.run_enroads(context_actions_dicts)
         return outcomes_dfs
 
     def outcomes_to_metrics(self,
-                            context_actions_dicts: list[dict[str, float]],
+                            context_actions_dicts: list[dict[int, float]],
                             outcomes_dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """
         Takes parallel lists of context_actions_dicts and outcomes_dfs and processes them into a metrics dict.
         All of these metrics dicts are then concatenated into a single DataFrame.
         TODO: We hard-code some metrics to be more app-friendly
         """
-        metrics_dicts = []
+        cand_results = []
         for context_actions_dict, outcomes_df in zip(context_actions_dicts, outcomes_dfs):
-            metrics = self.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
-            metrics_dicts.append(metrics)
+            results_dict = self.evaluator.outcome_manager.process_outcomes(context_actions_dict, outcomes_df)
+            cand_results.append(results_dict)
 
-        metrics_df = pd.DataFrame(metrics_dicts)
-
-        metrics_df["Temperature above 1.5C"] += 1.5
-        metrics_df["Government net revenue below zero"] *= -1
-        metrics_df["Total energy below baseline"] *= -1
-
+        metrics_df = pd.DataFrame(cand_results)
         return metrics_df
 
-    def context_baseline_outcomes(self, context_dict: dict[str, float]) -> pd.DataFrame:
+    def context_baseline_outcomes(self, context_dict: dict[int, float]) -> pd.DataFrame:
         """
         Takes a context dict and returns the outcomes when no actions are performed.
         """
-        return self.runner.evaluate_actions(context_dict)
+        return self.evaluator.run_enroads([context_dict])[0]

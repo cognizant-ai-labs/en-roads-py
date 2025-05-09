@@ -16,4 +16,4 @@ class RevenueOutcome(Outcome):
         We don't want to reward governments for making money off of the climate crisis.
         """
         revenue = outcomes_df["Government net revenue from adjustments"].sum()
-        return min(revenue, 0)
+        return -1 * min(revenue, 0)

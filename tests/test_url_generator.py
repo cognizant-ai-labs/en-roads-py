@@ -21,8 +21,8 @@ class TestURLGenerator(unittest.TestCase):
         back into the same dictionary.
         """
         actions_dict = {}
-        for action in self.input_specs["varId"].tolist():
-            row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+        for action in self.input_specs["id"].tolist():
+            row = self.input_specs[self.input_specs["id"] == action].iloc[0]
             if row["kind"] == "slider":
                 actions_dict[action] = row["maxValue"] if row["defaultValue"] != row["maxValue"] else row["minValue"]
             else:

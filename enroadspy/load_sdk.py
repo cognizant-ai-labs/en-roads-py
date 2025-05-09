@@ -9,6 +9,8 @@ import zipfile
 
 import boto3
 
+from enroadspy import SDK_VERSION
+
 
 def main():
     """
@@ -16,7 +18,7 @@ def main():
     If the sdk already exists, we do nothing.
     If we already have the zip file but no SDK, we just extract the zip file.
     """
-    sdk_name = "en-roads-sdk-v24.6.0-beta1"
+    sdk_name = f"en-roads-sdk-{SDK_VERSION}"
     sdk_path = "enroadspy/"
     zip_path = sdk_path + "/" + sdk_name + ".zip"
 

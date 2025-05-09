@@ -1,7 +1,10 @@
 """
 Tests the enroads model
 """
+import io
 import unittest
+
+import pandas as pd
 
 from enroadspy import load_input_specs
 from enroadspy.enroads_runner import EnroadsRunner
@@ -24,20 +27,21 @@ class TestDefaultArgs(unittest.TestCase):
         we're ok with the defaults not exactly matching.
         Tests if no args is the same as default args is the same as manually constructing default args
         """
-        # input_str = self.runner.construct_enroads_input({})
-        # index_col = self.input_specs["index"].astype(str)
-        # default_col = self.input_specs["defaultValue"].astype(str)
-        # default_str = " ".join(index_col + ":" + default_col)
+        input_str = self.runner.construct_enroads_input({})
+        index_col = self.input_specs["index"].astype(str)
+        default_col = self.input_specs["defaultValue"].astype(str)
+        default_str = " ".join(index_col + ":" + default_col)
 
         # no_arg_output = self.runner.run_enroads()
-        # input_output = self.runner.run_enroads(input_str)
-        # default_output = self.runner.run_enroads(default_str)
+        input_output = self.runner.run_enroads(input_str)
+        default_output = self.runner.run_enroads(default_str)
 
         # no_arg_df = pd.read_table(io.StringIO(no_arg_output), sep="\t")
-        # input_df = pd.read_table(io.StringIO(input_output), sep="\t")
-        # default_df = pd.read_table(io.StringIO(default_output), sep="\t")
+        input_df = pd.read_table(io.StringIO(input_output), sep="\t")
+        default_df = pd.read_table(io.StringIO(default_output), sep="\t")
 
-        # pd.testing.assert_frame_equal(input_df, default_df)
+        pd.testing.assert_frame_equal(input_df, default_df)
+        # TODO: Get this test to work
         # pd.testing.assert_frame_equal(no_arg_df, default_df)
 
     def test_non_default_args(self):

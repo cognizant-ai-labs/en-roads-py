@@ -10,6 +10,7 @@ from enroadspy import load_input_specs, BAD_SWITCH
 from evolution.candidates.direct import DirectPrescriptor, DirectFactory
 from evolution.candidates.output_parser import OutputParser
 from evolution.seeding.train_seeds import create_direct_seeds
+from evolution.utils import process_config
 
 
 class TestDirect(unittest.TestCase):
@@ -19,6 +20,7 @@ class TestDirect(unittest.TestCase):
     def setUp(self):
         with open("tests/configs/direct.yml", "r", encoding="utf-8") as f:
             self.config = yaml.safe_load(f)
+        self.config = process_config(self.config)
 
         self.actions = list(self.config["actions"])
         self.output_parser = OutputParser(self.config["actions"])
@@ -32,9 +34,8 @@ class TestDirect(unittest.TestCase):
         If cand_type is default its output is compared to the default values. This goes for "min" and "max" as well.
         """
         actions_dict = candidate.forward(None)[0]
-
         for action in actions_dict:
-            row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+            row = self.input_specs[self.input_specs["id"] == action].iloc[0]
             if row["kind"] == "slider":
                 truth = None
                 if cand_type == "default":
@@ -47,7 +48,7 @@ class TestDirect(unittest.TestCase):
                     raise ValueError(f"Unknown candidate type {cand_type}")
 
                 self.assertAlmostEqual(actions_dict[action], truth, places=5)
-                # self.assertTrue(np.isclose(actions_dict[action], truth))
+
             else:
                 truth = None
                 if cand_type == "default":
@@ -100,7 +101,7 @@ class TestDirect(unittest.TestCase):
         # Get the true values of the default genome
         default_values = {}
         for action in self.actions:
-            row = self.input_specs[self.input_specs["varId"] == action].iloc[0]
+            row = self.input_specs[self.input_specs["id"] == action].iloc[0]
             default_values[action] = row["defaultValue"]
         unscaled_default = torch.tensor(list(default_values.values()), dtype=torch.float32).unsqueeze(0)
         default_tensor = self.output_parser.unparse(unscaled_default)
