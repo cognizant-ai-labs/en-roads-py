@@ -234,11 +234,18 @@ class ContextComponent(Component):
         def select_ssp_dropdown(value):
             """
             When we select a dropdown value, update the sliders.
+            If we clear the dropdown, reset the sliders to the default values.
             """
-            scenario = f"{value}-Baseline"
-            row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
             input_specs = load_input_specs()
-            return [row[id_to_varid(self.context[i], input_specs)] for i in range(4)]
+
+            # If the value is a scenario, find the corresponding row in context_df.
+            scenario = f"{value}-Baseline"
+            if scenario in self.context_df["scenario"].unique():
+                row = self.context_df[self.context_df["scenario"] == scenario].iloc[0]
+                return [row[id_to_varid(self.context[i], input_specs)] for i in range(4)]
+
+            # Default case: if the scenario is not found just get the default values
+            return [input_specs[input_specs["id"] == self.context[i]]["defaultValue"].iloc[0] for i in range(4)]
 
         @app.callback(
             Output("ssp-dropdown", "value", allow_duplicate=True),
