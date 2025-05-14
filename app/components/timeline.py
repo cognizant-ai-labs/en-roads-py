@@ -44,6 +44,7 @@ class TimelineComponent(Component):
         Returns a dict with the year as the key and the event as the value.
         """
         # Parse details into ids instead of varids
+        details = dict(details.items())
         if "start" in details:
             details["start"] = varid_to_id(details["start"], self.input_specs)
         if "stop" in details:
