@@ -48,7 +48,7 @@ def name_to_id(name: str, input_specs: pd.DataFrame) -> int:
     filtered = input_specs[input_specs["varName"] == name]
     if filtered.empty:
         return -1
-    return filtered["id"].values[0]
+    return int(filtered["id"].values[0])
 
 
 def id_to_name(input_id: int, input_specs: pd.DataFrame) -> str:
